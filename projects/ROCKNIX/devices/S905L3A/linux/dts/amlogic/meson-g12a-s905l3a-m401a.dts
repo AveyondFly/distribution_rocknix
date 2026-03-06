@@ -1,0 +1,166 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2018 Amlogic, Inc. All rights reserved.
+ * Create by janko888 2022/11/27
+ */
+ 
+/dts-v1/;
+
+#include "meson-g12a-u200.dts"
+
+/ {
+	compatible = "m401a", "amlogic,g12a";
+	model = "M401A";
+	
+	aliases {
+		serial1 = &uart_A;
+	};
+	
+	vddgpu: regulator-vddgpu {
+		compatible = "regulator-fixed";
+		regulator-name = "mali";
+		regulator-min-microvolt = <800000>;
+		regulator-max-microvolt = <800000>;
+		vin-supply = <&main_12v>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+	
+	leds {
+		compatible = "gpio-leds";
+
+		power_led {
+			led_name = "power_led";
+			gpios = <&gpio_ao GPIOAO_11 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		net_led {
+			led_name = "net_led";
+			gpios = <&gpio_ao GPIOAO_9 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+			linux,default-trigger = "0.0:00:link";
+		};
+
+		remote_led {
+			led_name = "remote_led";
+			gpios = <&gpio_ao GPIOAO_10 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+			linux,default-trigger = "rc-feedback";
+		};
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x0 0x0 0x80000000>;
+	};
+};
+
+&uart_A {
+	status = "okay";
+	pinctrl-0 = <&uart_a_pins>, <&uart_a_cts_rts_pins>;
+	uart-has-rtscts;
+	pinctrl-names = "default";
+};
+
+&mali {
+	status = "okay";
+	mali-supply = <&vddgpu>;
+};
+
+/* SD card */
+/* No SD card in M401A */
+&sd_emmc_b {
+	status = "disabled";
+	bus-width = <4>;
+	cap-sd-highspeed;
+	max-frequency = <50000000>;
+};
+
+/* eMMC */
+&sd_emmc_c {
+	status = "okay";
+	bus-width = <8>;
+	cap-mmc-highspeed;
+	mmc-ddr-1_8v;
+	mmc-hs200-1_8v;
+	max-frequency = <100000000>;
+};
+
+/* CPU Overclock */
+&cpu_opp_table {
+	opp-100000000 {
+		opp-hz = /bits/ 64 <100000000>;
+		opp-microvolt = <731000>;
+	};
+
+	opp-250000000 {
+		opp-hz = /bits/ 64 <250000000>;
+		opp-microvolt = <731000>;
+	};
+	
+	opp-500000000 {
+		opp-hz = /bits/ 64 <500000000>;
+		opp-microvolt = <731000>;
+	};
+
+	opp-667000000 {
+		opp-hz = /bits/ 64 <667000000>;
+		opp-microvolt = <731000>;
+	};
+	
+	opp-1000000000 {
+		opp-hz = /bits/ 64 <1000000000>;
+		opp-microvolt = <731000>;
+	};
+
+	opp-1200000000 {
+		opp-hz = /bits/ 64 <1200000000>;
+		//opp-microvolt = <731000>;
+		opp-microvolt = <761000>;
+	};
+
+	opp-1398000000 {
+		opp-hz = /bits/ 64 <1398000000>;
+		//opp-microvolt = <761000>;
+		opp-microvolt = <791000>;
+	};
+
+	opp-1512000000 {
+		opp-hz = /bits/ 64 <1512000000>;
+		//opp-microvolt = <791000>;
+		opp-microvolt = <831000>;
+	};
+
+	opp-1608000000 {
+		opp-hz = /bits/ 64 <1608000000>;
+		//opp-microvolt = <831000>;
+		opp-microvolt = <871000>;
+	};
+
+	opp-1704000000 {
+		opp-hz = /bits/ 64 <1704000000>;
+		//opp-microvolt = <861000>;
+		opp-microvolt = <921000>;
+	};
+	
+	/* some soc has crash under 1800 */
+	opp-1800000000 {
+		opp-hz = /bits/ 64 <1800000000>;
+		opp-microvolt = <981000>;
+		status = "disabled";
+	};
+		
+};
+
+&internal_ephy  {
+	max-speed = <100>;
+};
+
+&ethmac {
+	/delete-property/ resets;
+	/delete-property/ reset-names;
+	phy-handle = <&internal_ephy>;
+	phy-mode = "rmii";
+	status = "okay";
+};

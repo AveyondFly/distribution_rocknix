@@ -75,6 +75,13 @@ case "${DEVICE}" in
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr geolith-lr flycast2021-lr uae4arm"
     PKG_RETROARCH+=" retropie-shaders"
     ;;
+  S905L3A)
+    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr pcsx_rearmed-lr"
+    PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
+    PKG_EMUS+=" box64 drastic-sa mednafen portmaster scummvmsa yabasanshiro-sa duckstation-sa"
+    LIBRETRO_CORES+=" flycast2021-lr geolith-lr uae4arm"
+    PKG_RETROARCH+=" retropie-shaders"
+    ;;
 esac
 
 # Split building emulators into 2 stages, needed to fit the jobs into the 6 hour GH runner time limit.
@@ -242,7 +249,7 @@ makeinstall_target() {
 
   ## Sammy Atomiswave
   case ${DEVICE} in
-    H700|RK3326|RK3399|RK3566|RK3588)
+    H700|RK3326|RK3399|RK3566|RK3588|S905L3A)
       add_emu_core atomiswave retroarch flycast2021 true
       add_emu_core atomiswave retroarch flycast false
       add_emu_core atomiswave flycast flycast-sa false
@@ -336,7 +343,7 @@ makeinstall_target() {
 
   ### Sega Dreamcast
   case ${DEVICE} in
-    H700|RK3326|RK3399|RK3566|RK3588)
+    H700|RK3326|RK3399|RK3566|RK3588|S905L3A)
       add_emu_core dreamcast retroarch flycast2021 true
       add_emu_core dreamcast retroarch flycast false
       add_emu_core dreamcast flycast flycast-sa false
@@ -453,7 +460,7 @@ makeinstall_target() {
   add_emu_core gba retroarch vba_next false
   add_emu_core gba retroarch beetle_gba false
   case ${DEVICE} in
-    H700|RK3326|RK3566|S922X)
+    H700|RK3326|RK3566|S905L3A|S922X)
       add_emu_core gba retroarch gpsp false
       ;;
     RK3399|RK3588|SM8250|SM8550|SDM845)
@@ -726,7 +733,7 @@ makeinstall_target() {
 
   ### Sega Naomi
   case ${DEVICE} in
-    H700|RK3326|RK3399|RK3566|RK3588)
+    H700|RK3326|RK3399|RK3566|RK3588|S905L3A)
       add_emu_core naomi retroarch flycast2021 true
       add_emu_core naomi retroarch flycast false
       add_emu_core naomi flycast flycast-sa false
@@ -830,7 +837,7 @@ makeinstall_target() {
       add_emu_core nds retroarch melondsds false
       install_script "Start MelonDS.sh"
       ;;
-    S922X)
+    S922X|S905L3A)
       add_emu_core nds drastic drastic-sa true
       add_emu_core nds retroarch melonds false
       add_emu_core nds retroarch melondsds false
@@ -965,6 +972,9 @@ makeinstall_target() {
     S922X)
       add_emu_core psx retroarch pcsx_rearmed true
       add_emu_core psx retroarch beetle_psx false
+      ;;
+    S905L3A)
+      add_emu_core psx retroarch pcsx_rearmed true
       ;;
   esac
   add_emu_core psx duckstation duckstation-sa false

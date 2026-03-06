@@ -47,6 +47,9 @@ case ${DEVICE} in
   S922X)
     PKG_CMAKE_OPTS_TARGET+=" -DODROIDN2=On"
     ;;
+  S905L3A)
+    PKG_CMAKE_OPTS_TARGET+=" -DGOA_CLONE=On"
+    ;;
 esac
 
 makeinstall_target() {

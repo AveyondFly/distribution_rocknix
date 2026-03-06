@@ -12,7 +12,8 @@ PKG_DEPENDS_UNPACK+=" u-boot"
 
 unpack() {
   mkdir -p ${PKG_BUILD}
-  tar --strip-components=1 -xf ${SOURCES}/u-boot/u-boot-${PKG_VERSION}.tar.bz2 -C ${PKG_BUILD}
+  local UBOOT_TAR=$(ls ${SOURCES}/u-boot/u-boot-${PKG_VERSION}.tar.{gz,bz2,xz} 2>/dev/null | head -1)
+  tar --strip-components=1 -xaf ${UBOOT_TAR} -C ${PKG_BUILD}
 }
 
 make_host() {

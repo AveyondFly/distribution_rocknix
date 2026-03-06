@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
+
+mkdir -p ${RELEASE_DIR}/3rdparty/bootloader
+  cp -a ${INSTALL}/usr/share/bootloader/* ${RELEASE_DIR}/3rdparty/bootloader
+
+# default dtb.img: use e900v22c
+if [ -f ${RELEASE_DIR}/3rdparty/bootloader/meson-g12a-s905l3a-e900v22c.dtb ]; then
+  cp -v ${RELEASE_DIR}/3rdparty/bootloader/meson-g12a-s905l3a-e900v22c.dtb \
+        ${RELEASE_DIR}/3rdparty/bootloader/dtb.img
+fi

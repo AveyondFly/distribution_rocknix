@@ -1,0 +1,13 @@
+[Unit]
+Description=Persist Ethernet MAC address for Amlogic devices
+DefaultDependencies=false
+Before=connman.service network.target
+After=systemd-udevd.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/autostart/quirks/platforms/S905L3A/bin/persist-mac
+
+[Install]
+WantedBy=sysinit.target

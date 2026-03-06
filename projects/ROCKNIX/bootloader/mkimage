@@ -102,4 +102,19 @@ mkimage_abl() {
   mcopy "${RELEASE_DIR}/3rdparty/bootloader/rocknix_abl" ::
 }
 
+mkimage_aml_boot() {
+  echo "image: copying Amlogic boot scripts and dtb.img..."
+  for f in aml_autoscript config.ini; do
+    if [ -f "${RELEASE_DIR}/3rdparty/bootloader/${f}" ]; then
+      mcopy "${RELEASE_DIR}/3rdparty/bootloader/${f}" ::
+    fi
+  done
+  if [ -f "${RELEASE_DIR}/3rdparty/bootloader/Generic_cfgload" ]; then
+    mcopy "${RELEASE_DIR}/3rdparty/bootloader/Generic_cfgload" ::/cfgload
+  fi
+  if [ -f "${RELEASE_DIR}/3rdparty/bootloader/dtb.img" ]; then
+    mcopy "${RELEASE_DIR}/3rdparty/bootloader/dtb.img" ::
+  fi
+}
+
 mkimage_all

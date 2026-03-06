@@ -1,0 +1,42 @@
+#!/bin/sh
+# Persist Ethernet MAC address across reboots for Amlogic devices
+# that lack a factory-programmed MAC in efuse.
+
+IFACE="eth0"
+MAC_FILE="/storage/.cache/mac_address"
+
+get_cmdline_mac() {
+  for arg in $(cat /proc/cmdline); do
+    case "$arg" in
+      mac=*) echo "${arg#mac=}"; return ;;
+      androidboot.mac=*) echo "${arg#androidboot.mac=}"; return ;;
+    esac
+  done
+}
+
+CMDLINE_MAC=$(get_cmdline_mac)
+
+if [ -n "$CMDLINE_MAC" ]; then
+  ip link set dev "$IFACE" down 2>/dev/null
+  ip link set dev "$IFACE" address "$CMDLINE_MAC" 2>/dev/null
+  ip link set dev "$IFACE" up 2>/dev/null
+  echo "$CMDLINE_MAC" > "$MAC_FILE"
+  exit 0
+fi
+
+if [ -f "$MAC_FILE" ]; then
+  SAVED_MAC=$(cat "$MAC_FILE")
+  if [ -n "$SAVED_MAC" ]; then
+    ip link set dev "$IFACE" down 2>/dev/null
+    ip link set dev "$IFACE" address "$SAVED_MAC" 2>/dev/null
+    ip link set dev "$IFACE" up 2>/dev/null
+    exit 0
+  fi
+fi
+
+# No saved MAC - save current one for future boots
+CURRENT_MAC=$(cat /sys/class/net/"$IFACE"/address 2>/dev/null)
+if [ -n "$CURRENT_MAC" ] && [ "$CURRENT_MAC" != "00:00:00:00:00:00" ]; then
+  mkdir -p "$(dirname "$MAC_FILE")"
+  echo "$CURRENT_MAC" > "$MAC_FILE"
+fi

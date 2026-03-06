@@ -66,6 +66,11 @@
     <file>rk3588s-retro-lite-cm5</file>
     <file>rk3588s-retroled-cm5</file>
   </RK3588>
+  <S905L3A mkimage_options="aml_boot" dtb_prefix="amlogic">
+    <file>meson-g12a-s905l3a-cm311</file>
+    <file>meson-g12a-s905l3a-e900v22c</file>
+    <file>meson-g12a-s905l3a-m401a</file>
+  </S905L3A>
   <S922X mkimage_options="dtb,extlinux,gou_extras,uboot" fdt_type="fdtdir" dtb_prefix="amlogic">
     <file>meson-g12b-odroid-go-ultra</file>
     <file>meson-g12b-powkiddy-rgb10-max-3-pro</file>

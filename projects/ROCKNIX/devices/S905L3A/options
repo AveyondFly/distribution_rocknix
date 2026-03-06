@@ -1,0 +1,88 @@
+################################################################################
+# setup device defaults
+################################################################################
+
+  # The TARGET_CPU variable controls which processor should be targeted for
+  # generated code.
+    case ${TARGET_ARCH} in
+      aarch64)
+        TARGET_KERNEL_ARCH="arm64"
+        TARGET_KERNEL_PATCH_ARCH="aarch64"
+        TARGET_CPU="cortex-a53"
+        TARGET_ARCH_FLAGS="+crc+fp+simd"
+        TARGET_FEATURES="64bit"
+        ;;
+      arm)
+        TARGET_KERNEL_ARCH="arm64"
+        TARGET_KERNEL_PATCH_ARCH="aarch64"
+        TARGET_CPU="cortex-a53"
+        TARGET_ARCH_FLAGS="+crc"
+        TARGET_FPU="crypto-neon-fp-armv8"
+        TARGET_FLOAT="hard"
+        TARGET_FEATURES="32bit"
+        ;;
+    esac
+
+    PARTITION_TABLE="msdos"
+    HW_CPU="Amlogic S905L3A"
+
+  # Kernel target
+    KERNEL_TARGET="Image.lzo"
+    KERNEL_NAME="kernel.img"
+    BUILD_ANDROID_BOOTIMG="yes"
+
+  # Kernel extra targets to build
+    KERNEL_MAKE_EXTRACMD=" $(get_kernel_make_extracmd)"
+
+  # Kernel cmdline
+    EXTRA_CMDLINE="quiet console=ttyAML0,115200n8 console=tty0 systemd.debug_shell=ttyAML0"
+
+  # Bootloader to use (syslinux / u-boot)
+    BOOTLOADER="u-boot"
+
+  # No U-Boot firmware needed (chain-boot from stock Android U-Boot)
+    UBOOT_FIRMWARE=""
+
+  # GPU driver - pure Panfrost (open source)
+    GRAPHIC_DRIVERS="panfrost"
+
+  # For maximum cross compatbility
+    PREFER_GLES="yes"
+
+  # Displayserver to use (wl / x11 / no)
+    DISPLAYSERVER="wl"
+
+  # Windowmanager to use (weston / swaywm-env / no)
+    WINDOWMANAGER="swaywm-env"
+
+  # Additional drivers to install:
+  # for a list of additional drivers see packages/linux-drivers
+  # Space separated list is supported,
+  # e.g. ADDITIONAL_DRIVERS="DRIVER1 DRIVER2"
+    ADDITIONAL_DRIVERS="RTW88"
+
+  # Additional Firmware to use ( )
+  # Space separated list is supported,
+  # e.g. FIRMWARE=""
+    FIRMWARE=""
+
+  # Additional packages to install
+    ADDITIONAL_PACKAGES=""
+
+  # Debug tty path
+    DEBUG_TTY="/dev/ttyAML0"
+
+  # Build and install rocknix out-of-tree device trees and overlays (yes / no)
+    ROCKNIX_DEVICE_TREE_OVERLAYS=""
+
+  # ROCKNIX joypad driver (not needed for TV box platforms)
+    ROCKNIX_JOYPAD="no"
+
+  # ZRAM Algorithm
+    ZRAM_COMPRESSION_ALGO="zstd"
+
+  # ZRAM Size
+    ZRAM_SWAP_SIZE="Auto"
+
+  # Disk Swap
+    SWAP_FILE_SIZE="0"

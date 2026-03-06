@@ -10,7 +10,7 @@ PKG_DEPENDS_TARGET="toolchain rocknix-hotkey"
 PKG_LONGDESC="Install Drastic Launcher script, will download bin on first run"
 PKG_TOOLCHAIN="make"
 
-if [ "${DEVICE}" = "S922X" ]; then
+if [ "${DEVICE}" = "S922X" -o "${DEVICE}" = "S905L3A" ]; then
   PKG_DEPENDS_TARGET+=" libegl"
 fi
 

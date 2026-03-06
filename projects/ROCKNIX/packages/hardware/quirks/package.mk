@@ -22,8 +22,10 @@ makeinstall_target() {
 
 post_install() {
   enable_service led-poweroff.service
-  if [ "${DEVICE}" = "RK3566" ]
-  then
+  if [ "${DEVICE}" = "RK3566" ]; then
     enable_service volume-fixup.service
+  fi
+  if [ "${DEVICE}" = "S905L3A" ]; then
+    enable_service persist-mac.service
   fi
 }

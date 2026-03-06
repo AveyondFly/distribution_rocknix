@@ -1,0 +1,22 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
+
+cat <<EOF >/storage/.config/profile.d/002-audio_path
+DEVICE_PIPEWIRE_PROFILE="pro-audio"
+EOF
+
+### Restart pipewire so wireplumber picks up the pro-audio profile
+systemctl restart pipewire
+sleep 1
+
+### Set HDMI audio routing via TOHDMITX
+### Use cset with numid because sset cannot find controls with "Switch" suffix
+amixer -c 0 -q cset numid=65 on   # TOHDMITX Switch
+amixer -c 0 -q cset numid=64 1    # TOHDMITX I2S SRC = I2S B
+amixer -c 0 -q cset numid=41 on   # FRDDR_A SRC 1 EN Switch
+amixer -c 0 -q cset numid=44 1    # FRDDR_A SINK 1 SEL = OUT 1
+amixer -c 0 -q cset numid=47 on   # FRDDR_B SRC 1 EN Switch
+amixer -c 0 -q cset numid=50 1    # FRDDR_B SINK 1 SEL = OUT 1
+amixer -c 0 -q cset numid=53 on   # FRDDR_C SRC 1 EN Switch
+amixer -c 0 -q cset numid=56 1    # FRDDR_C SINK 1 SEL = OUT 1

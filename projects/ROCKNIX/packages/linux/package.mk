@@ -16,7 +16,7 @@ PKG_STAMP="${KERNEL_TARGET} ${KERNEL_MAKE_EXTRACMD}"
 PKG_PATCH_DIRS="${LINUX} mainline ${DEVICE} default"
 
 [[ "${DEVICE}" == RK* ]] && PKG_PATCH_DIRS+=" mainline-rockchip"
-[[ "${DEVICE}" == SM* ]] && PKG_DEPENDS_TARGET+=" mkbootimg:host"
+[[ "${DEVICE}" == SM* || "${BUILD_ANDROID_BOOTIMG}" == "yes" ]] && PKG_DEPENDS_TARGET+=" mkbootimg:host"
 
 case ${DEVICE} in
   RK3588)
@@ -36,7 +36,7 @@ case ${DEVICE} in
         PKG_VERSION="6.19.5"
         PKG_URL="https://www.kernel.org/pub/linux/kernel/v${PKG_VERSION/.*/}.x/${PKG_NAME}-${PKG_VERSION}.tar.xz"
         ;;
-      S922X|RK3399|RK3566)
+      S905L3A|S922X|RK3399|RK3566)
         PKG_VERSION="6.18.13"
         PKG_URL="https://www.kernel.org/pub/linux/kernel/v${PKG_VERSION/.*/}.x/${PKG_NAME}-${PKG_VERSION}.tar.xz"
         ;;
@@ -334,7 +334,17 @@ makeinstall_target() {
   mkdir -p ${INSTALL}/.image
   cp -p System.map .config Module.symvers ${INSTALL}/.image/
 
-  if [ "${BOOTLOADER}" != "qcom-abl" ]; then
+  if [ "${BUILD_ANDROID_BOOTIMG}" = "yes" ]; then
+    INITRAMFS_DIR=$(sed -n 's/^CONFIG_INITRAMFS_SOURCE="\(.*\)"/\1/p' .config | tr ' ' '\n' | grep -v '\.conf$' | head -1)
+    mkdir -p ${BUILD}/image
+    (cd ${INITRAMFS_DIR} && find . | cpio -H newc -o --quiet -R 0:0 > ${BUILD}/image/initramfs.cpio)
+    python3 "${TOOLCHAIN}/mkbootimg/mkbootimg.py" \
+      --kernel "arch/${TARGET_KERNEL_ARCH}/boot/${KERNEL_TARGET}" \
+      --ramdisk "${BUILD}/image/initramfs.cpio" \
+      --base 0x0 --kernel_offset 0x1080000 \
+      --header_version 0 \
+      -o "${INSTALL}/.image/${KERNEL_TARGET}" || { exit 1; }
+  elif [ "${BOOTLOADER}" != "qcom-abl" ]; then
   	cp -p arch/${TARGET_KERNEL_ARCH}/boot/${KERNEL_TARGET} ${INSTALL}/.image/
   else
 

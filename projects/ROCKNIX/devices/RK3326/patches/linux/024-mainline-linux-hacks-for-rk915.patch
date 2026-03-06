@@ -1,0 +1,81 @@
+diff -ur linux-6.12.29/drivers/mmc/core/host.c linux_for_rk915/drivers/mmc/core/host.c
+--- linux-6.12.29/drivers/mmc/core/host.c	2025-05-18 06:25:00.000000000 +0000
++++ linux_for_rk915/drivers/mmc/core/host.c	2025-06-28 17:43:59.825733795 +0000
+@@ -403,6 +403,8 @@
+ 		host->caps2 |= MMC_CAP2_NO_SD;
+ 	if (device_property_read_bool(dev, "no-mmc"))
+ 		host->caps2 |= MMC_CAP2_NO_MMC;
++	if (device_property_read_bool(dev, "supports-rk912"))
++		host->caps2 |= MMC_CAP2_WIFI_RK912;
+ 	if (device_property_read_bool(dev, "no-mmc-hs400"))
+ 		host->caps2 &= ~(MMC_CAP2_HS400_1_8V | MMC_CAP2_HS400_1_2V |
+ 				 MMC_CAP2_HS400_ES);
+diff -ur linux-6.12.29/drivers/mmc/core/sdio.c linux_for_rk915/drivers/mmc/core/sdio.c
+--- linux-6.12.29/drivers/mmc/core/sdio.c	2025-05-18 06:25:00.000000000 +0000
++++ linux_for_rk915/drivers/mmc/core/sdio.c	2025-06-28 17:43:59.827733748 +0000
+@@ -1076,7 +1076,8 @@
+ 	 * removable card is checked from a detect work later on in the resume
+ 	 * process.
+ 	 */
+-	if (!mmc_card_keep_power(host)) {
++	if (!mmc_card_keep_power(host) &&
++	    !(host->caps2 & MMC_CAP2_WIFI_RK912)) {
+ 		mmc_power_up(host, host->card->ocr);
+ 		/*
+ 		 * Tell runtime PM core we just powered up the card,
+diff -ur linux-6.12.29/drivers/mmc/core/sdio_cis.c linux_for_rk915/drivers/mmc/core/sdio_cis.c
+--- linux-6.12.29/drivers/mmc/core/sdio_cis.c	2025-05-18 06:25:00.000000000 +0000
++++ linux_for_rk915/drivers/mmc/core/sdio_cis.c	2025-06-28 17:43:59.826733772 +0000
+@@ -190,15 +191,15 @@
+ 		pr_warn("%s: card has broken SDIO 1.1 CIS, forcing SDIO 1.0\n",
+ 			mmc_hostname(card->host));
+ 		vsn = SDIO_SDIO_REV_1_00;
+-	} else if (size < min_size) {
++	} else if (size < min_size && !(card->host->caps2 & MMC_CAP2_WIFI_RK912)) {
+ 		return -EINVAL;
+ 	}
+ 
+ 	/* TPLFE_MAX_BLK_SIZE */
+ 	func->max_blksize = buf[12] | (buf[13] << 8);
+ 
+ 	/* TPLFE_ENABLE_TIMEOUT_VAL, present in ver 1.1 and above */
+-	if (vsn > SDIO_SDIO_REV_1_00)
++	if (vsn > SDIO_SDIO_REV_1_00 && !(card->host->caps2 & MMC_CAP2_WIFI_RK912))
+ 		func->enable_timeout = (buf[28] | (buf[29] << 8)) * 10;
+ 	else
+ 		func->enable_timeout = jiffies_to_msecs(HZ);
+diff -ur linux-6.12.29/drivers/mmc/host/dw_mmc.c linux_for_rk915/drivers/mmc/host/dw_mmc.c
+--- linux-6.12.29/drivers/mmc/host/dw_mmc.c	2025-05-18 06:25:00.000000000 +0000
++++ linux_for_rk915/drivers/mmc/host/dw_mmc.c	2025-06-28 17:44:02.417672518 +0000
+@@ -295,6 +295,10 @@
+ 			     SDMMC_CMD_PRV_DAT_WAIT, 0);
+ 	}
+ 
++	if ((mmc->caps2 & MMC_CAP2_WIFI_RK912) &&
++	    (cmd->opcode == SD_IO_RW_DIRECT))
++		cmdr |= SDMMC_CMD_PRV_DAT_WAIT;
++
+ 	if (cmd->flags & MMC_RSP_PRESENT) {
+ 		/* We expect a response, so set this bit */
+ 		cmdr |= SDMMC_CMD_RESP_EXP;
+@@ -1263,7 +1267,8 @@
+ 
+ 		/* enable clock; only low power if no SDIO */
+ 		clk_en_a = SDMMC_CLKEN_ENABLE << slot->id;
+-		if (!test_bit(DW_MMC_CARD_NO_LOW_PWR, &slot->flags))
++		if (!test_bit(DW_MMC_CARD_NO_LOW_PWR, &slot->flags) &&
++		    !(slot->mmc->caps2 & MMC_CAP2_WIFI_RK912))
+ 			clk_en_a |= SDMMC_CLKEN_LOW_PWR << slot->id;
+ 		mci_writel(host, CLKENA, clk_en_a);
+ 
+diff -ur linux-6.12.29/include/linux/mmc/host.h linux_for_rk915/include/linux/mmc/host.h
+--- linux-6.12.29/include/linux/mmc/host.h	2025-05-18 06:25:00.000000000 +0000
++++ linux_for_rk915/include/linux/mmc/host.h	2025-06-28 17:45:54.422123779 +0000
+@@ -404,6 +404,7 @@
+ #define MMC_CAP2_CRYPTO		0
+ #endif
+ #define MMC_CAP2_ALT_GPT_TEGRA	(1 << 28)	/* Host with eMMC that has GPT entry at a non-standard location */
++#define MMC_CAP2_WIFI_RK912     (1 << 29)
+ 
+ 	int			fixed_drv_type;	/* fixed driver type for non-removable media */
+ 

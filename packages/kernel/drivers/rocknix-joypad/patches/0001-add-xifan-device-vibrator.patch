@@ -1,0 +1,193 @@
+From 57732dea248ea275bfe2852179c3d8bc49141083 Mon Sep 17 00:00:00 2001
+From: kk <405437445@qq.com>
+Date: Sat, 26 Jul 2025 17:06:26 +0800
+Subject: [PATCH 1/3] add xifan device vibrator
+
+---
+ rocknix-singleadc-joypad.c | 68 ++++++++++++++++++++++++++++++++------
+ 1 file changed, 57 insertions(+), 11 deletions(-)
+
+diff --git a/rocknix-singleadc-joypad.c b/rocknix-singleadc-joypad.c
+index 44b0cda..7bc3f5d 100644
+--- a/rocknix-singleadc-joypad.c
++++ b/rocknix-singleadc-joypad.c
+@@ -176,6 +176,7 @@ struct joypad {
+ 	int amux_count;
+ 	/* analog button */
+ 	struct bt_adc *adcs;
++	bool skip_absr;
+ 
+ 	/* report reference point */
+ 	bool invert_absx;
+@@ -208,6 +209,7 @@ struct joypad {
+ 	u16 boost_strong;
+ 	bool has_rumble;
+ 	bool rumble_enabled; /* to turn rumble on/off if a device has it */
++	int rumble_gpio;
+ 
+ 
+ 	/* New property to override logic with Miyoo serial approach */
+@@ -258,26 +260,46 @@ static int pwm_vibrator_start(struct joypad *joypad)
+ 	return 0;
+ }
+ 
++static int joypad_vibrator_start(struct joypad *joypad)
++{
++	if (joypad->rumble_gpio) {
++		gpio_set_value(joypad->rumble_gpio, 1);
++		return 0;
++	}
++	return pwm_vibrator_start(joypad);
++}
++
+ static void pwm_vibrator_stop(struct joypad *joypad)
+ {
++	if (joypad->rumble_gpio) {
++		gpio_set_value(joypad->rumble_gpio, 0);
++		return;
++	}
++
+ 	pwm_disable(joypad->pwm);
+ }
+ 
+-static void pwm_vibrator_play_work(struct work_struct *work)
++
++static void joypad_vibrator_stop(struct joypad *joypad)
++{
++	pwm_vibrator_stop(joypad);
++}
++
++static void joypad_vibrator_play_work(struct work_struct *work)
+ {
+ 	struct joypad *joypad = container_of(work,
+ 					    struct joypad, play_work);
+ 	mutex_lock(&joypad->lock);
+ 	if (!joypad->rumble_enabled) {
+-		pwm_vibrator_stop(joypad);
++		joypad_vibrator_stop(joypad);
+ 		mutex_unlock(&joypad->lock);
+ 		return;
+ 	}
+ 
+ 	if (joypad->level)
+-		 pwm_vibrator_start(joypad);
++		 joypad_vibrator_start(joypad);
+ 	else
+-		 pwm_vibrator_stop(joypad);
++		 joypad_vibrator_stop(joypad);
+ 
+ 	mutex_unlock(&joypad->lock);
+ }
+@@ -354,7 +376,7 @@ static ssize_t joypad_store_rumble_enable(struct device *dev,
+ 		joypad->rumble_enabled = false;
+ 		joypad->level = 0;
+ 		cancel_work_sync(&joypad->play_work);
+-		pwm_vibrator_stop(joypad);
++		joypad_vibrator_stop(joypad);
+ 	}
+ 	mutex_unlock(&joypad->lock);
+ 	return count;
+@@ -416,10 +438,11 @@ static void joypad_adc_check(struct input_polled_dev *poll_dev)
+ 	struct joypad *joypad = poll_dev->private;
+ 	int nbtn;
+ 	int mag;
++	int start_index = joypad->skip_absr ? 2 : 0;
+ 
+ 	/* Assumes an even number of axes and that joystick axis pairs are sequential */
+ 	/* e.g. left stick Y immediately follows left stick X */
+-	for (nbtn = 0; nbtn < joypad->amux_count; nbtn += 2) {
++	for (nbtn = start_index; nbtn < joypad->amux_count; nbtn += 2) {
+ 		struct bt_adc *adcx = &joypad->adcs[nbtn];
+ 		struct bt_adc *adcy = &joypad->adcs[nbtn + 1];
+ 
+@@ -550,7 +573,7 @@ static void joypad_close(struct input_polled_dev *poll_dev)
+ 
+ 	if (joypad->has_rumble) {
+ 		cancel_work_sync(&joypad->play_work);
+-		pwm_vibrator_stop(joypad);
++		joypad_vibrator_stop(joypad);
+ 	}
+ 
+ 	/* button report disable */
+@@ -834,14 +857,17 @@ static int joypad_rumble_setup(struct device *dev, struct joypad *joypad)
+ 	int error;
+ 	struct pwm_state state;
+ 
++	INIT_WORK(&joypad->play_work, joypad_vibrator_play_work);
++
++	if (joypad->rumble_gpio)
++		return 0;
++
+ 	joypad->pwm = devm_pwm_get(dev, "enable");
+ 	if (IS_ERR(joypad->pwm)) {
+ 		dev_err(dev, "rumble get error\n");
+ 		return -EINVAL;
+ 	}
+ 
+-	INIT_WORK(&joypad->play_work, pwm_vibrator_play_work);
+-
+ 	/* Sync up PWM state and ensure it is off. */
+ 	pwm_init_state(joypad->pwm, &state);
+ 	state.enabled = false;
+@@ -1270,6 +1296,7 @@ static void miyoo_delayed_init_workfn(struct work_struct *work)
+ static int joypad_dt_parse(struct device *dev, struct joypad *joypad)
+ {
+ 	int error = 0;
++	enum of_gpio_flags flags;
+ 
+ 	/* initialize values from device-tree */
+ 	device_property_read_u32(dev, "button-adc-fuzz",
+@@ -1289,6 +1316,8 @@ static int joypad_dt_parse(struct device *dev, struct joypad *joypad)
+ 
+ 	joypad->auto_repeat = device_property_present(dev, "autorepeat");
+ 
++	joypad->skip_absr = device_property_present(dev, "skip-absr");
++	dev_info(dev, "%s : skip-absr = %d\n", __func__, joypad->skip_absr);
+ 	/* change the report reference point? (ADC MAX - read value) */
+ 	joypad->invert_absx = device_property_present(dev, "invert-absx");
+ 	joypad->invert_absy = device_property_present(dev, "invert-absy");
+@@ -1329,6 +1358,23 @@ static int joypad_dt_parse(struct device *dev, struct joypad *joypad)
+ 	if (joypad->has_rumble)
+ 		dev_info(dev, "%s : has rumble\n", __func__);
+ 
++	joypad->rumble_gpio = of_get_named_gpio_flags(dev->of_node, "rumble-gpio", 0, &flags);
++	if (gpio_is_valid(joypad->rumble_gpio)) {
++		error = devm_gpio_request(dev, joypad->rumble_gpio, "rumble-gpio");
++		if (error < 0) {
++			dev_err(dev, "%s : failed to request rumble gpio %d\n",
++				__func__, joypad->rumble_gpio);
++			return error;
++		}
++		error = gpio_direction_output(joypad->rumble_gpio, 0);
++		if (error < 0)
++			return error;
++		joypad->has_rumble = true;
++		dev_info(dev, "%s : has gpio rumble\n", __func__);
++	} else {
++		dev_err(dev, "joypad rumble gpio error!");
++	}
++
+ 	joypad->use_miyoo_serial =
+ 		device_property_present(dev, "rocknix,use-miyoo-serial-joypad");
+ 	if (joypad->use_miyoo_serial) {
+@@ -1367,7 +1413,7 @@ static int __maybe_unused joypad_suspend(struct device *dev)
+ 	if (joypad->has_rumble) {
+ 		cancel_work_sync(&joypad->play_work);
+ 		if (joypad->level)
+-			 pwm_vibrator_stop(joypad);
++			 joypad_vibrator_stop(joypad);
+ 	}
+ 	return 0;
+ }
+@@ -1378,7 +1424,7 @@ static int __maybe_unused joypad_resume(struct device *dev)
+ 	struct joypad *joypad = platform_get_drvdata(pdev);
+ 	if (joypad->has_rumble) {
+ 		if (joypad->level)
+-			 pwm_vibrator_start(joypad);
++			 joypad_vibrator_start(joypad);
+ 	}
+ 	return 0;
+ }
+-- 
+2.34.1
+

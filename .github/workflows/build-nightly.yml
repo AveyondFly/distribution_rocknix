@@ -60,6 +60,11 @@ on:
         required: false
         default: false
         type: boolean
+      S905L3A:
+        description: 'S905L3A'
+        required: false
+        default: false
+        type: boolean
   workflow_call:
   pull_request:
     types: [ assigned ]
@@ -97,6 +102,7 @@ jobs:
             ["SM8250"]="${{ inputs.SM8250 }}"
             ["SM8550"]="${{ inputs.SM8550 }}"
             ["SM8650"]="${{ inputs.SM8650 }}"
+            ["S905L3A"]="${{ inputs.S905L3A }}"
           )
           
           SELECTED_MATRIX=""
@@ -112,7 +118,7 @@ jobs:
           done
           
           if [[ -z "$SELECTED_MATRIX" ]]; then
-            MATRIX='[{"device":"RK3326","project":"ROCKNIX"},{"device":"RK3399","project":"ROCKNIX"},{"device":"RK3566","project":"ROCKNIX"},{"device":"RK3588","project":"ROCKNIX"},{"device":"S922X","project":"ROCKNIX"},{"device":"H700","project":"ROCKNIX"},{"device":"SDM845","project":"ROCKNIX"},{"device":"SM8250","project":"ROCKNIX"},{"device":"SM8550","project":"ROCKNIX"},{"device":"SM8650","project":"ROCKNIX"}]'
+            MATRIX='[{"device":"RK3326","project":"ROCKNIX"},{"device":"RK3399","project":"ROCKNIX"},{"device":"RK3566","project":"ROCKNIX"},{"device":"RK3588","project":"ROCKNIX"},{"device":"S922X","project":"ROCKNIX"},{"device":"H700","project":"ROCKNIX"},{"device":"SDM845","project":"ROCKNIX"},{"device":"SM8250","project":"ROCKNIX"},{"device":"SM8550","project":"ROCKNIX"},{"device":"SM8650","project":"ROCKNIX"},{"device":"S905L3A","project":"ROCKNIX"}]'
           else
             MATRIX="[$SELECTED_MATRIX]"
           fi

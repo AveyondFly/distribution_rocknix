@@ -290,5 +290,5 @@ if [ -e "/storage/.config/duckstation/settings.ini" ]; then
   grep -q "^NoDesktopFile =" /storage/.config/duckstation/settings.ini ||
     sed -i '/\[Main\]/a\NoDesktopFile = true' /storage/.config/duckstation/settings.ini
   # no confirmation popup
-  sed -i 's/ConfirmPowerOff = true/ConfirmPowerOff = false' /storage/.config/duckstation/settings.ini
+  sed -i 's/ConfirmPowerOff = true/ConfirmPowerOff = false/' /storage/.config/duckstation/settings.ini
 fi

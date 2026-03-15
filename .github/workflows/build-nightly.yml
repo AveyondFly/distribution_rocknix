@@ -76,7 +76,7 @@ on:
 
 jobs:
   set-envs:
-    if: (github.event_name != 'schedule') || (github.repository == 'ROCKNIX/distribution' && github.ref_name == 'next')
+    if: (github.event_name != 'schedule') || (github.repository == 'AveyondFly/distribution_rocknix' && github.ref_name == 'next')
     environment:
       name: ${{ github.event_name == 'pull_request' && 'pr-approval' || 'auto' }}
     runs-on: ubuntu-24.04
@@ -132,7 +132,7 @@ jobs:
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
 
   build-docker:
-    if: github.event_name != 'schedule' || (github.repository == 'ROCKNIX/distribution' && github.ref_name == 'next')
+    if: github.event_name != 'schedule' || (github.repository == 'AveyondFly/distribution_rocknix' && github.ref_name == 'next')
     name: Docker
     needs: set-envs
     uses: ./.github/workflows/build-docker-image.yml
@@ -140,7 +140,7 @@ jobs:
       OWNER_LC: ${{ needs.set-envs.outputs.OWNER_LC }}
 
   build-devices:
-    if: (github.event_name != 'schedule') || (github.repository == 'ROCKNIX/distribution' && github.ref_name == 'next')
+    if: (github.event_name != 'schedule') || (github.repository == 'AveyondFly/distribution_rocknix' && github.ref_name == 'next')
     name: Build Devices
     needs:
       - set-envs
@@ -159,7 +159,7 @@ jobs:
       OFFICIAL: ${{ needs.set-envs.outputs.OFFICIAL }}
 
   rerun-failed-jobs:
-    if: always() && !cancelled() && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && fromJSON(github.run_attempt) < 3 && github.ref_name == 'next' && (github.event_name != 'schedule' || github.repository == 'ROCKNIX/distribution')
+    if: always() && !cancelled() && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && fromJSON(github.run_attempt) < 3 && github.ref_name == 'next' && (github.event_name != 'schedule' || github.repository == 'AveyondFly/distribution_rocknix')
     needs: build-devices
     runs-on: ubuntu-24.04
     steps:
@@ -169,7 +169,7 @@ jobs:
         run: gh workflow run retry-workflow.yml -F run_id=${{ github.run_id }}
 
   release-nightly:
-     if: ${{ always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && github.repository_owner == 'ROCKNIX' && needs.set-envs.outputs.NIGHTLY == 'yes' && github.event_name != 'pull_request' }}
+     if: ${{ always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && github.repository_owner == 'AveyondFly' && needs.set-envs.outputs.NIGHTLY == 'yes' && github.event_name != 'pull_request' }}
      name: Release nightly
      needs: build-devices
      runs-on: ubuntu-24.04
@@ -258,7 +258,7 @@ jobs:
          done         
 
   release-official:
-    if: ${{ always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && github.repository_owner == 'ROCKNIX' && needs.set-envs.outputs.OFFICIAL == 'yes' }}
+    if: ${{ always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && github.repository_owner == 'AveyondFly' && needs.set-envs.outputs.OFFICIAL == 'yes' }}
     name: Release official
     needs: build-devices
     runs-on: ubuntu-24.04

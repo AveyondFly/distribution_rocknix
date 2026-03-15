@@ -1,0 +1,62 @@
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2024-present ROCKNIX (https://rocknix.org)
+
+PKG_SOC="rk3562"
+
+# Use mkimage from rkbin (avoid building broken tools from Rockchip BSP U-Boot)
+MKIMAGE="${PKG_RKBIN}/tools/mkimage"
+
+# Make idbloader.img
+${MKIMAGE} -n "${PKG_SOC}" -T rksd -d "${PKG_DDR_BIN}":"${PKG_MINILOADER}" -C bzip2 idbloader.img
+
+# Generate FIT image using rkbin's mkimage
+cat > u-boot.its <<EOF
+/dts-v1/;
+/ {
+    description = "U-Boot FIT Image for RK3562";
+    #address-cells = <1>;
+    images {
+        uboot {
+            description = "U-Boot";
+            data = /incbin/("u-boot-nodtb.bin");
+            type = "standalone";
+            os = "U-Boot";
+            arch = "arm64";
+            compression = "none";
+            load = <0x00200000>;
+        };
+        fdt {
+            description = "U-Boot DTB";
+            data = /incbin/("u-boot.dtb");
+            type = "flat_dt";
+            arch = "arm64";
+            compression = "none";
+        };
+        atf-1 {
+            description = "ARM Trusted Firmware";
+            data = /incbin/("${PKG_BL31}");
+            type = "firmware";
+            arch = "arm64";
+            os = "arm-trusted-firmware";
+            compression = "none";
+            load = <0x00040000>;
+            entry = <0x00040000>;
+        };
+    };
+    configurations {
+        default = "config-1";
+        config-1 {
+            description = "RK3562 U-Boot";
+            firmware = "atf-1";
+            loadables = "uboot";
+            fdt = "fdt";
+        };
+    };
+};
+EOF
+
+${MKIMAGE} -f u-boot.its -E u-boot.itb
+
+# Build a unified uboot.bin image
+dd if=idbloader.img of=uboot.bin bs=512 seek=0 conv=fsync,notrunc
+dd if=u-boot.itb of=uboot.bin bs=512 seek=16320 conv=fsync,notrunc

@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ROCKNIX <rocknix@rocknix.org>
+Date: Sat, 15 Mar 2026 16:30:00 +0800
+Subject: [PATCH] gpu: arm: bifrost: fix kbase_debug_coresight_csf_config_create signature
+
+Add missing bool pre_post parameter to match the declaration in
+include/linux/mali_kbase_debug_coresight_csf.h
+
+Signed-off-by: ROCKNIX <rocknix@rocknix.org>
+---
+ .../bifrost/debug/backend/mali_kbase_debug_coresight_csf.c   | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/drivers/gpu/arm/bifrost/debug/backend/mali_kbase_debug_coresight_csf.c
++++ b/drivers/gpu/arm/bifrost/debug/backend/mali_kbase_debug_coresight_csf.c
+@@ -408,7 +408,8 @@ EXPORT_SYMBOL(kbase_debug_coresight_csf_unregister);
+ 
+ void *
+ kbase_debug_coresight_csf_config_create(void *client_data,
+-					struct kbase_debug_coresight_csf_sequence *enable_seq,
+-					struct kbase_debug_coresight_csf_sequence *disable_seq)
++				struct kbase_debug_coresight_csf_sequence *enable_seq,
++				struct kbase_debug_coresight_csf_sequence *disable_seq,
++				bool pre_post)
+ {
+ 	struct kbase_debug_coresight_csf_client *client;

@@ -61,6 +61,11 @@
       <file>rk3568-anbernic-rg-ds</file>
     </Specific>
   </RK3566>
+  <RK3562 dtb_prefix="rockchip">
+    <Generic mkimage_options="dtb,extlinux,uboot" fdt="device_trees/rk3562-ro520c-lp3x-v10-linux.dtb" fdt_type="fdt">
+      <file>rk3562-ro520c-lp3x-v10-linux</file>
+    </Generic>
+  </RK3562>
   <RK3588 mkimage_options="dtb,extlinux,uboot" fdt="device_trees/rk3588s-gameforce-ace.dtb" fdt_type="fdt" dtb_prefix="rockchip">
     <file>rk3588s-gameforce-ace</file>
     <file>rk3588s-retro-lite-cm5</file>

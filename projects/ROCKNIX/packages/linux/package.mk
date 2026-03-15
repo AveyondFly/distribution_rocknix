@@ -19,6 +19,12 @@ PKG_PATCH_DIRS="${LINUX} mainline ${DEVICE} default"
 [[ "${DEVICE}" == SM* || "${BUILD_ANDROID_BOOTIMG}" == "yes" ]] && PKG_DEPENDS_TARGET+=" mkbootimg:host"
 
 case ${DEVICE} in
+  RK3562)
+    PKG_VERSION="1ba51b059f25533c5529b7f68186190b47d6a7b3"
+    PKG_URL="https://github.com/rockchip-linux/kernel/archive/${PKG_VERSION}.tar.gz"
+    PKG_GIT_CLONE_BRANCH="develop-6.6"
+    PKG_PATCH_DIRS="${LINUX} ${DEVICE} default"
+    ;;
   RK3588)
     PKG_VERSION="b8e62bed74766b6c8c423a767b35495e78b64caf"
     PKG_URL="https://github.com/armbian/linux-rockchip/archive/${PKG_VERSION}.tar.gz"
@@ -303,8 +309,6 @@ make_target() {
           ;;
       esac
 
-      [[ "${DEVICE}" != "RK3588" && "${DEVICE}" != "SDM845" ]] && export BUILD_BPF_SKEL=0
-
       WERROR=0 \
       NO_LIBPERL=1 \
       NO_LIBPYTHON=1 \
@@ -323,7 +327,7 @@ make_target() {
       NO_CAPSTONE=1 \
       CROSS_COMPILE="${TARGET_PREFIX}" \
       JOBS="${CONCURRENCY_MAKE_LEVEL}" \
-        make ${PERF_BUILD_ARGS}
+        make ${PERF_BUILD_ARGS} BUILD_BPF_SKEL=
       mkdir -p ${INSTALL}/usr/bin
         cp perf ${INSTALL}/usr/bin
     )
@@ -380,7 +384,7 @@ makeinstall_target() {
     mkdir -p ${INSTALL}/usr/share/bootloader
     for dtb in arch/${TARGET_KERNEL_ARCH}/boot/dts/**/*.dtb; do
       if [ -f ${dtb} ]; then
-        if [ "${DEVICE}" = "H700" -o "${DEVICE}" = "RK3326" -o "${DEVICE}" = "RK3399" -o "${DEVICE}" = "RK3566" -o "${DEVICE}" = "RK3588" ]; then
+        if [ "${DEVICE}" = "H700" -o "${DEVICE}" = "RK3326" -o "${DEVICE}" = "RK3399" -o "${DEVICE}" = "RK3562" -o "${DEVICE}" = "RK3566" -o "${DEVICE}" = "RK3588" ]; then
           mkdir -p ${INSTALL}/usr/share/bootloader/device_trees
           cp -v ${dtb} ${INSTALL}/usr/share/bootloader/device_trees
         else

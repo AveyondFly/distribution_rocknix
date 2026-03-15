@@ -1,0 +1,94 @@
+################################################################################
+# setup device defaults
+################################################################################
+
+  # The TARGET_CPU variable controls which processor should be targeted for
+  # generated code.
+    case ${TARGET_ARCH} in
+      aarch64)
+        TARGET_KERNEL_ARCH="arm64"
+        TARGET_KERNEL_PATCH_ARCH="aarch64"
+        TARGET_CPU="cortex-a53"
+        TARGET_ARCH_FLAGS="+crc+crypto+fp+simd"
+        TARGET_FEATURES="64bit"
+        ;;
+      arm)
+        TARGET_KERNEL_ARCH="arm64"
+        TARGET_KERNEL_PATCH_ARCH="aarch64"
+        TARGET_CPU="cortex-a53"
+        TARGET_ARCH_FLAGS="+crc"
+        TARGET_FPU="neon-fp-armv8"
+        TARGET_FLOAT="hard"
+        TARGET_FEATURES="32bit"
+        ;;
+    esac
+
+    PARTITION_TABLE="msdos"
+    HW_CPU="Rockchip RK3562"
+
+  # Kernel target
+    KERNEL_TARGET="Image"
+
+  # Kernel extra targets to build
+    KERNEL_MAKE_EXTRACMD=" $(get_kernel_make_extracmd)"
+
+  # Kernel cmdline
+    EXTRA_CMDLINE="quiet console=ttyS2,1500000 console=tty0 systemd.debug_shell=ttyS2"
+
+  # Bootloader to use (syslinux / u-boot)
+    BOOTLOADER="u-boot"
+
+  # U-Boot firmware package(s) to use
+    UBOOT_FIRMWARE="rkbin"
+
+  # Mali GPU family
+    MALI_FAMILY="bifrost-g52"
+    GRAPHIC_DRIVERS="mali"
+
+  # For maximum cross compatbility
+    PREFER_GLES="yes"
+
+  # VULKAN_SUPPORT
+    VULKAN_SUPPORT="no"
+
+  # Vulkan implementation to use (vulkan-loader / no)
+  # VULKAN="vulkan-loader"
+
+  # Displayserver to use (wl / no)
+    DISPLAYSERVER="wl"
+
+  # Windowmanager to use (weston / swaywm-env / no)
+    WINDOWMANAGER="swaywm-env"
+
+  # Pipewire audio support (yes / no)
+    PIPEWIRE_SUPPORT="yes"
+
+  # Additional drivers to install:
+  # for a list of additional drivers see packages/linux-drivers
+  # Space separated list is supported,
+  # e.g. ADDITIONAL_DRIVERS="DRIVER1 DRIVER2"
+  # RK3562 uses ARM official r52p0 bifrost DDK
+    ADDITIONAL_DRIVERS="rk3562-joystick rk915 RTL8812AU RTL8814AU RTL8821AU RTL8821CU RTL88x2BU RTL8851BU"
+
+  # Additional Firmware to use ( )
+  # Space separated list is supported,
+  # e.g. FIRMWARE=""
+    FIRMWARE=""
+
+  # Additional packages to install
+    ADDITIONAL_PACKAGES="libmali"
+
+  # Debug tty path
+    DEBUG_TTY="/dev/ttyS2"
+
+  # Build and install rocknix out-of-tree device trees and overlays (yes / no)
+    ROCKNIX_DEVICE_TREE_OVERLAYS="yes"
+
+  # ZRAM Algorithm
+    ZRAM_COMPRESSION_ALGO="lzo-rle"
+
+  # ZRAM Size
+    ZRAM_SWAP_SIZE="0"
+
+  # Disk Swap
+    SWAP_FILE_SIZE="0"

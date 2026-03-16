@@ -86,7 +86,7 @@ post_install() {
 
   # Libmali check - force software renderer
   case ${DEVICE} in
-    RK3588|S922X|S905L3A|RK3566)
+    RK3588|S922X|S905L3A|RK3566|RK3562)
       LIBMALI="if [[ -x \"\/usr\/bin\/gpudriver\" ]] \&\& [[ \"\$\(\/usr\/bin\/gpudriver\)\" = \"libmali\" ]]; then sed -i '\/ScreenUseGL=\/c\\\ScreenUseGL=0' \/storage\/.config\/melonDS\/melonDS.ini; fi"
     ;;
     *)

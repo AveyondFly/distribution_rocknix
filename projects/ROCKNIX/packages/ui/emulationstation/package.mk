@@ -81,6 +81,12 @@ makeinstall_target() {
 
   cp -rf ${PKG_DIR}/config/common/*.cfg ${INSTALL}/usr/config/emulationstation
 
+  # Add device-specific settings for S905L3A
+  if [ "${DEVICE}" = "S905L3A" ]; then
+    sed -i 's|</config>|  <bool name="BackgroundJoystickInput" value="true" />\n</config>|' \
+      ${INSTALL}/usr/config/emulationstation/es_settings.cfg
+  fi
+
   # If we're not an emulation device, ES may still be installed so we need a default config.
   if [ "${EMULATION_DEVICE}" = "no" ] || \
      [ "${BASE_ONLY}" = "true" ]

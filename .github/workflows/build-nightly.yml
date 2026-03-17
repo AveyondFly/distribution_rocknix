@@ -312,7 +312,7 @@ jobs:
         with:
           tag: ${{ env.DATE }}
           commit: ${{ github.sha }}
-          artifacts: ROCKNIX-*
+          artifacts: target/ROCKNIX-*
           allowUpdates: false
           makeLatest: true
           token: ${{ steps.app-token.outputs.token }}

@@ -12,11 +12,17 @@ PKG_TOOLCHAIN="manual"
 
 makeinstall_target() {
   mkdir -p ${INSTALL}/usr/lib/autostart/quirks/{platforms,devices}
+
+  # Copy all device quirks (QUIRK_DEVICE is determined at runtime from device tree)
   cp -r ${PKG_DIR}/devices/* ${INSTALL}/usr/lib/autostart/quirks/devices
+
+  # Copy only the current platform's quirks (DEVICE is known at build time)
   if [ -d "${PKG_DIR}/platforms/${DEVICE}" ]
   then
-    cp -r ${PKG_DIR}/platforms/* ${INSTALL}/usr/lib/autostart/quirks/platforms
+    mkdir -p ${INSTALL}/usr/lib/autostart/quirks/platforms/${DEVICE}
+    cp -r ${PKG_DIR}/platforms/${DEVICE}/* ${INSTALL}/usr/lib/autostart/quirks/platforms/${DEVICE}/
   fi
+
   chmod -R 0755 ${INSTALL}/usr/lib/autostart/quirks
 }
 
@@ -27,5 +33,6 @@ post_install() {
   fi
   if [ "${DEVICE}" = "S905L3A" ]; then
     enable_service persist-mac.service
+    enable_service s905l3a-audio.service
   fi
 }

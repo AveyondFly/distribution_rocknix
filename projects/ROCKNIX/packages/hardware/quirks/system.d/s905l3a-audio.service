@@ -1,0 +1,12 @@
+[Unit]
+Description=S905L3A HDMI Audio Setup
+Before=pipewire.service wireplumber.service pipewire-pulse.service
+After=alsa-restore.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/autostart/quirks/platforms/S905L3A/bin/audio-setup
+
+[Install]
+WantedBy=sound.target

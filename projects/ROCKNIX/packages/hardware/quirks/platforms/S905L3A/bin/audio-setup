@@ -1,17 +1,11 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0
 # Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
+#
+# Set HDMI audio routing via TOHDMITX before pipewire starts
+# This must run before pipewire initializes the ALSA devices
 
-cat <<EOF >/storage/.config/profile.d/002-audio_path
-DEVICE_PIPEWIRE_PROFILE="pro-audio"
-EOF
-
-### Restart pipewire so wireplumber picks up the pro-audio profile
-systemctl restart pipewire
-sleep 1
-
-### Set HDMI audio routing via TOHDMITX
-### Use cset with numid because sset cannot find controls with "Switch" suffix
+# Set HDMI audio routing via TOHDMITX
 amixer -c 0 -q cset numid=65 on   # TOHDMITX Switch
 amixer -c 0 -q cset numid=64 1    # TOHDMITX I2S SRC = I2S B
 amixer -c 0 -q cset numid=41 on   # FRDDR_A SRC 1 EN Switch

@@ -1,0 +1,23 @@
+diff -rupbN linux.orig/net/core/sock.c linux/net/core/sock.c
+--- linux.orig/net/core/sock.c
++++ linux/net/core/sock.c
+@@ -1554,8 +1554,8 @@ set_sndbuf:
+ 	case SO_PASSSEC:
+ 		if (IS_ENABLED(CONFIG_SECURITY_NETWORK) && sk_may_scm_recv(sk))
+ 			sk->sk_scm_security = valbool;
+-		else
+-			ret = -EOPNOTSUPP;
++		//else
++		//	ret = -EOPNOTSUPP;
+ 		break;
+ 
+ 	case SO_PASSPIDFD:
+@@ -1990,7 +1990,7 @@ int sk_getsockopt(struct sock *sk, int l
+ 
+ 	case SO_PASSSEC:
+ 		if (!IS_ENABLED(CONFIG_SECURITY_NETWORK) || !sk_may_scm_recv(sk))
+-			return -EOPNOTSUPP;
++			//return -EOPNOTSUPP;
+ 
+ 		v.val = sk->sk_scm_security;
+ 		break;

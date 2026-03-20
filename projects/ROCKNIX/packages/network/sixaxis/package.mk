@@ -19,6 +19,7 @@ makeinstall_target() {
 }
 
 post_install() {
-enable_service sixaxis@.service
+  # sixaxis@.service is a template service, activated on-demand by udev rules
+  # Do not enable template services directly
 }
 

@@ -147,6 +147,7 @@ function mount_games() {
         ntfs)   MOUNT_ARGS="-t ntfs3" ;;
         *)      true ;;
       esac
+      MOUNT_ARGS+=" -o rw,utf8,noatime ";
 
       if [ ! -d "${MOUNT_PATH}" ]
       then
@@ -176,15 +177,23 @@ function mount_games() {
           rm "${MOUNT_PATH}/.tmp-rocknix"
 	fi
       fi
-      start_ms external
-      create_game_dirs
+      if [ -e "/flash/ms_unsupported" ]
+      then
+	      mount --bind ${MOUNT_PATH} ${MS_PATH}
+      else
+              start_ms external
+      fi
+      if [ ! -d "/storage/roms/music" ]
+      then
+	      create_game_dirs
+      fi
       exit 0
 }
 
 function find_games() {
   if /usr/bin/busybox mountpoint -q /storage
   then
-    for DEV in $(for dev in mmcblk[0-9] sd[a-z] nvme[0-9]n[0-9]; do blkid | grep ${dev} | awk 'BEGIN {FS=":"}; /ext4/ || /btrfs/ || /fat/ || /ntfs/ {print $1}' | sort -r; done)
+    for DEV in $(for dev in mmcblk[0-9] sd[a-z] nvme[0-9]; do blkid | grep ${dev} | awk 'BEGIN {FS=":"}; /ext4/ || /btrfs/ || /fat/ || /ntfs/ {print $1}' | sort -r; done)
     do
       ROOTDEV=$(echo ${DEV} | sed -e "s#^/.*/##g" -e "s#p[0-9].*\$##g")
       log $0 "Inspecting ${DEV}."
@@ -221,7 +230,11 @@ function find_games() {
     then
       set_setting system.merged.device internal
     fi
-    start_ms internal
+    if [ ! -e "/flash/ms_unsupported" ]
+    then
+	start_ms internal
+    fi
+
     create_game_dirs
     exit 0
   fi

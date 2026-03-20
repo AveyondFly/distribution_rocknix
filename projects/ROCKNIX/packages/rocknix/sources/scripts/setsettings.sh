@@ -1247,7 +1247,7 @@ EOF
 
 set_retroarch_paths
 setup_controllers
-configure_hotkeys
+[ "${HW_DEVICE}" != "S905L3A" ] && configure_hotkeys
 
 ###
 ### Game specific functions

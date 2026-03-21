@@ -4,6 +4,52 @@
 
 ROCKNIX is an immutable Linux distribution for handheld gaming devices developed by a small community of enthusiasts.  Our goal is to produce an operating system that has the features and capabilities that we need, and to have fun as we develop it.
 
+## About This Fork
+
+This is an **unofficial** fork of ROCKNIX that provides support for additional devices and emulators not included in the official distribution.
+
+### Additional Emulators
+
+- **BBK 4980** (gam4980-lr): Electronic dictionary game emulator
+- **HBMAME** (hbmame-lr): Homebrew MAME libretro core
+- **ONScripter** (onscripter-lr): Visual novel engine
+- **PyMO/cpymo**: PyMO AVG game engine in C
+- **free-j2me**: J2ME SDL2 frontend standalone
+- **OpenBOR-ff**: OpenBOR-ff variant
+- **drastic_adv-sa**: Advanced Drastic NDS emulator
+- **fbneoplus-lr**: FBNeo Plus libretro core
+
+### Additional Supported Devices
+
+#### RK3326 Devices (image-b)
+| Brand | Models |
+|-------|--------|
+| Diium | D007, D-R28S |
+| GameConsole | HG36, K36, K36S, R36T, R36TMax, R36Ultra, R50S, T16Max, U8, U8-V2, XGB36 |
+| GameMT | E6 |
+| PortableGame | A10Mini, A10Mini-V2 |
+| Clone R36s | Type 2 (with/without amplifier), Type 3, Type 4, Sauce V03/V04 |
+| XiFan | DC35V, DC40V, Mini40, MyMini, R36Max, R36Max2, R36Pro, XF28, XF35H, XF40H, XF40V |
+| BatleXP | G350 |
+
+#### RK3566 Devices (Specific image)
+| Brand | Models |
+|-------|--------|
+| GameMT | E5P, E6P |
+| MiniLong | Pocket1 |
+
+#### S905L3A Android TV Boxes
+| Brand | Models |
+|-------|--------|
+| CM311 | CM311 |
+| E900V | E900V22C |
+| M401 | M401A |
+
+#### RK3562 Devices (WIP)
+| Brand | Models |
+|-------|--------|
+| RO520C | LP3X-V10 |
+
 ## Features
 
 * ROCKNIX has a very active community of developers and users.

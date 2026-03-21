@@ -1,0 +1,150 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+* Copyright (c) 2019 Hardkernel Co., Ltd
+* Copyright (c) 2020 Theobroma Systems Design und Consulting GmbH
+* Copyright (c) 2022 Maya Matuszczyk <maccraft123mc@gmail.com>
+*/
+
+/dts-v1/;
+#include "rk3326-gameconsole-r3xs.dtsi"
+#include "retrogame_joypad_s2_f1.dtsi"
+
+/ {
+	model = "YMC A10Mini V2";
+	compatible = "gameconsole,a10min", "rockchip,rk3326";
+	
+	aliases {
+		mmc1 = &sdio;
+		mmc0 = &sdmmc;
+	};
+	
+	chosen {
+		stdout-path = "serial2:115200n8";
+	};
+};
+
+&joypad {
+	compatible = "rocknix-singleadc-joypad";
+	joypad-name = "retrogame_joypad";
+	joypad-product = <0x1101>;
+	joypad-revision = <0x0100>;
+	joypad-vendor = <0x484B>;
+	
+	status = "okay";
+	
+	/* gpio pincontrol setup */
+	pinctrl-names = "default";
+	pinctrl-0 = <&btn_pins>;
+	
+	/* adc mux channel count */
+	amux-count = <0>;
+	
+	/*
+	specifies fuzz value that is used to filter noise from
+	the event stream.
+	*/
+	button-adc-fuzz = <32>;
+	button-adc-flat = <32>;
+	
+	
+	/* poll device interval (ms), adc read interval */
+	poll-interval = <10>;
+	
+	/* gpio button auto repeat set value : default disable */
+	/*
+	autorepeat;
+	*/
+	
+	/*
+	joypad driver is poll-device driver.
+	poll-device is does not support wakeup-source.
+	*/
+up      { gpios = <&gpio1 RK_PB4 GPIO_ACTIVE_LOW>; };
+down    { gpios = <&gpio1 RK_PB5 GPIO_ACTIVE_LOW>; };
+left    { gpios = <&gpio1 RK_PB6 GPIO_ACTIVE_LOW>; };
+right   { gpios = <&gpio1 RK_PB7 GPIO_ACTIVE_LOW>; };
+a       { gpios = <&gpio1 RK_PA2 GPIO_ACTIVE_LOW>; };
+b       { gpios = <&gpio1 RK_PA5 GPIO_ACTIVE_LOW>; };
+x       { gpios = <&gpio1 RK_PA7 GPIO_ACTIVE_LOW>; };
+y       { gpios = <&gpio1 RK_PA6 GPIO_ACTIVE_LOW>; };
+select  { gpios = <&gpio3 RK_PB1 GPIO_ACTIVE_LOW>; };
+start   { gpios = <&gpio3 RK_PB4 GPIO_ACTIVE_LOW>; };
+mode    { gpios = <&gpio2 RK_PA4 GPIO_ACTIVE_LOW>; };
+tl      { gpios = <&gpio2 RK_PA6 GPIO_ACTIVE_LOW>; };
+tr      { gpios = <&gpio2 RK_PA7 GPIO_ACTIVE_LOW>; };
+tl2     { gpios = <&gpio3 RK_PB2 GPIO_ACTIVE_LOW>; };
+tr2     { gpios = <&gpio3 RK_PB7 GPIO_ACTIVE_LOW>; };
+thumbl  { gpios = <&gpio2 RK_PA2 GPIO_ACTIVE_LOW>; };
+thumbr  { gpios = <&gpio2 RK_PA3 GPIO_ACTIVE_LOW>; };
+};
+
+&usb20_otg {
+	status = "okay";
+	/delete-property/ usb-role-switch;
+	role-switch-default-mode = "host";
+};
+
+&internal_display {
+	compatible = "rocknix,generic-dsi";
+	rotation = <180>;
+	panel_description =
+	"G size=43,57 delays=10,10,80,26,20 format=rgb888 lanes=2 flags=0xe03",
+	
+	"M clock=30000 horizontal=720,32,40,32 vertical=540,10,20,20 default=1",
+	"M clock=30000 horizontal=720,32,74,32 vertical=540,10,112,38",
+	"M clock=30030 horizontal=720,32,74,32 vertical=540,10,112,38",
+	"M clock=30440 horizontal=720,32,51,32 vertical=540,10,141,38",
+	"M clock=30360 horizontal=720,32,41,32 vertical=540,10,52,38",
+	"M clock=32570 horizontal=720,32,46,32 vertical=540,10,69,38",
+	"M clock=31500 horizontal=720,32,41,32 vertical=540,10,67,20",
+	"M clock=30060 horizontal=720,32,51,32 vertical=540,10,30,20",
+	"M clock=34100 horizontal=720,32,77,32 vertical=540,10,89,20",
+	"M clock=43660 horizontal=720,32,68,32 vertical=540,10,109,20",
+	"M clock=44550 horizontal=720,32,41,32 vertical=540,10,30,20",
+	"M clock=58410 horizontal=720,32,41,32 vertical=540,10,20,20",
+	
+	"I seq=ffaa55a580",
+	"I seq=f055aa520800",
+	"I seq=3600",
+	"I seq=b16827",
+	"I seq=b50f", "I seq=b60c",
+	"I seq=b801020802",
+	"I seq=ba02",
+	"I seq=bb2424",
+	"I seq=bc0000",
+	"I seq=bd0268202000",
+	"I seq=be0268202000",
+	"I seq=cc413687000000",
+	"I seq=ce101010101010",
+	"I seq=f055aa520806",
+	"I seq=b02e2e",
+	"I seq=c21711",
+	"I seq=11 wait=120",
+	"I seq=29 wait=120";
+};
+
+&pinctrl {
+	btns {
+		btn_pins: btn-pins {
+			rockchip,pins =
+			<1 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PB5 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PA2 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PA5 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,
+			<3 RK_PB1 RK_FUNC_GPIO &pcfg_pull_up>,
+			<3 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA4 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up>,
+			<3 RK_PB2 RK_FUNC_GPIO &pcfg_pull_up>,
+			<3 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA2 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+		
+	};
+};

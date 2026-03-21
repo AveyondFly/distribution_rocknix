@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# 获取脚本的第一个参数，即颜色名称
+COLOR=$1
+
+# 定义每个颜色对应的 LED 路径
+LED_LEFT="/sys/class/leds/left_joystick/brightness"
+LED_RIGHT="/sys/class/leds/right_joystick/brightness"
+
+# 定义一个函数来设置 LED 的亮度
+set_led_brightness() {
+    local value=$1
+
+    if [ -w "$LED_LEFT" ]; then
+        echo "$value" > "$LED_LEFT"
+    else
+        echo "Error: Unable to write to $LED_LEFT"
+    fi
+
+    if [ -w "$LED_RIGHT" ]; then
+        echo "$value" > "$LED_RIGHT"
+    else
+        echo "Error: Unable to write to $LED_RIGHT"
+    fi
+}
+
+# 根据颜色名称设置 LED 状态
+case $COLOR in
+    off)
+        # 假设 battery 对应绿色（可以根据实际需求调整）
+        set_led_brightness 0
+        ;;
+    on)
+        set_led_brightness 1
+        ;;
+    list)
+cat <<EOF
+off
+on
+EOF
+  ;;
+esac

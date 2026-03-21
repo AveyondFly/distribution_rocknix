@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set_led_brightness() {
+	for d in /sys/class/leds/awinic*; do echo $1 > "$d/brightness"; done
+}
+
+case $1 in
+    off)
+	set_led_brightness 0
+        ;;
+    on)
+	set_led_brightness 250
+        ;;
+    list)
+cat <<EOF
+off
+on
+EOF
+  ;;
+esac

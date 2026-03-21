@@ -1,0 +1,259 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+* # Copyright (C) 2022-24 JELOS (https://github.com/JustEnoughLinuxOS)
+*/
+
+/dts-v1/;
+#include "rk3326-gameconsole-r3xs.dtsi"
+
+/ {
+	model = "Game Console R50S";
+	compatible = "gameconsole,r35s", "gameconsole,r36s", "gameconsole,r50s", "rockchip,rk3326";
+	
+	joypad: rocknix-singleadc-joypad {
+		compatible = "rocknix-singleadc-joypad";
+		
+		joypad-name = "retrogame_joypad";
+		joypad-product = <0x1101>;
+		joypad-revision = <0x0100>;
+		joypad-vendor = <0x484B>;
+		
+		status = "okay";
+		
+		/* gpio pincontrol setup */
+		pinctrl-names = "default";
+		pinctrl-0 = <&btn_pins>;
+		
+		/* Analog mux define */
+		io-channel-names = "amux_adc";
+		io-channels = <&saradc 1>;
+		
+		/* adc mux channel count */
+		amux-count = <4>;
+		amux-channel-mapping = <1 0 2 3>;
+		/* adc mux select(a,b) gpio */
+		amux-a-gpios = <&gpio3 RK_PB3 GPIO_ACTIVE_LOW>;
+		amux-b-gpios = <&gpio3 RK_PB0 GPIO_ACTIVE_LOW>;
+		/* adc mux enable gpio */
+		amux-en-gpios = <&gpio3 RK_PB5 GPIO_ACTIVE_LOW>;
+		
+		/* adc calculate scale */
+		button-adc-scale = <2>;
+		
+		/* adc deadzone range  */
+		button-adc-deadzone = <64>;
+		
+		/*
+		specifies fuzz value that is used to filter noise from
+		the event stream.
+		*/
+		button-adc-fuzz = <32>;
+		button-adc-flat = <32>;
+		
+		/*
+		Analog Stick data tuning value(precent)
+		p = positive direction, n = negative direction
+		report value = (real_adc_data * tuning_value) / 100
+		*/
+		abs_x-p-tuning = <200>;
+		abs_x-n-tuning = <200>;
+		
+		abs_y-p-tuning = <200>;
+		abs_y-n-tuning = <200>;
+		
+		abs_rx-p-tuning = <200>;
+		abs_rx-n-tuning = <200>;
+		
+		abs_ry-p-tuning = <200>;
+		abs_ry-n-tuning = <200>;
+		
+		/* poll device interval (ms), adc read interval */
+		poll-interval = <10>;
+		
+		/* required for RG36S */
+		invert-absx;
+		invert-absy;
+		invert-absry;
+		
+		/* gpio button auto repeat set value : default disable */
+		/*
+		autorepeat;
+		*/
+		
+		/*
+		joypad driver is poll-device driver.
+		poll-device is does not support wakeup-source.
+		*/
+		sw1 {
+			gpios = <&gpio1 RK_PB4 GPIO_ACTIVE_LOW>;
+			label = "GPIO DPAD-UP";
+			linux,code = <BTN_DPAD_UP>;// 0x220
+		};
+		sw2 {
+			gpios = <&gpio1 RK_PB5 GPIO_ACTIVE_LOW>;
+			label = "GPIO DPAD-DOWN";
+			linux,code = <BTN_DPAD_DOWN>;// 0x221
+		};
+		sw3 {
+			gpios = <&gpio1 RK_PB6 GPIO_ACTIVE_LOW>;
+			label = "GPIO DPAD-LEFT";
+			linux,code = <BTN_DPAD_LEFT>;// 0x222
+		};
+		sw4 {
+			gpios = <&gpio1 RK_PB7 GPIO_ACTIVE_LOW>;
+			label = "GPIO DPAD-RIGHT";
+			linux,code = <BTN_DPAD_RIGHT>;// 0x223
+		};
+		sw5 {
+			gpios = <&gpio1 RK_PA2 GPIO_ACTIVE_LOW>;
+			label = "GPIO KEY BTN-A";
+			linux,code = <BTN_EAST>;// 0x131
+		};
+		sw6 {
+			gpios = <&gpio1 RK_PA5 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN-B";
+			linux,code = <BTN_SOUTH>;// 0x130
+		};
+		sw7 {
+			gpios = <&gpio1 RK_PA6 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN-Y";
+			linux,code = <BTN_WEST>;// 0x134
+		};
+		sw8 {
+			gpios = <&gpio1 RK_PA7 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN-X";
+			linux,code = <BTN_NORTH>;// 0x133
+		};
+		sw11 {
+			gpios = <&gpio2 RK_PA4 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN_THUMBL";
+			linux,code = <BTN_THUMBL>;// 0x2c2
+		};
+		sw12 {
+			gpios = <&gpio2 RK_PA5 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN_THUMBR";
+			linux,code = <BTN_THUMBR>;// 0x2c3
+		};
+		sw13 {
+			gpios = <&gpio3 RK_PB1 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN_FN";
+			linux,code = <BTN_MODE>;// 0x2c4
+		};
+		sw14 {
+			gpios = <&gpio3 RK_PB4 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN_RF";
+			linux,code = <BTN_TRIGGER_HAPPY1>;//右侧fn 为了不影响用户态映射
+		};
+		sw15 {
+			gpios = <&gpio3 RK_PB2 GPIO_ACTIVE_LOW>;
+			label = "GPIO TOP-LEFT";
+			linux,code = <BTN_TL>;// 0x02
+		};
+		sw16 {
+			gpios = <&gpio3 RK_PB7 GPIO_ACTIVE_LOW>;
+			label = "GPIO TOP-RIGHT";
+			linux,code = <BTN_TR>;// 0x05
+		};
+		sw19 {
+			gpios = <&gpio2 RK_PA2 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN_SELECT";
+			linux,code = <BTN_SELECT>;
+		};
+		sw20 {
+			gpios = <&gpio2 RK_PA7 GPIO_ACTIVE_LOW>;
+			label = "GPIO TOP-RIGHT2";
+			linux,code = <BTN_TR2>;
+		};
+		sw21 {
+			gpios = <&gpio2 RK_PA6 GPIO_ACTIVE_LOW>;
+			label = "GPIO TOP-LEFT2";
+			linux,code = <BTN_TL2>;
+		};
+		sw22 {
+			gpios = <&gpio2 RK_PA3 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN_START";
+			linux,code = <BTN_START>;
+		};
+	};
+};
+
+&internal_display {
+	compatible = "rocknix,generic-dsi";
+	panel_description =
+	"G size=69,139 delays=2,20,10,50,20 format=rgb888 lanes=2 flags=0xa03",
+	
+	"M clock=30265 horizontal=480,18,22,2 vertical=854,18,34,60 default=1",
+	// "M clock=60530  horizontal=480,18,22,2 vertical=854,18,34,60",
+	// "M clock=27600 horizontal=480,2,22,2 vertical=854,12,166,60",
+	// "M clock=27500 horizontal=480,2,16,2 vertical=854,12,174,60",
+	// "M clock=27890 horizontal=480,2,18,2 vertical=854,12,185,60",
+	// "M clock=27600 horizontal=480,2,16,2 vertical=854,12,34,60",
+	// "M clock=32570 horizontal=480,2,14,2 vertical=854,12,169,60",
+	// "M clock=31920 horizontal=480,2,10,2 vertical=854,12,152,60",
+	// "M clock=27840 horizontal=480,2,16,2 vertical=854,12,2,60",
+	// "M clock=32750 horizontal=480,2,34,2 vertical=854,12,126,60",
+	// "M clock=38530 horizontal=480,2,18,2 vertical=854,12,91,60",
+	// "M clock=41760 horizontal=480,2,16,2 vertical=854,12,2,60",
+	// "M clock=55680 horizontal=480,2,16,2 vertical=854,12,2,60",
+	
+	"I seq=01 wait=5",
+	"I seq=11 wait=250",
+	"I seq=ff7701000010",
+	"I seq=c0e903",
+	"I seq=c11102",
+	"I seq=c23108",
+	"I seq=cc10",
+	"I seq=b0000d140d10050208081e051311a32918",
+	"I seq=b1000c140c100503080720051311a42918",
+	"I seq=ff7701000011",
+	"I seq=b06c", "I seq=b143", "I seq=b207", "I seq=b380", "I seq=b547", "I seq=b785",
+	"I seq=b820", "I seq=b910",
+	"I seq=c178", "I seq=c378",
+	"I seq=d088 wait=250",
+	"I seq=e0000002",
+	"I seq=e108000a0007000900003333",
+	"I seq=e20000000000000000000000000000",
+	"I seq=e300003333",
+	"I seq=e44444",
+	"I seq=e50e60a0a01060a0a00a60a0a00c60a0a0",
+	"I seq=e600003333",
+	"I seq=e74444",
+	"I seq=e80d60a0a00f60a0a00960a0a00b60a0a0",
+	"I seq=eb0201e4e4440040",
+	"I seq=ec0201",
+	"I seq=edab89765401ffffffffffff10456798ba",
+	"I seq=ff7701000000",
+	"I seq=3a70",
+	"I seq=53ec", "I seq=55b3",
+	"I seq=5eff",
+	"I seq=29 wait=50";
+	rotation = <0x10e>;
+};
+
+&pinctrl {
+	btns {
+		btn_pins: btn-pins {
+			rockchip,pins =
+			<1 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PB5 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PA2 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PA5 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA4 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA5 RK_FUNC_GPIO &pcfg_pull_up>,
+			<3 RK_PB1 RK_FUNC_GPIO &pcfg_pull_up>,
+			<3 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA2 RK_FUNC_GPIO &pcfg_pull_up>,
+			<3 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>,
+			<3 RK_PB2 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>;
+			
+		};
+		
+	};
+};

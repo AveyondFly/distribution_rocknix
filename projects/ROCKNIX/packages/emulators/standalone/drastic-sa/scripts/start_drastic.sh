@@ -6,17 +6,19 @@
 . /etc/profile
 . /etc/os-release
 
+arguments="$@"
+
+CORE="${arguments##*--core=}"  # read from --core= onwards
+CORE="${CORE%% *}"  # until a space is found
+
+if [ "$CORE" = "advanced_drastic" ]; then
+	cd /storage/.config/advanced_drastic
+  ./launch.sh "$1"
+  exit 0
+fi
+
+
 set_kill set "-9 drastic"
-
-#Get game/platform info
-GAME=$(echo "${1}"| sed "s#^/.*/##")
-PLATFORM="nds"
-
-#Get ES feature settings
-HIRES3D=$(get_setting hires_3d "${PLATFORM}" "${GAME}")
-THREADED3D=$(get_setting threaded_3d "${PLATFORM}" "${GAME}")
-FOLLOW3D=$(get_setting follow_3d_renderer "${PLATFORM}" "${GAME}")
-MICTHRESH=$(get_setting microphone_sensitivity "${PLATFORM}" "${GAME}")
 
 #load gptokeyb support files
 control-gen_init.sh
@@ -47,6 +49,15 @@ if [ ! -f "/storage/.config/drastic/drastic.gptk" ]; then
   cp -r /usr/config/drastic/drastic.gptk /storage/.config/drastic/
 fi
 
+if [ ! -e "/storage/.config/drastic/usrcheat.dat" ]; then
+    if grep -q "language=zh_CN" /storage/.config/system/configs/system.cfg; then
+        ln -sf /storage/roms/bios/nds/zh_CN/usrcheat.dat /storage/.config/drastic/usrcheat.dat
+    else
+        ln -sf /storage/roms/bios/nds/es_EN/usrcheat.dat /storage/.config/drastic/usrcheat.dat
+    fi
+fi
+
+
 #Make drastic savestate folder
 if [ ! -d "/storage/roms/savestates/nds" ]; then
   mkdir -p /storage/roms/savestates/nds
@@ -60,27 +71,11 @@ ln -sf /storage/roms/savestates/nds /storage/.config/drastic/savestates
 rm -rf /storage/.config/drastic/backup
 ln -sf /storage/roms/nds /storage/.config/drastic/backup
 
-#Apply ES features to config
-if [ "${HIRES3D}" = "1" ]; then
-    sed -i 's/^hires_3d = .*/hires_3d = 1/' /storage/.config/drastic/config/drastic.cfg
-else
-    sed -i 's/^hires_3d = .*/hires_3d = 0/' /storage/.config/drastic/config/drastic.cfg
-fi
-
-if [ "${THREADED3D}" = "1" ]; then
-    sed -i 's/^threaded_3d = .*/threaded_3d = 1/' /storage/.config/drastic/config/drastic.cfg
-else
-    sed -i 's/^threaded_3d = .*/threaded_3d = 0/' /storage/.config/drastic/config/drastic.cfg
-fi
-
-if [ "${FOLLOW3D}" = "1" ]; then
-    sed -i 's/^fix_main_2d_screen = .*/fix_main_2d_screen = 1/' /storage/.config/drastic/config/drastic.cfg
-else
-    sed -i 's/^fix_main_2d_screen = .*/fix_main_2d_screen = 0/' /storage/.config/drastic/config/drastic.cfg
+if echo "${UI_SERVICE}" | grep "sway"; then
+    /usr/bin/drastic_sense.sh &
 fi
 
 cd /storage/.config/drastic/
-@HOTKEY@
 
 # Fix for libmali gpu driver on S922X platform
 if [ "${HW_DEVICE}" = "S922X" ]; then
@@ -92,10 +87,14 @@ if [ "${HW_DEVICE}" = "S922X" ]; then
   fi
 fi
 
-$GPTOKEYB "drastic" -c "drastic.gptk" &
-# Fix actual touch inputs by replacing touch->mouse translation and add hw mic support
-export LD_PRELOAD="/usr/lib/libdrastouch.so"
-export SDL_TOUCH_MOUSE_EVENTS="0"
-export DSHOOK_MIC_THRESH="${MICTHRESH}"
+if [ "$CORE" = "drastic_opt-sa" ]; then
+	export LD_LIBRARY_PATH=/storage/.config/drastic/lib
+fi
+
+gptokeyb -k "drastic" -c "drastic.gptk" --killsignal 15&
 ./drastic "$1"
 kill -9 $(pidof gptokeyb)
+
+if echo "${UI_SERVICE}" | grep "sway"; then
+    kill -9 $(pidof drastic_sense.sh)
+fi

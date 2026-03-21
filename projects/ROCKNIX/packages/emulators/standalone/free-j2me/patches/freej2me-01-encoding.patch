@@ -1,0 +1,10 @@
+--- a/build.xml
++++ b/build.xml
+@@ -28,6 +28,7 @@
+ 		srcdir="src"
+ 		destdir="build/classes"
+ 		includeantruntime="false"
++		encoding="UTF-8"
+ 		debug="false"
+ 		debuglevel="lines,vars,source"
+ 		classpathref="project-classpath"

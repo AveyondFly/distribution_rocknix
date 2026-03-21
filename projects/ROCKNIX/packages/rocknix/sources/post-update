@@ -102,7 +102,6 @@ if [ ! -e "/storage/.config/ppsspp/assets/NotoSansJP-Regular.ttf" ]
 then
   cd /storage/.config/ppsspp/assets
   cp /usr/config/ppsspp/assets/NotoSansJP-Regular.ttf .
-  ln -s NotoSansJP-Regular.ttf Roboto-Condensed.ttf
   cd -
 fi
 

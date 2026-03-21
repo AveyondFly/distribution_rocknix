@@ -8,7 +8,7 @@ PKG_SECTION="emulation" # Do not change to virtual or makeinstall_target will no
 PKG_LONGDESC="Emulation metapackage."
 PKG_TOOLCHAIN="manual"
 
-PKG_EMUS="amiberry flycast-sa gzdoom-sa hatarisa hypseus-singe moonlight mupen64plus-sa openbor pico-8 ppsspp-sa vice-sa wine"
+PKG_EMUS="amiberry flycast-sa gzdoom-sa hatarisa hypseus-singe moonlight mupen64plus-sa openbor openbor-ff free-j2me pico-8 ppsspp-sa vice-sa wine cpymo"
 EMUS_32BIT=""
 
 PKG_RETROARCH="core-info libretro-database retroarch retroarch-assets retroarch-joypads retroarch-overlays slang-shaders"
@@ -18,33 +18,33 @@ LIBRETRO_CORES="81-lr a5200-lr arduous-lr atari800-lr b2-lr beetle-gba-lr beetle
                 beetle-supergrafx-lr beetle-vb-lr beetle-wswan-lr bluemsx-lr cap32-lr crocods-lr daphne-lr doublecherrygb-lr         \
                 dosbox-core-lr dosbox-pure-lr easyrpg-lr emuscv-lr fake08-lr fbalpha2012-lr                                          \
                 fbalpha2019-lr fbneo-lr fceumm-lr flycast-lr fmsx-lr freechaf-lr freeintv-lr freej2me-lr fuse-lr gambatte-lr         \
-                gearboy-lr gearcoleco-lr gearsystem-lr genesis-plus-gx-lr genesis-plus-gx-wide-lr gw-lr handy-lr hatari-lr idtech-lr \
-                jaxe-lr mame-lr mame2003-plus-lr mame2010-lr mame2015-lr melonds-lr melonds-ds-lr mesen-lr mgba-lr minivmac-lr       \
-                mojozork-lr mu-lr mupen64plus-lr mupen64plus-nx-lr neocd_lr nestopia-lr np2kai-lr o2em-lr opera-lr parallel-n64-lr   \
-                pcsx_rearmed-lr picodrive-lr pokemini-lr potator-lr ppsspp-lr prosystem-lr puae-lr puae2021-lr px68k-lr quasi88-lr   \
-                quicknes-lr race-lr same_cdi-lr sameboy-lr sameduck-lr scummvm-lr smsplus-gx-lr snes9x-lr snes9x2002-lr              \
-                snes9x2005_plus-lr snes9x2010-lr stella-lr swanstation-lr tgbdual-lr theodore-lr tic80-lr uzem-lr vba-next-lr        \
-                vbam-lr vecx-lr vice-lr vircon32-lr virtualjaguar-lr xmil-lr wasm4-lr yabasanshiro-lr"
+                gam4980-lr gearboy-lr gearcoleco-lr gearsystem-lr genesis-plus-gx-lr genesis-plus-gx-wide-lr gw-lr handy-lr hatari-lr \
+                hbmame-lr idtech-lr jaxe-lr mame-lr mame2003-plus-lr mame2010-lr mame2015-lr melonds-lr melonds-ds-lr mesen-lr mgba-lr \
+                minivmac-lr mojozork-lr mu-lr mupen64plus-lr mupen64plus-nx-lr neocd_lr nestopia-lr np2kai-lr o2em-lr onscripter-lr  \
+                opera-lr parallel-n64-lr pcsx_rearmed-lr picodrive-lr pokemini-lr potator-lr ppsspp-lr prosystem-lr puae-lr         \
+                puae2021-lr px68k-lr quasi88-lr quicknes-lr race-lr same_cdi-lr sameboy-lr sameduck-lr scummvm-lr smsplus-gx-lr     \
+                snes9x-lr snes9x2002-lr snes9x2005_plus-lr snes9x2010-lr stella-lr swanstation-lr tgbdual-lr theodore-lr tic80-lr  \
+                uzem-lr vba-next-lr vbam-lr vecx-lr vice-lr vircon32-lr virtualjaguar-lr xmil-lr wasm4-lr yabasanshiro-lr fbneoplus-lr"
 
 ### Emulators or cores for specific devices
 case "${DEVICE}" in
   H700)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr pcsx_rearmed-lr"
     PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
-    PKG_EMUS+=" box64 drastic-sa mednafen portmaster scummvmsa yabasanshiro-sa duckstation-sa"
+    PKG_EMUS+=" box64 drastic-sa drastic_adv-sa mednafen portmaster scummvmsa yabasanshiro-sa duckstation-sa"
     LIBRETRO_CORES+=" flycast2021-lr geolith-lr uae4arm"
     PKG_RETROARCH+=" retropie-shaders"
     ;;
   RK3326)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr pcsx_rearmed-lr"
     PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
-    PKG_EMUS+=" box64 drastic-sa mednafen portmaster scummvmsa yabasanshiro-sa duckstation-sa"
+    PKG_EMUS+=" box64 drastic-sa drastic_adv-sa mednafen portmaster scummvmsa yabasanshiro-sa duckstation-sa"
     LIBRETRO_CORES+=" flycast2021-lr geolith-lr uae4arm"
     PKG_RETROARCH+=" retropie-shaders"
     ;;
   RK3399)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+=" aethersx2-sa box64 dolphin-sa drastic-sa mednafen melonds-sa nanoboyadvance-sa portmaster scummvmsa \
+    PKG_EMUS+=" aethersx2-sa box64 dolphin-sa drastic-sa drastic_adv-sa mednafen melonds-sa nanoboyadvance-sa portmaster scummvmsa \
                 yabasanshiro-sa duckstation-sa"
     LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr geolith-lr flycast2021-lr pcsx_rearmed-lr uae4arm"
     PKG_RETROARCH+=" retropie-shaders"
@@ -52,20 +52,20 @@ case "${DEVICE}" in
   RK3566)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr pcsx_rearmed-lr"
     PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
-    PKG_EMUS+=" box64 dolphin-sa drastic-sa mednafen melonds-sa portmaster scummvmsa yabasanshiro-sa duckstation-sa"
+    PKG_EMUS+=" box64 dolphin-sa drastic-sa drastic_adv-sa mednafen melonds-sa portmaster scummvmsa yabasanshiro-sa duckstation-sa"
     LIBRETRO_CORES+=" dolphin-lr flycast2021-lr geolith-lr uae4arm"
     PKG_RETROARCH+=" retropie-shaders"
     ;;
   RK3562)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr pcsx_rearmed-lr"
     PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
-    PKG_EMUS+=" box64 dolphin-sa drastic-sa mednafen melonds-sa portmaster scummvmsa yabasanshiro-sa duckstation-sa"
+    PKG_EMUS+=" box64 dolphin-sa drastic-sa drastic_adv-sa mednafen melonds-sa portmaster scummvmsa yabasanshiro-sa duckstation-sa"
     LIBRETRO_CORES+=" dolphin-lr flycast2021-lr geolith-lr uae4arm"
     PKG_RETROARCH+=" retropie-shaders"
     ;;
   RK3588)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+=" aethersx2-sa azahar-sa box64 dolphin-sa drastic-sa mednafen melonds-sa portmaster scummvmsa supermodel-sa yabasanshiro-sa duckstation-sa"
+    PKG_EMUS+=" aethersx2-sa azahar-sa box64 dolphin-sa drastic-sa drastic_adv-sa mednafen melonds-sa portmaster scummvmsa supermodel-sa yabasanshiro-sa duckstation-sa"
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr flycast2021-lr geolith-lr pcsx_rearmed-lr uae4arm"
     PKG_RETROARCH+=" retropie-shaders"
     ;;
@@ -78,14 +78,14 @@ case "${DEVICE}" in
     ;;
   S922X)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 pcsx_rearmed-lr"
-    PKG_EMUS+=" aethersx2-sa azahar-sa box64 dolphin-sa drastic-sa duckstation-sa melonds-sa portmaster scummvmsa yabasanshiro-sa"
+    PKG_EMUS+=" aethersx2-sa azahar-sa box64 dolphin-sa drastic-sa drastic_adv-sa duckstation-sa melonds-sa portmaster scummvmsa yabasanshiro-sa"
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr geolith-lr flycast2021-lr uae4arm"
     PKG_RETROARCH+=" retropie-shaders"
     ;;
   S905L3A)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr pcsx_rearmed-lr"
     PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
-    PKG_EMUS+=" box64 drastic-sa mednafen portmaster scummvmsa yabasanshiro-sa duckstation-sa"
+    PKG_EMUS+=" box64 drastic-sa drastic_adv-sa mednafen portmaster scummvmsa yabasanshiro-sa duckstation-sa"
     LIBRETRO_CORES+=" flycast2021-lr geolith-lr uae4arm"
     PKG_RETROARCH+=" retropie-shaders"
     ;;
@@ -226,6 +226,14 @@ makeinstall_target() {
   add_emu_core arcade retroarch fbalpha2019 false
   add_emu_core arcade retroarch mame false
   add_es_system arcade
+
+  ### Homebrew MAME
+  add_emu_core hbmame retroarch fbalpha2012_32b true
+  add_emu_core hbmame retroarch nebularm_32b false
+  add_emu_core hbmame retroarch nebularm_legacy_32b false
+  add_emu_core hbmame retroarch fbneo_32b false
+  add_emu_core hbmame retroarch mame2003_plus_32b false
+  add_es_system hbmame
 
   ### Arduboy
   add_emu_core arduboy retroarch arduous true
@@ -372,6 +380,10 @@ makeinstall_target() {
   add_emu_core easyrpg retroarch easyrpg true
   add_es_system easyrpg
 
+  ### ONScripter
+  add_emu_core onscripter retroarch onscripter true
+  add_es_system onscripter
+
   ### Nintendo Famicom
   add_emu_core famicom retroarch nestopia true
   add_emu_core famicom retroarch fceumm false
@@ -398,6 +410,7 @@ makeinstall_target() {
 
   ### Final Burn Neo
   add_emu_core fbn retroarch fbneo true
+  add_emu_core fbn retroarch fbneoplus false
   add_emu_core fbn retroarch mame2003_plus false
   add_emu_core fbn retroarch mame2010 false
   add_emu_core fbn retroarch mame2015 false
@@ -657,8 +670,13 @@ makeinstall_target() {
   add_es_system intellivision
 
   ### Sun Microsystems J2ME
-  add_emu_core j2me retroarch freej2me true
+  add_emu_core j2me retroarch freej2me false
+  add_emu_core j2me freej2me freej2me true
   add_es_system j2me
+
+  ### BBK Electronic Dictionary
+  add_emu_core bbk retroarch gam4980 true
+  add_es_system bbk
 
   ### Atari Jaguar
   add_emu_core atarijaguar retroarch virtualjaguar true
@@ -816,13 +834,15 @@ makeinstall_target() {
   ### Nintendo DS
   case ${DEVICE} in
     H700|RK3326)
-      add_emu_core nds drastic drastic-sa true
+      add_emu_core nds drastic drastic_adv-sa true
+      add_emu_core nds drastic drastic-sa false
       add_emu_core nds retroarch melonds false
       add_emu_core nds retroarch melondsds false
       add_emu_core nds retroarch desmume false
       ;;
     RK3399|RK3566|RK3562|RK3588)
-      add_emu_core nds drastic drastic-sa true
+      add_emu_core nds drastic drastic_adv-sa true
+      add_emu_core nds drastic drastic-sa false
       add_emu_core nds retroarch melonds false
       add_emu_core nds retroarch melondsds false
       add_emu_core nds melonds melonds-sa false
@@ -845,14 +865,16 @@ makeinstall_target() {
       install_script "Start MelonDS.sh"
       ;;
     S922X|S905L3A)
-      add_emu_core nds drastic drastic-sa true
+      add_emu_core nds drastic drastic_adv-sa true
+      add_emu_core nds drastic drastic-sa false
       add_emu_core nds retroarch melonds false
       add_emu_core nds retroarch melondsds false
       add_emu_core nds melonds melonds-sa false
       install_script "Start MelonDS.sh"
       ;;
     *)
-      add_emu_core nds drastic drastic-sa true
+      add_emu_core nds drastic drastic_adv-sa true
+      add_emu_core nds drastic drastic-sa false
       add_emu_core nds retroarch melonds false
       add_emu_core nds retroarch melondsds false
     ;;
@@ -901,7 +923,12 @@ makeinstall_target() {
 
   ### OpenBOR
   add_emu_core openbor OpenBOR OpenBOR true
+  add_emu_core openbor OpenBOR OpenBOR-ff false
   add_es_system openbor
+
+  ### PyMO AVG Games
+  add_emu_core pymo cpymo cpymo true
+  add_es_system pymo
 
   ### NEC PC-8800
   add_emu_core pc-8800 retroarch quasi88 true

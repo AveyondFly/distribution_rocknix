@@ -112,11 +112,11 @@
 |Sony|PlayStation (psx)|1994|`psx`|.bin .cue .img .mdf .pbp .toc .cbn .m3u .ccd .chd .iso|**retroarch:** pcsx_rearmed (default)<br>**duckstation:** duckstation-sa<br>**retroarch:** swanstation<br>|
 |Sony|PlayStation Portable (psp)|2004|`psp`|.iso .cso .pbp .chd|**ppsspp:** ppsspp-sa (default)<br>**retroarch:** ppsspp<br>|
 |Sony|PSP Minis (pspminis)|2004|`pspminis`|.iso .cso .pbp .chd|**ppsspp:** ppsspp-sa (default)<br>**retroarch:** ppsspp<br>|
-|Sun Microsystems|J2ME (j2me)|2002|`j2me`|.jar|**retroarch:** freej2me (default)<br>|
+|Sun Microsystems|J2ME (j2me)|2002|`j2me`|.jar|**retroarch:** freej2me<br>**freej2me:** freej2me (default)<br>|
 |Thomson|MO/TO family (TO7, TO7/70, TO8, TO8D, TO9, TO9+, MO5 and MO6) (moto)|1982|`moto`|.fd .sap .k7 .m7 .m5 .rom|**retroarch:** theodore (default)<br>|
 |Various|CHIP-8 / S-CHIP / XO-CHIP (chip-8)|1978|`chip-8`|.ch8 .sc8 .xo8|**retroarch:** jaxe (default)<br>|
 |Various|EasyRPG (easyrpg)|2003|`easyrpg`|.zip .easyrpg .ldb|**retroarch:** easyrpg (default)<br>|
-|Various|OpenBOR (openbor)|2003|`openbor`|.pak|**OpenBOR:** OpenBOR (default)<br>|
+|Various|OpenBOR (openbor)|2003|`openbor`|.pak|**OpenBOR:** OpenBOR (default)<br>**OpenBOR:** OpenBOR-ff<br>|
 |Various|ScummVM (scummvm)|2001|`games`|.sh .svm .scummvm|**scummvmsa:** scummvm (default)<br>**retroarch:** scummvm<br>|
 |Various|Vircon32 (vircon32)|2021|`vircon32`|.v32|**retroarch:** vircon32 (default)<br>|
 |Various|WASM-4 (wasm4)|2017|`wasm4`|.wasm .wat|**retroarch:** wasm4 (default)<br>|

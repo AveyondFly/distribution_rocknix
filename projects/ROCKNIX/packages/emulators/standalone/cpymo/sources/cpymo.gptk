@@ -1,0 +1,13 @@
+up = up
+down = down
+left = left
+right = right
+a = enter
+b = escape
+x = space
+y = l
+start = return
+back = escape
+l1 = l
+r1 = r
+deadzone_triggers = 3000

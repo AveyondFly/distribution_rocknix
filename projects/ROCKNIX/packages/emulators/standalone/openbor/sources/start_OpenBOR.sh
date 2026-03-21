@@ -6,6 +6,13 @@
 
 # OpenBOR only works with Pak files, if you have an extracted game you will need to create a pak first.
 
+arguments="$@"
+
+CORE="${arguments##*--core=}"  # read from --core= onwards
+OB="${CORE%% *}"  # until a space is found
+EMU="${arguments##*--emulator=}"
+EMU="${EMU%% *}"
+
 pakname=$(basename "$1")
 pakname="${pakname%.*}"
 
@@ -18,28 +25,34 @@ SAVES="${CONFIGDIR}/Saves"
   mkdir -p "${PAKS}"
   mkdir -p "${SAVES}"
 
-# Check if master.cfg exists
-  if [ ! -f "${CONFIGDIR}/master.cfg" ]; then
-    cp -f "/usr/config/openbor/master.cfg" "${CONFIGDIR}/"
-  fi
-
 # Clear PAKS folder to avoid getting the launcher on next run
   rm -rf ${PAKS}/*
 
 # make a symlink to the pak
-  ln -sf "$1" "${PAKS}"
+ln -sf "$1" "${PAKS}"
+if [ ${OB} = "OpenBOR-ff4g" ]; then
+  ln -sf "$1".0* "${PAKS}"
+fi
 
 # only create symlink to master.cfg if its the first time running the pak
-  if [ ! -f "${SAVES}/${pakname}.cfg" ]; then
-    ln -sf "${CONFIGDIR}/master.cfg" "${SAVES}/${pakname}.cfg"
-  fi
+if [ ! -f "${SAVES}/${pakname}.cfg" ]; then
+	if [ ${OB} = "OpenBOR-ff4g" ]; then
+		ln -sf "${CONFIGDIR}/masterff4g.cfg" "${SAVES}/${pakname}.cfg"
+	elif [ ${OB} = "OpenBOR-ff" ]; then
+		ln -sf "${CONFIGDIR}/masterff.cfg" "${SAVES}/${pakname}.cfg"
+	else
+		ln -sf "${CONFIGDIR}/master.cfg" "${SAVES}/${pakname}.cfg"
+	fi
+fi
 
 # We start the fake keyboard
-  gptokeyb openbor &
+if [ "$EMU" != "OpenBOR-nogptk" ]; then
+  gptokeyb -c /storage/.config/gptokeyb/openbor.gptk -k ${OB} --killsignal 15 &
+fi
 
 # Run OpenBOR in the config folder
   cd "${CONFIGDIR}"
-  OpenBOR
+  ${OB}
 
 # We stop the fake keyboard
   killall gptokeyb &

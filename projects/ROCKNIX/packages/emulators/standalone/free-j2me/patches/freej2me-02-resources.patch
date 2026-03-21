@@ -1,0 +1,13 @@
+--- a/build.xml
++++ b/build.xml
+@@ -53,7 +53,7 @@
+ 	<echo message="Building JAR - SDL" />
+ 	<jar
+ 		destfile="build/freej2me-sdl.jar"
+-		basedir="build/classes">
++		basedir="build/classes" >
+-		<fileset dir="resources" />
++		<!-- <fileset dir="resources" /> -->
+ 		<zipfileset dir="natives/dist/${variant}" prefix="natives/${variant}/"/>
+ 		<metainf dir="META-INF" />
+ 		<manifest>

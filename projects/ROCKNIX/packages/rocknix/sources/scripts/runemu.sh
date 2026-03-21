@@ -129,6 +129,22 @@ function bluetooth() {
         fi
 }
 
+if [[ ${PLATFORM} == "psx" ]]; then
+	if [ -f "${ROMNAMETMP}.bios" ]; then
+		cp -f "${ROMNAMETMP}.bios" "/storage/roms/bios/scph101.bin"
+		cp -f "${ROMNAMETMP}.bios" "/storage/roms/bios/scph5500.bin"
+		cp -f "${ROMNAMETMP}.bios" "/storage/roms/bios/scph5501.bin"
+		cp -f "${ROMNAMETMP}.bios" "/storage/roms/bios/scph5502.bin"
+		cp -f "${ROMNAMETMP}.bios" "/storage/roms/bios/psxonpsp660.bin"
+	else
+		cp -f "/usr/share/psxbios/scph7001.bios" "/storage/roms/bios/scph101.bin"
+		cp -f "/usr/share/psxbios/scph5500.bios" "/storage/roms/bios/scph5500.bin"
+		cp -f "/usr/share/psxbios/scph5501.bios" "/storage/roms/bios/scph5501.bin"
+		cp -f "/usr/share/psxbios/scph5502.bios" "/storage/roms/bios/scph5502.bin"
+		cp -f "/usr/share/psxbios/psxonpsp660.bios" "/storage/roms/bios/psxonpsp660.bin"
+	fi
+fi
+
 ### Enable logging
 case $(get_setting system.loglevel) in
   off|none)
@@ -191,7 +207,8 @@ case ${EMULATOR} in
       aarch64)
         if [[ "${CORE}" =~ pcsx_rearmed32 ]] || \
            [[ "${CORE}" =~ gpsp ]] || \
-           [[ "${CORE}" =~ desmume ]]
+           [[ "${CORE}" =~ desmume ]] \
+	   [[ "${CORE}" == *"_32b"*  ]]
         then
           ### Configure for 32bit Retroarch
           ${VERBOSE} && log $0 "Configuring for 32bit cores."

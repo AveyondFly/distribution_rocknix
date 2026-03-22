@@ -1,0 +1,35 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
+#
+# Cache hwdb.bin to persistent storage to avoid recompiling on every boot.
+# This saves ~2.2s of boot time.
+
+HWDB_CACHE="/storage/.cache/hwdb.bin"
+HWDB_SRC_DIR="/etc/udev/hwdb.d"
+
+# Check if cache is newer than all source files
+cache_valid() {
+  [ -f "${HWDB_CACHE}" ] || return 1
+
+  # Check if any source file is newer than cache
+  for f in "${HWDB_SRC_DIR}"/*.hwdb; do
+    [ -f "$f" ] || continue
+    [ "$f" -nt "${HWDB_CACHE}" ] && return 1
+  done
+  return 0
+}
+
+# Main logic
+mkdir -p /storage/.cache
+
+if cache_valid; then
+  # Use cached hwdb.bin - just create symlink
+  ln -sf "${HWDB_CACHE}" /run/hwdb.bin
+else
+  # Cache invalid or missing - rebuild and cache
+  /usr/bin/systemd-hwdb update
+  if [ -f /run/hwdb.bin ]; then
+    cp /run/hwdb.bin "${HWDB_CACHE}"
+  fi
+fi

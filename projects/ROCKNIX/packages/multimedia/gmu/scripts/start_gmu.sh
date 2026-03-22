@@ -9,6 +9,23 @@ set_kill set "-HUP gmu.bin"
 GMUPATH="/storage/.config/gmu"
 GMUCONFIG="${GMUPATH}/gmu.conf"
 GMUINPUT="${GMUPATH}/gmuinput.conf"
+CONTROLLER_CFG="/storage/.config/profile.d/098-controller"
+
+### Generate controller config on-demand if needed
+### Skip if already exists with matching controller GUID
+CURRENT_GUID=$(control-gen | awk 'BEGIN {FS="\""} /^DEVICE/ {print $2;exit}')
+CACHED_GUID=""
+if [ -f "${CONTROLLER_CFG}" ]; then
+  CACHED_GUID=$(grep "^# CONTROLLER_GUID=" "${CONTROLLER_CFG}" 2>/dev/null | cut -d'=' -f2)
+fi
+
+if [ "${CURRENT_GUID}" != "${CACHED_GUID}" ] || [ ! -f "${CONTROLLER_CFG}" ]; then
+  /usr/bin/mkcontroller
+  # Add GUID marker for future checks
+  sed -i "1i # CONTROLLER_GUID=${CURRENT_GUID}" "${CONTROLLER_CFG}"
+  # Reload profile to get the new variables
+  . /etc/profile
+fi
 
 if [ -d "/storage/.local/share/gmu" ]
 then

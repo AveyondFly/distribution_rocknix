@@ -1,12 +1,8 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0
-# Copyright (C) 2023 JELOS (https://github.com/JustEnoughLinuxOS)
+# Copyright (C) 2023 JELOS (https://github.comJustEnoughLinuxOS)
 
-# Minimal OS variable loading for performance
-. /etc/profile.d/001-functions
+# Controller configuration is generated on-demand by start_gmu.sh
+# This saves ~1.1s during boot time
 
-(
-  ### Set up our controller variables.
-  tocon "Configuring controller..."
-  /usr/bin/mkcontroller
-) &
+exit 0

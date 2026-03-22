@@ -13,11 +13,20 @@ then
   systemctl start pipewire-pulse
 fi
 
-### Auto switch between internal and bluetooth devices
-pactl load-module module-switch-on-connect blocklist="DirtyWave_M8|hdmi" 2>/dev/null
+### Skip audio routing for platforms that handle it elsewhere
+### S905L3A: HDMI routing handled by s905l3a-audio.service
+case "${HW_DEVICE}" in
+  S905L3A)
+    # Audio routing already handled by platform-specific service
+    ;;
+  *)
+    ### Auto switch between internal and bluetooth devices
+    pactl load-module module-switch-on-connect blocklist="DirtyWave_M8|hdmi" 2>/dev/null
 
-### Set up audio routing (Internal or HDMI)
-/usr/bin/hdmi_sense 2>/dev/null
+    ### Set up audio routing (Internal or HDMI)
+    /usr/bin/hdmi_sense 2>/dev/null
+    ;;
+esac
 
 ### Set the default audio path, needed for some devices
 if [ ! -z "${DEVICE_PLAYBACK_PATH_SPK}" ]

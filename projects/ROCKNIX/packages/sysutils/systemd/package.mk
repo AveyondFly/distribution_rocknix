@@ -156,6 +156,8 @@ post_makeinstall_target() {
 
   # adjust systemd-hwdb-update (we have read-only /etc).
   sed '/^ConditionNeedsUpdate=.*$/d' -i ${INSTALL}/usr/lib/systemd/system/systemd-hwdb-update.service
+  # Use cached hwdb.bin to avoid recompiling on every boot (~2.2s saved)
+  sed 's|^ExecStart=.*|ExecStart=/usr/bin/hwdb-cache-setup|' -i ${INSTALL}/usr/lib/systemd/system/systemd-hwdb-update.service
 
   # remove nspawn
   safe_remove ${INSTALL}/usr/bin/systemd-nspawn
@@ -227,6 +229,7 @@ post_makeinstall_target() {
   cp ${PKG_DIR}/scripts/systemd-machine-id-setup ${INSTALL}/usr/bin
   cp ${PKG_DIR}/scripts/userconfig-setup ${INSTALL}/usr/bin
   cp ${PKG_DIR}/scripts/usercache-setup ${INSTALL}/usr/bin
+  cp ${PKG_DIR}/scripts/hwdb-cache-setup ${INSTALL}/usr/bin
 
   mkdir -p ${INSTALL}/usr/sbin
   cp ${PKG_DIR}/scripts/network-base-setup ${INSTALL}/usr/sbin

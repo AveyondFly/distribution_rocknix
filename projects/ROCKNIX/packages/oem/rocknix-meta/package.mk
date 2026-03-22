@@ -6,7 +6,7 @@ PKG_VERSION="0.9"
 PKG_LICENSE="GPLv2"
 PKG_SITE="https://github.com/AveyondFly/console_mod_res"
 PKG_URL="https://github.com/AveyondFly/console_mod_res/releases/download/v${PKG_VERSION}/rocknix_meta.tar.gz"
-PKG_DEPENDS_TARGET="toolchain"
+PKG_DEPENDS_TARGET="toolchain ppsspp-sa drastic_adv-sa"
 PKG_TOOLCHAIN="manual"
 PKG_LONGDESC="Meta package for ROCKNIX custom resources."
 

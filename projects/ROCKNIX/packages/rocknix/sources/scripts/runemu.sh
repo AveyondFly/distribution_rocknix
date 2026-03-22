@@ -207,7 +207,7 @@ case ${EMULATOR} in
       aarch64)
         if [[ "${CORE}" =~ pcsx_rearmed32 ]] || \
            [[ "${CORE}" =~ gpsp ]] || \
-           [[ "${CORE}" =~ desmume ]] \
+           [[ "${CORE}" =~ desmume ]] || \
 	   [[ "${CORE}" == *"_32b"*  ]]
         then
           ### Configure for 32bit Retroarch

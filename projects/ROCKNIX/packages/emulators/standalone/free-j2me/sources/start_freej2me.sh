@@ -23,6 +23,11 @@ GAME_JAR=$GAME_HOME/freej2me-sdl.jar
 
 cd $GAME_HOME
 
+# 如果 /storage/jdk 不存在，创建软连接指向 /roms/bios/jdk
+if [ ! -e "/storage/jdk" ]; then
+    ln -sf /roms/bios/jdk /storage/jdk
+fi
+
 JAVA_HOME='/storage/jdk'
 export JAVA_HOME
 PATH="$JAVA_HOME/bin:$PATH"

@@ -59,7 +59,7 @@ post_install() {
 
   # Issue banner
   cat <<EOF >> ${INSTALL}/etc/issue
-... Version: ${OS_VERSION} (${OS_BUILD})
+... Version: ${OS_VERSION} (${OS_BUILD}-from-kk)
 ... Built: ${BUILD_DATE}
 
 EOF

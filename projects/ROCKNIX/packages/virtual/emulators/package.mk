@@ -381,7 +381,7 @@ makeinstall_target() {
   add_es_system easyrpg
 
   ### ONScripter
-  add_emu_core onscripter retroarch onscripter true
+  add_emu_core onscripter retroarch onsyuri true
   add_es_system onscripter
 
   ### Nintendo Famicom
@@ -409,8 +409,8 @@ makeinstall_target() {
   add_es_system fds
 
   ### Final Burn Neo
-  add_emu_core fbn retroarch fbneo true
-  add_emu_core fbn retroarch fbneoplus false
+  add_emu_core fbn retroarch fbneoplus true
+  add_emu_core fbn retroarch fbneo false
   add_emu_core fbn retroarch mame2003_plus false
   add_emu_core fbn retroarch mame2010 false
   add_emu_core fbn retroarch mame2015 false
@@ -865,8 +865,8 @@ makeinstall_target() {
       install_script "Start MelonDS.sh"
       ;;
     S922X|S905L3A)
-      add_emu_core nds drastic drastic_adv-sa true
-      add_emu_core nds drastic drastic-sa false
+      add_emu_core nds drastic drastic_adv-sa false
+      add_emu_core nds drastic drastic-sa true
       add_emu_core nds retroarch melonds false
       add_emu_core nds retroarch melondsds false
       add_emu_core nds melonds melonds-sa false

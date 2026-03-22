@@ -119,6 +119,9 @@ EOF
 }
 
 add_es_system() {
+  # Reset SYSTEM_COMMAND to prevent inheritance from previous systems
+  unset SYSTEM_COMMAND
+
   RUNCMD='/usr/bin/runemu.sh %ROM% -P%SYSTEM% --core=%CORE% --emulator=%EMULATOR% --controllers="%CONTROLLERSCONFIG%"'
   if [ -e "${ROOT}/config/emulators/${1}.conf" ]
   then

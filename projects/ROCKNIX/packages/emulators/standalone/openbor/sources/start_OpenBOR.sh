@@ -47,7 +47,7 @@ fi
 
 # We start the fake keyboard
 if [ "$EMU" != "OpenBOR-nogptk" ]; then
-  gptokeyb -c /storage/.config/gptokeyb/openbor.gptk -k ${OB} --killsignal 15 &
+  gptokeyb -k ${OB} --killsignal 15 &
 fi
 
 # Run OpenBOR in the config folder

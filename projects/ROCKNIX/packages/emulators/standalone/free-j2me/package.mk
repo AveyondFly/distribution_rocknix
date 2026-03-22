@@ -34,5 +34,6 @@ makeinstall_target() {
   fi
 
   cp ${PKG_DIR}/sources/j2me.gptk ${INSTALL}/usr/config/java/
+  mkdir -p ${INSTALL}/usr/bin
   cp ${PKG_DIR}/sources/start_freej2me.sh ${INSTALL}/usr/bin/
 }

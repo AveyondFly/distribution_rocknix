@@ -193,8 +193,34 @@ function mount_games() {
 function find_games() {
   if /usr/bin/busybox mountpoint -q /storage
   then
-    for DEV in $(for dev in mmcblk[0-9] sd[a-z] nvme[0-9]; do blkid | grep ${dev} | awk 'BEGIN {FS=":"}; /ext4/ || /btrfs/ || /fat/ || /ntfs/ {print $1}' | sort -r; done)
+    ### Detect system disk from /flash mount point
+    SYSTEM_DISK=""
+    FLASH_DEV=$(awk '$2 == "/flash" {print $1}' /proc/mounts | head -1)
+    if [ -n "${FLASH_DEV}" ]
+    then
+      SYSTEM_DISK=$(echo ${FLASH_DEV} | sed -e "s#^/.*/##g" -e "s#p[0-9].*\$##g")
+      log $0 "System disk detected: ${SYSTEM_DISK}"
+    fi
+
+    ### Collect all candidate partitions, separated by system/non-system disk
+    SYSTEM_PARTITIONS=""
+    OTHER_PARTITIONS=""
+    for dev in "mmcblk[0-9]" "sd[a-z]" "nvme[0-9]"; do
+      for PART in $(blkid | grep -E "${dev}" | awk 'BEGIN {FS=":"}; /ext4/ || /btrfs/ || /fat/ || /ntfs/ {print $1}' | sort -r); do
+        ROOTDEV=$(echo ${PART} | sed -e "s#^/.*/##g" -e "s#p[0-9].*\$##g")
+        if [ "${ROOTDEV}" = "${SYSTEM_DISK}" ]
+        then
+          SYSTEM_PARTITIONS="${SYSTEM_PARTITIONS} ${PART}"
+        else
+          OTHER_PARTITIONS="${OTHER_PARTITIONS} ${PART}"
+        fi
+      done
+    done
+
+    ### Process non-system disk partitions first, then system disk partitions
+    for DEV in ${OTHER_PARTITIONS} ${SYSTEM_PARTITIONS}
     do
+      [ -z "${DEV}" ] && continue
       ROOTDEV=$(echo ${DEV} | sed -e "s#^/.*/##g" -e "s#p[0-9].*\$##g")
       log $0 "Inspecting ${DEV}."
       SIZE=$(awk '/'${ROOTDEV}'$/ {print $3}' /proc/partitions)

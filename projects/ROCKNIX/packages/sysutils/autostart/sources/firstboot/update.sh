@@ -5,7 +5,7 @@
 
 hidecursor
 ROM_DIR="/storage/roms"
-DONE_FLAG="/storage/data/mod.done"
+DONE_FLAG="/storage/mod.done"
 
 if [ -e "$DONE_FLAG" ]; then
   exit 0
@@ -18,6 +18,15 @@ function Test_Button_A(){
 function Test_Button_B(){
   evtest --query $event_dev $event_type $event_btn_b
 }
+
+# 处理 ppsspp 字体软链接
+PPSSPP_FONTS="/storage/.config/ppsspp/assets"
+if [ -d "$PPSSPP_FONTS" ]; then
+  for font in Roboto_Condensed-Bold.ttf Roboto_Condensed-Italic.ttf Roboto_Condensed-Light.ttf Roboto_Condensed-Regular.ttf; do
+    rm -f "$PPSSPP_FONTS/$font"
+    ln -s Roboto-Condensed.ttf "$PPSSPP_FONTS/$font"
+  done
+fi
 
 event_type="EV_KEY"
 event_btn_a="BTN_EAST"

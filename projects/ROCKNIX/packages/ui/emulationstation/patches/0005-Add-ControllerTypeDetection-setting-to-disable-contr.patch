@@ -1,0 +1,227 @@
+From 25e2362dd8ef32162120104bcc0f0ca8e63d633c Mon Sep 17 00:00:00 2001
+From: kk <405437445@qq.com>
+Date: Mon, 23 Mar 2026 14:08:10 +0800
+Subject: [PATCH 5/6] Add ControllerTypeDetection setting to disable controller
+ type checks
+
+- Add ControllerTypeDetection setting (default: false) for handheld devices
+- Skip gun/wheel/trackball/spinner detection in GameNameFormatter
+- Skip controller config flags when launching games
+- Skip controller type auto-collections
+- Skip controller type filters
+- Skip controller type display in detail view
+
+This improves performance for handheld devices that don't need
+lightgun/wheel/trackball/spinner controller detection.
+---
+ es-app/src/CollectionSystemManager.cpp        |  8 +++----
+ es-app/src/FileData.cpp                       | 20 ++++++++++-------
+ es-app/src/FileFilterIndex.cpp                |  8 +++----
+ .../src/views/gamelist/DetailedContainer.cpp  | 17 +++++++-------
+ .../src/views/gamelist/GameNameFormatter.cpp  | 11 ++++++----
+ es-core/src/Settings.cpp                      | 22 +++++++++----------
+ 6 files changed, 47 insertions(+), 39 deletions(-)
+
+diff --git a/es-app/src/CollectionSystemManager.cpp b/es-app/src/CollectionSystemManager.cpp
+index 54d871a..167e455 100644
+--- a/es-app/src/CollectionSystemManager.cpp
++++ b/es-app/src/CollectionSystemManager.cpp
+@@ -1025,16 +1025,16 @@ void CollectionSystemManager::populateAutoCollection(CollectionSystemData* sysDa
+ 				include = game->isVerticalArcadeGame();
+ 				break;
+ 			case AUTO_LIGHTGUN:
+-				include = game->isLightGunGame();
++				include = Settings::getInstance()->getBool("ControllerTypeDetection") && game->isLightGunGame();
+ 				break;
+ 			case AUTO_WHEEL:
+-				include = game->isWheelGame();
++				include = Settings::getInstance()->getBool("ControllerTypeDetection") && game->isWheelGame();
+ 				break;
+ 			case AUTO_TRACKBALL:
+-				include = game->isTrackballGame();
++				include = Settings::getInstance()->getBool("ControllerTypeDetection") && game->isTrackballGame();
+ 				break;
+ 			case AUTO_SPINNER:
+-				include = game->isSpinnerGame();
++				include = Settings::getInstance()->getBool("ControllerTypeDetection") && game->isSpinnerGame();
+ 				break;
+ 			case AUTO_RETROACHIEVEMENTS:
+ 				include = game->hasCheevos();
+diff --git a/es-app/src/FileData.cpp b/es-app/src/FileData.cpp
+index 9e719c1..1f7731e 100644
+--- a/es-app/src/FileData.cpp
++++ b/es-app/src/FileData.cpp
+@@ -487,17 +487,21 @@ std::string FileData::getlaunchCommand(LaunchGameOptions& options, bool includeC
+ 	// must really;-) be done before window->deinit while it closes joysticks
+ 	std::string controllersConfig = InputManager::getInstance()->configureEmulators();
+ 
+-	if (gameToUpdate->isLightGunGame())
+-		controllersConfig = controllersConfig + "-lightgun ";
++	// Skip controller type detection if disabled globally (for handheld devices)
++	if (Settings::getInstance()->getBool("ControllerTypeDetection"))
++	{
++		if (gameToUpdate->isLightGunGame())
++			controllersConfig = controllersConfig + "-lightgun ";
+ 
+-        if (gameToUpdate->isWheelGame())
+-		controllersConfig = controllersConfig + "-wheel ";
++		if (gameToUpdate->isWheelGame())
++			controllersConfig = controllersConfig + "-wheel ";
+ 
+-        if (gameToUpdate->isTrackballGame())
+-		controllersConfig = controllersConfig + "-trackball ";
++		if (gameToUpdate->isTrackballGame())
++			controllersConfig = controllersConfig + "-trackball ";
+ 
+-        if (gameToUpdate->isSpinnerGame())
+-		controllersConfig = controllersConfig + "-spinner ";
++		if (gameToUpdate->isSpinnerGame())
++			controllersConfig = controllersConfig + "-spinner ";
++	}
+ 
+ 	std::string systemName = system->getName();
+ 	std::string emulator = getEmulator();
+diff --git a/es-app/src/FileFilterIndex.cpp b/es-app/src/FileFilterIndex.cpp
+index 42ec541..16b1ff4 100644
+--- a/es-app/src/FileFilterIndex.cpp
++++ b/es-app/src/FileFilterIndex.cpp
+@@ -396,7 +396,7 @@ std::string FileFilterIndex::getIndexableKey(FileData* game, FilterIndexType typ
+ 		if (game->getType() != GAME)
+ 			return "FALSE";
+ 
+-		return game->isLightGunGame() ? "TRUE" : "FALSE";
++		return (Settings::getInstance()->getBool("ControllerTypeDetection") && game->isLightGunGame()) ? "TRUE" : "FALSE";
+ 	}
+ 
+ 	case WHEEL_FILTER:
+@@ -407,7 +407,7 @@ std::string FileFilterIndex::getIndexableKey(FileData* game, FilterIndexType typ
+ 		if (game->getType() != GAME)
+ 			return "FALSE";
+ 
+-		return game->isWheelGame() ? "TRUE" : "FALSE";
++		return (Settings::getInstance()->getBool("ControllerTypeDetection") && game->isWheelGame()) ? "TRUE" : "FALSE";
+ 	}
+ 
+ 	case TRACKBALL_FILTER:
+@@ -418,7 +418,7 @@ std::string FileFilterIndex::getIndexableKey(FileData* game, FilterIndexType typ
+ 		if (game->getType() != GAME)
+ 			return "FALSE";
+ 
+-		return game->isTrackballGame() ? "TRUE" : "FALSE";
++		return (Settings::getInstance()->getBool("ControllerTypeDetection") && game->isTrackballGame()) ? "TRUE" : "FALSE";
+ 	}
+ 
+ 	case SPINNER_FILTER:
+@@ -429,7 +429,7 @@ std::string FileFilterIndex::getIndexableKey(FileData* game, FilterIndexType typ
+ 		if (game->getType() != GAME)
+ 			return "FALSE";
+ 
+-		return game->isSpinnerGame() ? "TRUE" : "FALSE";
++		return (Settings::getInstance()->getBool("ControllerTypeDetection") && game->isSpinnerGame()) ? "TRUE" : "FALSE";
+ 	}
+ 
+ 	case VERTICAL_FILTER:
+diff --git a/es-app/src/views/gamelist/DetailedContainer.cpp b/es-app/src/views/gamelist/DetailedContainer.cpp
+index 93ca387..09364b1 100644
+--- a/es-app/src/views/gamelist/DetailedContainer.cpp
++++ b/es-app/src/views/gamelist/DetailedContainer.cpp
+@@ -939,32 +939,33 @@ void DetailedContainer::updateControls(FileData* file, bool isClearing, int move
+ 			mNotKidGame->setVisible(!file->getKidGame());
+ 
+ 		// Gun game
++		bool controllerDetectionEnabled = Settings::getInstance()->getBool("ControllerTypeDetection");
+ 		if (mGunGame != nullptr)
+-			mGunGame->setVisible(file->isLightGunGame());
++			mGunGame->setVisible(controllerDetectionEnabled && file->isLightGunGame());
+ 
+ 		if (mNotGunGame != nullptr)
+-			mNotGunGame->setVisible(!file->isLightGunGame());
++			mNotGunGame->setVisible(controllerDetectionEnabled && !file->isLightGunGame());
+ 
+ 		// Wheel game
+ 		if (mWheelGame != nullptr)
+-			mWheelGame->setVisible(file->isWheelGame());
++			mWheelGame->setVisible(controllerDetectionEnabled && file->isWheelGame());
+ 
+ 		if (mNotWheelGame != nullptr)
+-			mNotWheelGame->setVisible(!file->isWheelGame());
++			mNotWheelGame->setVisible(controllerDetectionEnabled && !file->isWheelGame());
+ 
+ 		// Trackball game
+ 		if (mTrackballGame != nullptr)
+-			mTrackballGame->setVisible(file->isTrackballGame());
++			mTrackballGame->setVisible(controllerDetectionEnabled && file->isTrackballGame());
+ 
+ 		if (mNotTrackballGame != nullptr)
+-			mNotTrackballGame->setVisible(!file->isTrackballGame());
++			mNotTrackballGame->setVisible(controllerDetectionEnabled && !file->isTrackballGame());
+ 
+ 		// Spinner game
+ 		if (mSpinnerGame != nullptr)
+-			mSpinnerGame->setVisible(file->isSpinnerGame());
++			mSpinnerGame->setVisible(controllerDetectionEnabled && file->isSpinnerGame());
+ 
+ 		if (mNotSpinnerGame != nullptr)
+-			mNotSpinnerGame->setVisible(!file->isSpinnerGame());
++			mNotSpinnerGame->setVisible(controllerDetectionEnabled && !file->isSpinnerGame());
+ 
+ 		bool systemHasCheevos = 
+ 			SystemConf::getInstance()->getBool("global.retroachievements") && (
+diff --git a/es-app/src/views/gamelist/GameNameFormatter.cpp b/es-app/src/views/gamelist/GameNameFormatter.cpp
+index 06de14b..d40f51d 100644
+--- a/es-app/src/views/gamelist/GameNameFormatter.cpp
++++ b/es-app/src/views/gamelist/GameNameFormatter.cpp
+@@ -72,10 +72,13 @@ GameNameFormatter::GameNameFormatter(SystemData* system)
+ 	mShowManualIcon = system->getBoolSetting("ShowManualIcon");
+ 	mShowSaveStates = system->getBoolSetting("ShowSaveStates");
+ 
+-	mShowGunIcon = system->getName() != "lightgun" && system->getBoolSetting("ShowGunIconOnGames");
+-	mShowWheelIcon = system->getName() != "wheel" && system->getBoolSetting("ShowWheelIconOnGames");
+-	mShowTrackballIcon = system->getName() != "trackball" && system->getBoolSetting("ShowTrackballIconOnGames");
+-	mShowSpinnerIcon = system->getName() != "spinner" && system->getBoolSetting("ShowSpinnerIconOnGames");
++	// Skip controller type detection if disabled globally (for handheld devices)
++	bool controllerDetectionEnabled = Settings::getInstance()->getBool("ControllerTypeDetection");
++
++	mShowGunIcon = controllerDetectionEnabled && system->getName() != "lightgun" && system->getBoolSetting("ShowGunIconOnGames");
++	mShowWheelIcon = controllerDetectionEnabled && system->getName() != "wheel" && system->getBoolSetting("ShowWheelIconOnGames");
++	mShowTrackballIcon = controllerDetectionEnabled && system->getName() != "trackball" && system->getBoolSetting("ShowTrackballIconOnGames");
++	mShowSpinnerIcon = controllerDetectionEnabled && system->getName() != "spinner" && system->getBoolSetting("ShowSpinnerIconOnGames");
+ 
+ 	mShowFlags = system->getShowFlags();
+ 	mShowTags = system->getShowTags();
+diff --git a/es-core/src/Settings.cpp b/es-core/src/Settings.cpp
+index 4ddb329..a21e4bd 100644
+--- a/es-core/src/Settings.cpp
++++ b/es-core/src/Settings.cpp
+@@ -168,17 +168,17 @@ void Settings::setDefaults()
+     mStringMap["INPUT P3"] = "DEFAULT";
+     mStringMap["INPUT P4"] = "DEFAULT";
+     mStringMap["INPUT P5"] = "DEFAULT";
+-    mStringMap["Overclock"] = "none";
+-
+-	mBoolMap["VSync"] = Settings::_VSync;
+-	mStringMap["FolderViewMode"] = "always";
+-	mStringMap["HiddenSystems"] = "";
+-	mStringMap["SystemConfigMode"] = "full";
+-
+-	mBoolMap["ZaparooEnabled"] = false;
+-
+-	mBoolMap["PublicWebAccess"] = false;	
+-	mBoolMap["FirstJoystickOnly"] = false;
++    	mStringMap["Overclock"] = "none";
++    
++    	mBoolMap["VSync"] = Settings::_VSync;
++    	mStringMap["FolderViewMode"] = "always";
++    	mStringMap["HiddenSystems"] = "";
++    	mStringMap["SystemConfigMode"] = "full";
++    
++    	mBoolMap["ZaparooEnabled"] = false;
++    	mBoolMap["ControllerTypeDetection"] = false;
++    
++    	mBoolMap["PublicWebAccess"] = false;	mBoolMap["FirstJoystickOnly"] = false;
+     mBoolMap["EnableSounds"] = false;
+ 	mBoolMap["ShowHelpPrompts"] = true;
+ 	mBoolMap["ScrapeRatings"] = true;
+-- 
+2.43.0
+

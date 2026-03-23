@@ -9,7 +9,7 @@ Environment=HOME=/storage
 Environment=SDL_AUDIODRIVER=pulseaudio
 EnvironmentFile=/etc/profile
 ExecStartPre=/usr/bin/es_settings
-ExecStart=/usr/bin/emulationstation --log-path /var/log --no-splash
+ExecStart=/usr/bin/emulationstation --log-path /var/log
 KillMode=process
 TimeoutStopSec=3
 Restart=always

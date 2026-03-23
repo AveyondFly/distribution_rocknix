@@ -1,0 +1,46 @@
+From b2e1fc4650b4222bc63d6868d87a6b12dcc0f5d5 Mon Sep 17 00:00:00 2001
+From: kk <405437445@qq.com>
+Date: Mon, 23 Mar 2026 09:03:54 +0800
+Subject: [PATCH 2/6] Optimize directory scanning for ports, windows, pymo and
+ onscripter
+
+- Use system name matching instead of path string matching for ports/windows
+- Add pymo system: only scan root directory for .pymo files
+- Add onscripter system: only scan root directory for .ons files
+- Skip all subfolders for these systems to improve startup performance
+---
+ es-app/src/SystemData.cpp | 16 ++++++++++++----
+ 1 file changed, 12 insertions(+), 4 deletions(-)
+
+diff --git a/es-app/src/SystemData.cpp b/es-app/src/SystemData.cpp
+index e5c35f5..3bf0463 100644
+--- a/es-app/src/SystemData.cpp
++++ b/es-app/src/SystemData.cpp
+@@ -331,12 +331,20 @@ void SystemData::populateFolder(FolderData* folder, std::unordered_map<std::stri
+ 			if (mMetadata.name == "vpinball" && fn == "roms")
+ 				continue;			
+ 
+-			// Skip ports folders, as many folders in ports causes slow down at startup
+-			if (fileInfo.path.rfind("ports") != std::string::npos)
++			// Hardcoded optimisation : ports only scans root directory, skip all subfolders
++			if (mMetadata.name == "ports")
+ 				continue;
+ 
+-			// Skip windows folder for the same reason as ports folder
+-			if (fileInfo.path.rfind("windows") != std::string::npos)
++			// Hardcoded optimisation : windows only scans root directory, skip all subfolders
++			if (mMetadata.name == "windows")
++				continue;
++
++			// Hardcoded optimisation : pymo only scans root directory for .pymo files
++			if (mMetadata.name == "pymo")
++				continue;
++
++			// Hardcoded optimisation : onscripter only scans root directory for .ons files
++			if (mMetadata.name == "onscripter")
+ 				continue;
+ 
+ 			FolderData* newFolder = new FolderData(filePath, this);
+-- 
+2.43.0
+

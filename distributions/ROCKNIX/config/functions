@@ -71,6 +71,23 @@ mk_system_doc() {
 
 ### Generate ES Systems
 
+# Load lite systems list from config file
+load_lite_systems() {
+  LITE_SYSTEMS=""
+  if [ -e "${ROOT}/config/emulators/lite_systems.cfg" ]; then
+    LITE_SYSTEMS=$(grep -v '^#' "${ROOT}/config/emulators/lite_systems.cfg" | grep -v '^$' | tr '\n' ' ')
+  fi
+}
+
+# Check if system is in lite list
+is_lite_system() {
+  local system="$1"
+  if [ -z "${LITE_SYSTEMS}" ]; then
+    load_lite_systems
+  fi
+  echo " ${LITE_SYSTEMS} " | grep -q " ${system} "
+}
+
 clean_es_cache() {
   ESTMP="${ROOT}/.es_cache/${DEVICE}"
   if [ -d "${ESTMP}" ]
@@ -91,20 +108,46 @@ add_emu_core() {
 }
 
 mk_es_systems() {
+  # Load lite systems list
+  load_lite_systems
 
+  # Generate regular es_systems.cfg
   cat <<EOF >${ESTMP}/.es_systems.cfg
 <?xml version="1.0" encoding="UTF-8"?>
 <systemList>
 EOF
+
+  # Generate lite version header
+  cat <<EOF >${ESTMP}/.es_systems_lite.cfg
+<?xml version="1.0" encoding="UTF-8"?>
+<systemList>
+EOF
+
   rm -f ${ESTMP}/*-emulators.tmp
   for essystem in $(ls ${ESTMP}/*.tmp | sort)
   do
     cat ${essystem} >>${ESTMP}/.es_systems.cfg
+    
+    # Get system name from file and check if it's in lite list
+    local sysname=$(basename ${essystem} .tmp)
+    if is_lite_system "${sysname}"; then
+      cat ${essystem} >>${ESTMP}/.es_systems_lite.cfg
+    fi
   done
+
+  # Close regular version
   cat <<EOF >>${ESTMP}/.es_systems.cfg
 </systemList>
 EOF
-xmlstarlet fo -t ${ESTMP}/.es_systems.cfg >${ESTMP}/es_systems.cfg 2>/dev/null
+
+  # Close lite version
+  cat <<EOF >>${ESTMP}/.es_systems_lite.cfg
+</systemList>
+EOF
+
+  # Format both files
+  xmlstarlet fo -t ${ESTMP}/.es_systems.cfg >${ESTMP}/es_systems.cfg 2>/dev/null
+  xmlstarlet fo -t ${ESTMP}/.es_systems_lite.cfg >${ESTMP}/es_systems_lite.cfg 2>/dev/null
 
 } 
 

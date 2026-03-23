@@ -1,0 +1,67 @@
+From bee12723cb4db2cb0af473159cc6edd675fda2bd Mon Sep 17 00:00:00 2001
+From: kk <405437445@qq.com>
+Date: Mon, 23 Mar 2026 14:31:25 +0800
+Subject: [PATCH 6/6] Skip gamesdb.xml parsing when ControllerTypeDetection is
+ disabled
+
+When ControllerTypeDetection=false (default for handheld devices),
+skip parsing gamesdb.xml which contains controller type data
+(lightgun/wheel/trackball/spinner). This saves ~8K lines of XML
+parsing at startup.
+
+arcaderoms.xml is still parsed for ROM names and BIOS detection.
+---
+ es-core/src/MameNames.cpp | 20 ++++++++++++--------
+ 1 file changed, 12 insertions(+), 8 deletions(-)
+
+diff --git a/es-core/src/MameNames.cpp b/es-core/src/MameNames.cpp
+index 4f9c398..af847f9 100644
+--- a/es-core/src/MameNames.cpp
++++ b/es-core/src/MameNames.cpp
+@@ -3,6 +3,7 @@
+ #include "resources/ResourceManager.h"
+ #include "utils/FileSystemUtil.h"
+ #include "Log.h"
++#include "Settings.h"
+ #include <pugixml/src/pugixml.hpp>
+ #include "utils/StringUtil.h"
+ #include <string.h>
+@@ -123,17 +124,19 @@ MameNames::MameNames()
+ 			LOG(LogError) << "Error parsing XML file \"" << xmlpath << "\"!\n	" << result.description();
+ 	}
+ 	
+-	// Read gun games for non arcade systems
+-	xmlpath = ResourceManager::getInstance()->getResourcePath(":/gamesdb.xml");
+-	if (Utils::FileSystem::exists(xmlpath))
++	// Read gun games for non arcade systems (skip if ControllerTypeDetection is disabled)
++	if (Settings::getInstance()->getBool("ControllerTypeDetection"))
+ 	{
+-		result = doc.load_file(WINSTRINGW(xmlpath).c_str());
+-		if (result)
++		xmlpath = ResourceManager::getInstance()->getResourcePath(":/gamesdb.xml");
++		if (Utils::FileSystem::exists(xmlpath))
+ 		{
+-			pugi::xml_node systems = doc.child("systems");
+-			if (systems)
++			result = doc.load_file(WINSTRINGW(xmlpath).c_str());
++			if (result)
+ 			{
+-				LOG(LogInfo) << "Parsing XML file \"" << xmlpath;
++				pugi::xml_node systems = doc.child("systems");
++				if (systems)
++				{
++					LOG(LogInfo) << "Parsing XML file \"" << xmlpath;
+ 
+ 				for (pugi::xml_node systemNode = systems.child("system"); systemNode; systemNode = systemNode.next_sibling("system"))
+ 				{
+@@ -281,6 +284,7 @@ MameNames::MameNames()
+ 						}
+ 					}	
+ 				}
++				}
+ 			}
+ 			else 
+ 				LOG(LogError) << "Error parsing XML file \"" << xmlpath << "\" <systems> root is missing !";
+-- 
+2.43.0
+

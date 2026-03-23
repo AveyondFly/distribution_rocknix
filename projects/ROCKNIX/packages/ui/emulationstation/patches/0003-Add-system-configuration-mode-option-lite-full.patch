@@ -1,0 +1,148 @@
+From 9084b0db37e2f8fd2a6208ee52b32ac7b163cbde Mon Sep 17 00:00:00 2001
+From: kk <405437445@qq.com>
+Date: Mon, 23 Mar 2026 09:27:02 +0800
+Subject: [PATCH 3/6] Add system configuration mode option (lite/full)
+
+- Add SystemConfigMode setting to switch between es_systems.cfg and es_systems_lite.cfg
+- Place the option at the top of Game Collection Settings menu
+- Show restart notification when mode is changed
+- Fallback to es_systems.cfg if lite config not found
+---
+ es-app/src/SystemData.cpp                     | 20 ++++++++++++++++--
+ .../src/guis/GuiCollectionSystemsOptions.cpp  | 19 ++++++++++++++++-
+ es-app/src/guis/GuiMenu.cpp                   | 21 +++++++++----------
+ es-core/src/Settings.cpp                      |  1 +
+ 4 files changed, 47 insertions(+), 14 deletions(-)
+
+diff --git a/es-app/src/SystemData.cpp b/es-app/src/SystemData.cpp
+index 3bf0463..e40c25b 100644
+--- a/es-app/src/SystemData.cpp
++++ b/es-app/src/SystemData.cpp
+@@ -1270,18 +1270,34 @@ void SystemData::deleteSystems()
+ 
+ std::string SystemData::getConfigPath()
+ {
++	// Check for lite mode configuration
++	bool liteMode = (Settings::getInstance()->getString("SystemConfigMode") == "lite");
++	std::string cfgSuffix = liteMode ? "_lite" : "";
++
+ 	std::string customPath = Paths::getUserEmulationStationPath() + "/es_systems_custom.cfg";
+ 	if (Utils::FileSystem::exists(customPath))
+ 		return customPath;
+ 
+-	std::string userdataPath = Paths::getUserEmulationStationPath() + "/es_systems.cfg";
++	std::string userdataPath = Paths::getUserEmulationStationPath() + "/es_systems" + cfgSuffix + ".cfg";
+ 	if(Utils::FileSystem::exists(userdataPath))
+ 		return userdataPath;
+ 
+-	userdataPath = Paths::getEmulationStationPath() + "/es_systems.cfg";
++	userdataPath = Paths::getEmulationStationPath() + "/es_systems" + cfgSuffix + ".cfg";
+ 	if (Utils::FileSystem::exists(userdataPath))
+ 		return userdataPath;
+ 
++	// Fallback to default config if lite config not found
++	if (liteMode)
++	{
++		userdataPath = Paths::getUserEmulationStationPath() + "/es_systems.cfg";
++		if(Utils::FileSystem::exists(userdataPath))
++			return userdataPath;
++
++		userdataPath = Paths::getEmulationStationPath() + "/es_systems.cfg";
++		if (Utils::FileSystem::exists(userdataPath))
++			return userdataPath;
++	}
++
+ 	return "/etc/emulationstation/es_systems.cfg"; // Backward compatibility with Retropie
+ }
+ 
+diff --git a/es-app/src/guis/GuiCollectionSystemsOptions.cpp b/es-app/src/guis/GuiCollectionSystemsOptions.cpp
+index 5973f9d..8e10e18 100644
+--- a/es-app/src/guis/GuiCollectionSystemsOptions.cpp
++++ b/es-app/src/guis/GuiCollectionSystemsOptions.cpp
+@@ -23,6 +23,20 @@ GuiCollectionSystemsOptions::GuiCollectionSystemsOptions(Window* window)
+ 
+ void GuiCollectionSystemsOptions::initializeMenu()
+ {
++	// System configuration mode (lite/full) - at the top
++	auto systemConfigMode = std::make_shared<OptionListComponent<std::string>>(mWindow, _("SYSTEMS CONFIGURATION MODE"), false);
++	systemConfigMode->add(_("FULL"), "full", Settings::getInstance()->getString("SystemConfigMode") == "full");
++	systemConfigMode->add(_("LITE"), "lite", Settings::getInstance()->getString("SystemConfigMode") == "lite");
++	addWithDescription(_("SYSTEMS CONFIGURATION MODE"), _("Lite mode uses a simplified system list for faster boot. Requires restart to take effect."), systemConfigMode);
++	addSaveFunc([this, systemConfigMode]
++	{
++		if (Settings::getInstance()->setString("SystemConfigMode", systemConfigMode->getSelected()))
++		{
++			Settings::getInstance()->saveFile();
++			setVariable("restartRequired", true);
++		}
++	});
++
+ 	addGroup(_("COLLECTIONS TO DISPLAY"));
+ 
+ 	// SYSTEMS DISPLAYED
+@@ -407,7 +421,7 @@ void GuiCollectionSystemsOptions::initializeMenu()
+ 			window->pushGui(ViewController::get());
+ 		}
+ 		else if (getVariable("reloadAll"))
+-		{			
++		{
+ 			Settings::getInstance()->saveFile();
+ 
+ 			CollectionSystemManager::get()->loadEnabledListFromSettings();
+@@ -416,6 +430,9 @@ void GuiCollectionSystemsOptions::initializeMenu()
+ 			ViewController::get()->reloadAll(mWindow);
+ 			mWindow->closeSplashScreen();
+ 		}
++
++		if (getVariable("restartRequired"))
++			mWindow->displayNotificationMessage(_U("\uF021  ") + _("RESTART EMULATIONSTATION TO APPLY THE NEW SYSTEMS CONFIGURATION"));
+ 	});
+ }
+ 
+diff --git a/es-app/src/guis/GuiMenu.cpp b/es-app/src/guis/GuiMenu.cpp
+index b06cc6f..9a0ba23 100644
+--- a/es-app/src/guis/GuiMenu.cpp
++++ b/es-app/src/guis/GuiMenu.cpp
+@@ -1255,17 +1255,16 @@ void GuiMenu::openDeveloperSettings()
+ 	s->addWithLabel(_("OPTIMIZE VIDEO VRAM USAGE"), optimizeVideo);
+ 	s->addSaveFunc([optimizeVideo] { Settings::getInstance()->setBool("OptimizeVideo", optimizeVideo->getState()); });
+ 	
+-	s->onFinalize([s, window]
+-	{					
+-		if (s->getVariable("reboot"))
+-			window->displayNotificationMessage(_U("\uF011  ") + _("REBOOT REQUIRED TO APPLY THE NEW CONFIGURATION"));
+-
+-		if (s->getVariable("reloadAll"))
+-		{
+-			ViewController::get()->reloadAll(window);
+-			window->closeSplashScreen();
+-		}
+-	});
++		s->onFinalize([s, window]
++		{						
++			if (s->getVariable("reboot"))
++				window->displayNotificationMessage(_U("\uF011  ") + _("REBOOT REQUIRED TO APPLY THE NEW CONFIGURATION"));
++	
++			if (s->getVariable("reloadAll"))
++			{
++				ViewController::get()->reloadAll(window);
++				window->closeSplashScreen();
++			}	});
+ 
+ 	mWindow->pushGui(s);
+ }
+diff --git a/es-core/src/Settings.cpp b/es-core/src/Settings.cpp
+index be06f16..4d00003 100644
+--- a/es-core/src/Settings.cpp
++++ b/es-core/src/Settings.cpp
+@@ -173,6 +173,7 @@ void Settings::setDefaults()
+ 	mBoolMap["VSync"] = Settings::_VSync;
+ 	mStringMap["FolderViewMode"] = "always";
+ 	mStringMap["HiddenSystems"] = "";
++	mStringMap["SystemConfigMode"] = "full";
+ 
+ 	mBoolMap["PublicWebAccess"] = false;	
+ 	mBoolMap["FirstJoystickOnly"] = false;
+-- 
+2.43.0
+

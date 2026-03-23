@@ -1,0 +1,34 @@
+From d1353983f0a7dc27a5560aa54ef237145f19fc29 Mon Sep 17 00:00:00 2001
+From: kk <405437445@qq.com>
+Date: Mon, 23 Mar 2026 11:05:01 +0800
+Subject: [PATCH 3/3] feat(ui): add custom Chinese font path for Linux
+
+Add /usr/share/fonts/TTF/DejaVuSansMono.ttf as fallback font path
+for Chinese UI rendering on Linux systems.
+---
+ core/ui/gui.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/core/ui/gui.cpp b/core/ui/gui.cpp
+index 0f29057bb..2ce10e953 100644
+--- a/core/ui/gui.cpp
++++ b/core/ui/gui.cpp
+@@ -438,6 +438,7 @@ void gui_initFonts()
+ 				"/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
+ 				"/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+ 				"/usr/share/fonts/google-noto-cjk/NotoSansCJK-Regular.ttc", // redhat
++				"/usr/share/fonts/TTF/DejaVuSansMono.ttf",
+ 		};
+ 		const char *largeFonts[] = {
+ 				"/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+@@ -445,6 +446,7 @@ void gui_initFonts()
+ 				"/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
+ 				"/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
+ 				"/usr/share/fonts/google-noto-cjk/NotoSansCJK-Bold.ttc", // redhat
++				"/usr/share/fonts/TTF/DejaVuSansMono.ttf",
+ 		};
+ 		addFont(fonts, fontSize, fontConfig, glyphRanges);
+ 		addFont(largeFonts, largeFontSize, largeFontConfig, glyphRanges);
+-- 
+2.43.0
+

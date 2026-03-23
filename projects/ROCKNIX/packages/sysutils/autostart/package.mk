@@ -25,5 +25,11 @@ makeinstall_target() {
     cp ${PKG_DIR}/sources/daemons/* ${INSTALL}/usr/lib/autostart/daemons
     chmod -R 0755 ${INSTALL}/usr/lib/autostart/daemons
   fi
+  if [ -d "${PKG_DIR}/sources/firstboot" ]
+  then
+    mkdir -p ${INSTALL}/usr/lib/autostart/firstboot
+    cp ${PKG_DIR}/sources/firstboot/* ${INSTALL}/usr/lib/autostart/firstboot
+    chmod -R 0755 ${INSTALL}/usr/lib/autostart/firstboot
+  fi
   chmod -R 0755 ${INSTALL}/usr/bin/autostart
 }

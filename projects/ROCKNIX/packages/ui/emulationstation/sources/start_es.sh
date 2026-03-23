@@ -5,4 +5,4 @@
 ### setup is the same
 . $(dirname $0)/es_settings
 
-emulationstation --log-path /var/log --no-splash
+emulationstation --log-path /var/log

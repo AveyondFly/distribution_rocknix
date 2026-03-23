@@ -12,6 +12,12 @@ log() {
 
 performance 2>/dev/null
 
+### Run firstboot
+if [ -x "/usr/lib/autostart/firstboot/update.sh" ]; then
+  log "Run firstboot update.sh"
+  /usr/lib/autostart/firstboot/update.sh 2>&1 >>${BOOTLOG}
+fi
+
 ### Load platform specific quirks
 if [ -d "/usr/lib/autostart/quirks/platforms/${HW_DEVICE}" ]
 then

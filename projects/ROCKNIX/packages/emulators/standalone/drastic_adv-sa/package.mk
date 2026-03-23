@@ -16,7 +16,8 @@ makeinstall_target() {
   cp -rf ${PKG_BUILD}/lib ${INSTALL}/usr/config/drastic/
   cp -rf ${PKG_BUILD}/resources ${INSTALL}/usr/config/drastic/
   cp -f ${PKG_BUILD}/drastic ${INSTALL}/usr/config/drastic/
-  cp -f ${PKG_BUILD}/usrcheat.dat ${INSTALL}/usr/config/drastic/
+  cp -f ${PKG_BUILD}/usrcheat.dat ${INSTALL}/usr/config/drastic/usrcheat_chs.dat
+  cp -f ${PKG_BUILD}/drastic.gptk ${INSTALL}/usr/config/drastic/
 
   # Download and install layout resources
   LAYOUT_URL="https://codeload.github.com/AveyondFly/drastic_layout/tar.gz/master"

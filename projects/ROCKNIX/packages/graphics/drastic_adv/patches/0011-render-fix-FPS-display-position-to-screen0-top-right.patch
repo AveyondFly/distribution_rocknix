@@ -1,0 +1,62 @@
+From e1803f7d5e05ec1f073e73ffe07f21942e53c53c Mon Sep 17 00:00:00 2001
+From: root <root@ubuntu.com>
+Date: Tue, 24 Mar 2026 20:55:28 +0800
+Subject: [PATCH 2/2] render: fix FPS display position to screen0 top-right
+ corner
+
+Move FPS display from screen top-right to screen0 (top screen) top-right
+corner. This fixes the text overlapping issue caused by not clearing
+the previous frame's FPS text.
+
+Made-with: Cursor
+---
+ src/render/SDL_render.c | 17 ++++++++++++-----
+ 1 file changed, 12 insertions(+), 5 deletions(-)
+
+diff --git a/src/render/SDL_render.c b/src/render/SDL_render.c
+index baf52a57c..00de4af21 100644
+--- a/src/render/SDL_render.c
++++ b/src/render/SDL_render.c
+@@ -5848,7 +5848,8 @@ static void nds_fps_draw(SDL_Renderer *renderer)
+     static SDL_Texture *fps_tex = NULL;
+     static int tex_w = 0, tex_h = 0;
+     Uint32 current_time;
+-    int out_w, out_h;
++    struct nds_disp_resize *cur_res;
++    SDL_Rect *screen0;
+     
+     if (!nds_show_fps) {
+         if (fps_tex) {
+@@ -5860,6 +5861,13 @@ static void nds_fps_draw(SDL_Renderer *renderer)
+     
+     if (!nds.font || !renderer) return;
+     
++    /* Get current layout's screen0 rect */
++    cur_res = &nds_disp_resize_used[disp_mode];
++    screen0 = &cur_res->tgt_rect[0];
++    
++    /* Skip if screen0 has no valid size */
++    if (screen0->w <= 0 || screen0->h <= 0) return;
++    
+     frame_count++;
+     current_time = SDL_GetTicks();
+     
+@@ -5889,12 +5897,11 @@ static void nds_fps_draw(SDL_Renderer *renderer)
+         }
+     }
+     
+-    /* Draw FPS texture */
++    /* Draw FPS texture at top-right corner of screen0 */
+     if (fps_tex) {
+         SDL_FRect dstrect;
+-        SDL_GetRendererOutputSize(renderer, &out_w, &out_h);
+-        dstrect.x = (float)(out_w - tex_w - 5);
+-        dstrect.y = 5.0f;
++        dstrect.x = (float)(screen0->x + screen0->w - tex_w - 5);
++        dstrect.y = (float)(screen0->y + 5);
+         dstrect.w = (float)tex_w;
+         dstrect.h = (float)tex_h;
+         SDL_RenderCopyF(renderer, fps_tex, NULL, &dstrect);
+-- 
+2.34.1
+

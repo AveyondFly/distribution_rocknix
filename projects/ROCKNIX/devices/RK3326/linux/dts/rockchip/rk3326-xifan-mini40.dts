@@ -121,7 +121,7 @@
 
 		/* gpio pincontrol setup */
 		pinctrl-names = "default";
-		pinctrl-0 = <&btn_pins_ctrl>;
+		pinctrl-0 = <&btn_pins>;
 
 		/* adc calculate scale */
 		button-adc-scale = <2>;

@@ -1,32 +1,8 @@
-From: ROCKNIX <dev@rocknix.org>
-Date: Wed, 11 Feb 2026
-Subject: [PATCH] phy: rockchip-inno-usb2: add USB switch GPIO and sysfs control
-
-Add support for USB signal routing switch GPIO and related sysfs
-interfaces for devices that multiplex USB signals between internal
-and external devices.
-
-Features:
-- switch-gpios: GPIO to control USB signal routing
-- ext-supply: regulator for external USB device power
-- sysfs interfaces for independent control:
-  - usb_switch_gpio: control switch GPIO (0=internal, 1=external)
-  - usb_switch_ext: control ext-supply (0=disable, 1=enable)
-
-Also adds rockchip_usb2phy_is_host_mode() to automatically detect
-host mode when switch_gpio is low (internal device mode), allowing
-the OTG state machine to enter host mode without physical ID pin.
-
-Signed-off-by: ROCKNIX <dev@rocknix.org>
----
- drivers/phy/rockchip/phy-rockchip-inno-usb2.c | 185 +++++++++++++++++-
- 1 file changed, 180 insertions(+), 5 deletions(-)
-
 diff --git a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
 index 1bbff11..xxxxxxx 100644
---- a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
-+++ b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
-@@ -11,6 +11,7 @@
+--- a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c	2025-12-07 05:25:03.000000000 +0800
++++ b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c	2026-03-24 08:32:09.772362168 +0800
+@@ -12,6 +12,7 @@
  #include <linux/interrupt.h>
  #include <linux/io.h>
  #include <linux/gpio/consumer.h>
@@ -34,8 +10,7 @@ index 1bbff11..xxxxxxx 100644
  #include <linux/jiffies.h>
  #include <linux/kernel.h>
  #include <linux/module.h>
-@@ -183,6 +184,9 @@ struct rockchip_usb2phy_cfg {
-  * @phy: generic phy.
+@@ -189,6 +190,8 @@
   * @port_id: flag for otg port or host port.
   * @suspended: phy suspended flag.
   * @vbus_attached: otg device vbus status.
@@ -44,7 +19,7 @@ index 1bbff11..xxxxxxx 100644
   * @host_disconnect: usb host disconnect status.
   * @bvalid_irq: IRQ number assigned for vbus valid rise detection.
   * @id_irq: IRQ number assigned for ID pin detection.
-@@ -200,6 +204,8 @@ struct rockchip_usb2phy_port {
+@@ -209,6 +212,8 @@
  	unsigned int	port_id;
  	bool		suspended;
  	bool		vbus_attached;
@@ -53,7 +28,7 @@ index 1bbff11..xxxxxxx 100644
  	bool            host_disconnect;
  	int		bvalid_irq;
  	int		id_irq;
-@@ -641,6 +647,24 @@ static const struct phy_ops rockchip_usb2phy_ops = {
+@@ -640,6 +645,24 @@
  	.owner		= THIS_MODULE,
  };
  
@@ -78,7 +53,7 @@ index 1bbff11..xxxxxxx 100644
  static void rockchip_usb2phy_otg_sm_work(struct work_struct *work)
  {
  	struct rockchip_usb2phy_port *rport =
-@@ -663,7 +687,7 @@ static void rockchip_usb2phy_otg_sm_work(struct work_struct *work)
+@@ -666,7 +689,7 @@
  			rockchip_usb2phy_power_off(rport->phy);
  		fallthrough;
  	case OTG_STATE_B_IDLE:
@@ -87,7 +62,7 @@ index 1bbff11..xxxxxxx 100644
  			dev_dbg(&rport->phy->dev, "usb otg host connect\n");
  			rport->state = OTG_STATE_A_HOST;
  			rockchip_usb2phy_power_on(rport->phy);
-@@ -737,7 +761,7 @@ static void rockchip_usb2phy_otg_sm_work(struct work_struct *work)
+@@ -740,7 +763,7 @@
  		sch_work = true;
  		break;
  	case OTG_STATE_A_HOST:
@@ -96,7 +71,7 @@ index 1bbff11..xxxxxxx 100644
  			dev_dbg(&rport->phy->dev, "usb otg host disconnect\n");
  			rport->state = OTG_STATE_B_IDLE;
  			rockchip_usb2phy_power_off(rport->phy);
-@@ -1010,6 +1034,75 @@ static irqreturn_t rockchip_usb2phy_bvalid_irq(int irq, void *data)
+@@ -1042,6 +1065,115 @@
  	return IRQ_HANDLED;
  }
  
@@ -212,12 +187,10 @@ index 1bbff11..xxxxxxx 100644
  static irqreturn_t rockchip_usb2phy_id_irq(int irq, void *data)
  {
  	struct rockchip_usb2phy_port *rport = data;
-@@ -1270,6 +1363,33 @@ static int rockchip_usb2phy_otg_port_init(struct rockchip_usb2phy *rphy,
- 	rport->suspended = true;
- 	rport->vbus_attached = false;
+@@ -1281,6 +1413,34 @@
  
-+	mutex_init(&rport->mutex);
-+
+ 	mutex_init(&rport->mutex);
+ 
 +	/*
 +	 * Get optional switch GPIO for USB signal routing.
 +	 * Some devices use a GPIO to multiplex USB signals between
@@ -249,16 +222,7 @@ index 1bbff11..xxxxxxx 100644
  	rport->mode = of_usb_get_dr_mode_by_phy(child_np, -1);
  	if (rport->mode == USB_DR_MODE_HOST ||
  	    rport->mode == USB_DR_MODE_UNKNOWN) {
-@@ -1277,8 +1397,6 @@ static int rockchip_usb2phy_otg_port_init(struct rockchip_usb2phy *rphy,
- 		goto out;
- 	}
- 
--	mutex_init(&rport->mutex);
--
- 	INIT_DELAYED_WORK(&rport->chg_work, rockchip_chg_detect_work);
- 	INIT_DELAYED_WORK(&rport->otg_sm_work, rockchip_usb2phy_otg_sm_work);
- 
-@@ -1509,6 +1627,12 @@ static int rockchip_usb2phy_probe(struct platform_device *pdev)
+@@ -1480,6 +1640,13 @@
  		}
  	}
  
@@ -272,5 +236,3 @@ index 1bbff11..xxxxxxx 100644
  	return PTR_ERR_OR_ZERO(provider);
  
  put_child:
--- 
-2.34.1

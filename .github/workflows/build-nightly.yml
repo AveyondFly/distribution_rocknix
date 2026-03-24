@@ -215,9 +215,8 @@ jobs:
          if [ $(git rev-list $COMMIT..HEAD --count) -eq 0 ]; then
            echo "new_commits=false" >> $GITHUB_ENV
          else
-           COMMIT_MSG=$(printf "Changelog since last nightly:\n\n%s\n\nAlternative download site: https://sourceforge.net/projects/rocknix/files/nightly/%s/" \
-           "$(git log --max-count=100 --format="- %s (by %an)" $COMMIT..$GITHUB_SHA | grep -v "Merge pull request")" \
-           "$(date +%Y%m%d)")
+           COMMIT_MSG=$(printf "Changelog since last nightly:\n\n%s" \
+           "$(git log --max-count=100 --format="- %s (by %an)" $COMMIT..$GITHUB_SHA | grep -v "Merge pull request")")
            echo "commit_msg<<EOF" >> "$GITHUB_OUTPUT"
            echo "$COMMIT_MSG" >> "$GITHUB_OUTPUT"
            echo "EOF" >> "$GITHUB_OUTPUT"
@@ -240,19 +239,24 @@ jobs:
          body: ${{ steps.create-nightly-tag.outputs.commit_msg }}
          token: ${{ steps.app-token.outputs.token }}
          repo: distribution-nightly
-     - name: Set up SSH sourceforge
+     - name: Install and login BaiduPCS-Go
        if: env.new_commits == 'true'
        run: |
-         mkdir -p ~/.ssh
-         echo "${{ secrets.SF_SSH_KEY }}" > ~/.ssh/id_ed25519
-         chmod 600 ~/.ssh/id_ed25519
-         ssh-keyscan frs.sourceforge.net >> ~/.ssh/known_hosts
-     - name: Upload files sourceforge
+         curl -Lo pcs.zip https://github.com/qjfoidnh/BaiduPCS-Go/releases/download/v3.9.9/BaiduPCS-Go-v3.9.9-linux-amd64.zip
+         unzip pcs.zip
+         mv BaiduPCS-Go-v3.9.9-linux-amd64/BaiduPCS-Go .
+         chmod +x BaiduPCS-Go
+         sudo mv BaiduPCS-Go /usr/local/bin/
+         BaiduPCS-Go login -cookies="${{ secrets.BAIDU_COOKIE }}"
+     - name: Upload files to Baidu Cloud
        if: env.new_commits == 'true'
        run: |
+         REMOTE_DIR="/rocknix/nightly/${{ env.DATE }}"
+         BaiduPCS-Go mkdir "$REMOTE_DIR" || echo "Directory may already exist"
          FILES=$(find . -type f \( -name "*.tar" -o -name "*.img.gz" -o -name "*.sha256" \))
          for FILE in $FILES; do
-           rsync -e ssh "$FILE" tiopex@frs.sourceforge.net:/home/frs/project/rocknix/nightly/${{ env.DATE }}/
+           echo "Uploading: $FILE"
+           BaiduPCS-Go upload "$FILE" "$REMOTE_DIR/"
          done         
 
   release-official:

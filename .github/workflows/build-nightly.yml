@@ -248,15 +248,19 @@ jobs:
          chmod +x BaiduPCS-Go
          sudo mv BaiduPCS-Go /usr/local/bin/
          BaiduPCS-Go login -cookies="${{ secrets.BAIDU_COOKIE }}"
+         BaiduPCS-Go who
      - name: Upload files to Baidu Cloud
        if: env.new_commits == 'true'
        run: |
-         REMOTE_DIR="/rocknix/nightly/${{ env.DATE }}"
+         BaiduPCS-Go mkdir "/rocknix" 2>/dev/null || true
+         BaiduPCS-Go mkdir "/rocknix/aurknix" 2>/dev/null || true
+         BaiduPCS-Go mkdir "/rocknix/aurknix/nightly" 2>/dev/null || true
+         REMOTE_DIR="/rocknix/aurknix/nightly/${{ env.DATE }}"
          BaiduPCS-Go mkdir "$REMOTE_DIR" || echo "Directory may already exist"
-         FILES=$(find . -type f \( -name "*.tar" -o -name "*.img.gz" -o -name "*.sha256" \))
+         FILES=$(find . -type f -name "*.img.gz")
          for FILE in $FILES; do
            echo "Uploading: $FILE"
-           BaiduPCS-Go upload "$FILE" "$REMOTE_DIR/"
+           BaiduPCS-Go upload "$FILE" "$REMOTE_DIR"
          done         
 
   release-official:

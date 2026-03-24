@@ -87,7 +87,7 @@ if [ "${HW_DEVICE}" = "S922X" ]; then
   fi
 fi
 
-if [ "$CORE" = "drastic_opt-sa" ]; then
+if [ "$CORE" = "drastic_adv-sa" ]; then
 	export LD_LIBRARY_PATH=/storage/.config/drastic/lib
 fi
 

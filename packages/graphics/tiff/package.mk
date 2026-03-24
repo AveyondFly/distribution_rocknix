@@ -12,7 +12,7 @@ PKG_DEPENDS_TARGET="toolchain libjpeg-turbo zlib"
 PKG_LONGDESC="libtiff is a library for reading and writing TIFF files."
 PKG_BUILD_FLAGS="+pic -gold"
 
-PKG_CMAKE_OPTS_TARGET="-DBUILD_SHARED_LIBS=OFF \
+PKG_CMAKE_OPTS_TARGET="-DBUILD_SHARED_LIBS=ON \
                        -Dtiff-tools=OFF \
                        -Dtiff-tests=OFF \
                        -Dtiff-contrib=OFF \

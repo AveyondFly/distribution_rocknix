@@ -45,7 +45,7 @@ fi
 ln -sfv ${MEMCARDS_DIR} ${CONF_DIR}/memcards
 
 #Link gamecontrollerdb.txt
-ln -sf /usr/config/SDL-GameControllerDB/gamecontrollerdb.txt "${CONF_DIR}/gamecontrollerdb.txt"
+ln -s /storage/.config/gptokeyb/gamecontrollerdb.txt "${CONF_DIR}/gamecontrollerdb.txt"
 
 #Emulation Station Features
 GAME=$(echo "${1}"| sed "s#^/.*/##")

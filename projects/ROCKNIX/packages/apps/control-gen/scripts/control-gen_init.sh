@@ -9,7 +9,7 @@ if [ ! -d "/storage/.config/gptokeyb" ]; then
 fi
 
 #Link gamecontrollerdb.txt
-ln -sf /usr/config/SDL-GameControllerDB/gamecontrollerdb.txt /storage/.config/gptokeyb/gamecontrollerdb.txt
+ln -s /usr/config/SDL-GameControllerDB/gamecontrollerdb.txt /storage/.config/gptokeyb/gamecontrollerdb.txt
 
 #Link gptokeyb
 ln -sf /usr/bin/gptokeyb /storage/.config/gptokeyb/gptokeyb

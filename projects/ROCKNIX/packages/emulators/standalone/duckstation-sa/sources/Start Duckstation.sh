@@ -25,6 +25,6 @@ ln -sfv "${CONF_DIR}" "${APPIMAGE_CONF_DIR}"
 [ ! -f "${CONF_FILE}" ] && cp ${IMMUTABLE_CONF_FILE} ${CONF_FILE}
 
 #Link gamecontrollerdb.txt
-ln -sf /usr/config/SDL-GameControllerDB/gamecontrollerdb.txt "${CONF_DIR}/gamecontrollerdb.txt"
+ln -s /storage/.config/gptokeyb/gamecontrollerdb.txt "${CONF_DIR}/gamecontrollerdb.txt"
 
 /usr/bin/duckstation-sa -fullscreen -bigpicture

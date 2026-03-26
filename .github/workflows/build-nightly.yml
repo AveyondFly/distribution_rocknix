@@ -242,13 +242,13 @@ jobs:
      - name: Install and login BaiduPCS-Go
        if: env.new_commits == 'true'
        run: |
-         curl -Lo pcs.zip https://github.com/qjfoidnh/BaiduPCS-Go/releases/download/v3.9.9/BaiduPCS-Go-v3.9.9-linux-amd64.zip
+         curl -Lo pcs.zip https://github.com/qjfoidnh/BaiduPCS-Go/releases/download/v4.0.0/BaiduPCS-Go-v4.0.0-linux-amd64.zip
          unzip pcs.zip
-         mv BaiduPCS-Go-v3.9.9-linux-amd64/BaiduPCS-Go .
+         mv BaiduPCS-Go-v4.0.0-linux-amd64/BaiduPCS-Go .
          chmod +x BaiduPCS-Go
          sudo mv BaiduPCS-Go /usr/local/bin/
-         BaiduPCS-Go login -cookies="${{ secrets.BAIDU_COOKIE }}"
-         BaiduPCS-Go who
+         BaiduPCS-Go login -cookies="${{ secrets.BAIDU_COOKIE }}" > /dev/null 2>&1
+         BaiduPCS-Go who > /dev/null 2>&1
      - name: Upload files to Baidu Cloud
        if: env.new_commits == 'true'
        run: |
@@ -260,7 +260,7 @@ jobs:
          FILES=$(find . -type f -name "*.img.gz")
          for FILE in $FILES; do
            echo "Uploading: $FILE"
-           BaiduPCS-Go upload "$FILE" "$REMOTE_DIR"
+           BaiduPCS-Go upload --norapid "$FILE" "$REMOTE_DIR"
          done         
 
   release-official:

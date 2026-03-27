@@ -355,7 +355,20 @@
 		regulator-boot-on;
 	};
 
-    
+    	vcc18_lcd0: vcc18-lcd0 {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc18_lcd0_n";
+		gpio = <&gpio0 RK_PB5 GPIO_ACTIVE_HIGH>;
+		enable-active-low;
+		pinctrl-0 = <&vcc18_lcd_n>;
+		pinctrl-names = "default";
+		regulator-boot-on;
+		
+		regulator-state-mem {
+			regulator-off-in-suspend;
+		};
+	};
+
     vcc_host: vcc_host {
         compatible = "regulator-fixed";
         regulator-name = "vcc_host";
@@ -849,6 +862,11 @@
         };
     };
 
+	vcc18-lcd {
+		vcc18_lcd_n: vcc18-lcd-n {
+			rockchip,pins = <0 RK_PB5 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
 
     vcc5-usb {
         vcc5_usb: vcc5-usb {

@@ -24,10 +24,10 @@ fi
 STARTUP_DEVICE=$(get_setting "audio.device")
 case "${2}" in
     "headphone")
-        amixer -c 0 -M cset name=${DEVICE_PLAYBACK_PATH} ${DEVICE_PLAYBACK_PATH_HP}
+        amixer -c 0 -M cset name="${DEVICE_PLAYBACK_PATH}" ${DEVICE_PLAYBACK_PATH_HP}
     ;;
     "auto"|"speakers"|*)
-        amixer -c 0 -M cset name=${DEVICE_PLAYBACK_PATH} ${DEVICE_PLAYBACK_PATH_SPK}
+        amixer -c 0 -M cset name="${DEVICE_PLAYBACK_PATH}" ${DEVICE_PLAYBACK_PATH_SPK}
     ;;
 esac
 

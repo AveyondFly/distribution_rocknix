@@ -26,6 +26,8 @@ jobs:
         include:
           - device: RK3326
             project: ROCKNIX
+          - device: RK3326S
+            project: ROCKNIX
           - device: RK3399
             project: ROCKNIX
           - device: RK3566

@@ -1,0 +1,49 @@
+From: Local User <local@localhost>
+Date: Thu, 27 Mar 2026 00:00:00 +0000
+Subject: [PATCH] arm64: dts: rockchip: px30: add GPU bifrost properties
+
+Add missing properties for Mali Bifrost GPU driver:
+- clock-names = "bus"
+- resets for GPU reset control
+- power_policy = "coarse_demand"
+- power_model@1 for mali-g31-power-model
+
+Signed-off-by: Local User <local@localhost>
+---
+ arch/arm64/boot/dts/rockchip/px30.dtsi | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/rockchip/px30.dtsi b/arch/arm64/boot/dts/rockchip/px30.dtsi
+index 1234567..abcdefg 100644
+--- a/arch/arm64/boot/dts/rockchip/px30.dtsi
++++ b/arch/arm64/boot/dts/rockchip/px30.dtsi
+@@ -1517,19 +1517,26 @@
+ 			     <GIC_SPI 47 IRQ_TYPE_LEVEL_HIGH>;
+ 		interrupt-names = "GPU", "MMU", "JOB";
+ 		clocks = <&cru SCLK_GPU>;
++		clock-names = "bus";
++		resets = <&cru SRST_GPU>;
+ 		#cooling-cells = <2>;
+ 		power-domains = <&power PX30_PD_GPU>;
++		power_policy = "coarse_demand";
+ 		operating-points-v2 = <&gpu_opp_table>;
+ 		upthreshold = <40>;
+ 		downdifferential = <10>;
+ 		status = "disabled";
+-		power_model {
++		power_model@0 {
+ 			compatible = "arm,mali-simple-power-model";
+ 			static-coefficient = <411000>;
+ 			dynamic-coefficient = <733>;
+ 			ts = <32000 4700 (-80) 2>;
+ 			thermal-zone = "gpu-thermal";
+ 		};
++		power_model@1 {
++			compatible = "arm,mali-g31-power-model";
++			scale = <5>;
++		};
+ 	};
+ 
+ 	gpu_opp_table: gpu-opp-table {
+-- 
+2.39.0

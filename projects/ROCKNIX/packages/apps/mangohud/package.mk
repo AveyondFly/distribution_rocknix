@@ -75,7 +75,7 @@ post_makeinstall_target() {
 
   # Customize config per platform, eg set font size for display resolution
   case ${DEVICE} in
-    RK3326)
+    RK3326*)
       sed -e "s/@FONT_SIZE@/30/g" -i ${INSTALL}/usr/config/MangoHud/MangoHud.conf
     ;;
     S922X|S905L3A)

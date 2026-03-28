@@ -65,7 +65,7 @@ mkimage_bootscr() {
 mkimage_dtb() {
   echo "image: copying device trees..."
   case "$DEVICE" in
-    RK3326)
+    RK3326*)
       mcopy "${RELEASE_DIR}/3rdparty/bootloader/device_trees/"*.dtb ::
       mcopy "${RELEASE_DIR}/3rdparty/bootloader/stock" ::
       mcopy "${RELEASE_DIR}/3rdparty/bootloader/overlays" ::

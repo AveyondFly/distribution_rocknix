@@ -19,7 +19,7 @@ PKG_PATCH_DIRS="${LINUX} mainline ${DEVICE} default"
 [[ "${DEVICE}" == SM* || "${BUILD_ANDROID_BOOTIMG}" == "yes" ]] && PKG_DEPENDS_TARGET+=" mkbootimg:host"
 
 case ${DEVICE} in
-  RK3562)
+  RK3326S|RK3562)
     PKG_VERSION="1ba51b059f25533c5529b7f68186190b47d6a7b3"
     PKG_URL="https://github.com/rockchip-linux/kernel/archive/${PKG_VERSION}.tar.gz"
     PKG_GIT_CLONE_BRANCH="develop-6.6"
@@ -81,7 +81,7 @@ for pkg in $(get_pkg_variable initramfs PKG_DEPENDS_TARGET); do
   ! listcontains "${PKG_DEPENDS_TARGET}" "${pkg}" && PKG_DEPENDS_TARGET+=" ${pkg}" || true
 done
 
-if [ "${DEVICE}" = "RK3326" -o "${DEVICE}" = "RK3566" ]; then
+if [[ "${DEVICE}" == RK3326* ]] || [ "${DEVICE}" = "RK3566" ]; then
   PKG_DEPENDS_UNPACK+=" generic-dsi"
 elif [ "${DEVICE}" = "SM8250" -o "${DEVICE}" = "SDM845" -o "${DEVICE}" = "H700" ]; then
   PKG_DEPENDS_UNPACK+=" kernel-firmware"
@@ -97,7 +97,7 @@ post_patch() {
     cp -p ${PKG_INSTALL}/.image/Module.symvers ${PKG_BUILD}
   fi
 
-  if [ "${DEVICE}" = "RK3326" -o "${DEVICE}" = "RK3566" ]; then
+  if [[ "${DEVICE}" == RK3326* ]] || [ "${DEVICE}" = "RK3566" ]; then
     cp -v $(get_pkg_directory generic-dsi)/sources/panel-generic-dsi.c ${PKG_BUILD}/drivers/gpu/drm/panel/
     echo "obj-y" += panel-generic-dsi.o >> ${PKG_BUILD}/drivers/gpu/drm/panel/Makefile
   fi
@@ -384,7 +384,7 @@ makeinstall_target() {
     mkdir -p ${INSTALL}/usr/share/bootloader
     for dtb in arch/${TARGET_KERNEL_ARCH}/boot/dts/**/*.dtb; do
       if [ -f ${dtb} ]; then
-        if [ "${DEVICE}" = "H700" -o "${DEVICE}" = "RK3326" -o "${DEVICE}" = "RK3399" -o "${DEVICE}" = "RK3562" -o "${DEVICE}" = "RK3566" -o "${DEVICE}" = "RK3588" ]; then
+        if [[ "${DEVICE}" == RK3326* ]] || [ "${DEVICE}" = "H700" -o "${DEVICE}" = "RK3399" -o "${DEVICE}" = "RK3562" -o "${DEVICE}" = "RK3566" -o "${DEVICE}" = "RK3588" ]; then
           mkdir -p ${INSTALL}/usr/share/bootloader/device_trees
           cp -v ${dtb} ${INSTALL}/usr/share/bootloader/device_trees
         else

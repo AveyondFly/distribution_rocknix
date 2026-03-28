@@ -70,6 +70,9 @@
       <file>rk3326-xifan-xf40v</file>
     </b>
   </RK3326>
+  <RK3326S mkimage_options="dtb,extlinux,uboot" fdt="device_trees/rk3326-gamemt-e6s.dtb" fdt_type="fdt" dtb_prefix="rockchip">
+    <file>rk3326-gamemt-e6s</file>
+  </RK3326S>
   <RK3399 mkimage_options="dtb,extlinux,uboot" fdt="device_trees/rk3399-anbernic-rg552.dtb" fdt_type="fdt" dtb_prefix="rockchip">
     <file>rk3399-anbernic-rg552</file>
   </RK3399>

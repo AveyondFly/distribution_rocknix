@@ -50,6 +50,11 @@ This is an **unofficial** fork of ROCKNIX that provides support for additional d
 |-------|--------|
 | RO520C | LP3X-V10 |
 
+#### RK3326S Devices (6.6 BSP Kernel)
+| Brand | Models |
+|-------|--------|
+| TBD | TBD |
+
 ## Features
 
 * ROCKNIX has a very active community of developers and users.

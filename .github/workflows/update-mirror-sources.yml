@@ -37,6 +37,7 @@ jobs:
         with:
           command: |
             PROJECT=ROCKNIX DEVICE=RK3326 ./tools/download-tool 
+            PROJECT=ROCKNIX DEVICE=RK3326S ./tools/download-tool 
             PROJECT=ROCKNIX DEVICE=RK3399 ./tools/download-tool 
             PROJECT=ROCKNIX DEVICE=RK3566 ./tools/download-tool 
             PROJECT=ROCKNIX DEVICE=RK3588 ./tools/download-tool 

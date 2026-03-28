@@ -30,7 +30,7 @@ DISABLED_MODULES+=" --disable-apple2 \
                     --disable-ssfplay"
 
 case ${DEVICE} in
-  RK3326|RK3566*|RK3562|H700)
+  RK3326*|RK3566*|RK3562|H700)
     DISABLED_MODULES+=" --disable-snes \
                         --disable-ss \
                         --disable-psx"

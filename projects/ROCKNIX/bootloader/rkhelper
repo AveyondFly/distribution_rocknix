@@ -5,7 +5,7 @@ PKG_SOC="${DEVICE/RK/rk}"
 
 # Make idbloader.img
 case "${DEVICE}" in
-  RK3326)
+  RK3326*)
     # mkimage does not support packing second level bootloader on rk3326
     ${PKG_BUILD}/tools/mkimage -n px30 -T rksd -d "${PKG_DDR_BIN}" -C bzip2 idbloader.img
     cat ${PKG_MINILOADER} >> idbloader.img
@@ -18,14 +18,14 @@ esac
 
 # Pack uboot.img
 case "${DEVICE}" in
-  RK3326|RK3399)
+  RK3326*|RK3399)
     ${PKG_RKBIN}/tools/loaderimage --pack --uboot u-boot-dtb.bin uboot.img 0x00200000
     ;;
 esac
 
 # Merge trust.img
 case "${DEVICE}" in
-  RK3326)
+  RK3326*)
     cat >trust.ini <<EOF
 [BL30_OPTION]
 SEC=0

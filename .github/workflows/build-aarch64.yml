@@ -100,7 +100,7 @@ jobs:
           if-no-files-found: error
 
       - name: Build modules
-        if: ${{ inputs.DEVICE == 'RK3326' || inputs.DEVICE == 'H700' }}
+        if: ${{ inputs.DEVICE == 'RK3326' || inputs.DEVICE == 'RK3326S' || inputs.DEVICE == 'H700' }}
         uses: corrupt952/actions-retry-command@v1.0.7
         with:
           command: |

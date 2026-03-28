@@ -13,6 +13,11 @@ on:
         required: false
         default: false
         type: boolean
+      RK3326S:
+        description: 'RK3326S'
+        required: false
+        default: false
+        type: boolean
       RK3399:
         description: 'RK3399'
         required: false
@@ -96,6 +101,7 @@ jobs:
         run: |
           declare -A DEVICE_INPUTS=(
             ["RK3326"]="${{ inputs.RK3326 }}"
+            ["RK3326S"]="${{ inputs.RK3326S }}"
             ["RK3399"]="${{ inputs.RK3399 }}"
             ["RK3566"]="${{ inputs.RK3566 }}"
             ["RK3588"]="${{ inputs.RK3588 }}"
@@ -122,7 +128,7 @@ jobs:
           done
           
           if [[ -z "$SELECTED_MATRIX" ]]; then
-            MATRIX='[{"device":"RK3326","project":"ROCKNIX"},{"device":"RK3399","project":"ROCKNIX"},{"device":"RK3566","project":"ROCKNIX"},{"device":"RK3588","project":"ROCKNIX"},{"device":"S922X","project":"ROCKNIX"},{"device":"H700","project":"ROCKNIX"},{"device":"SDM845","project":"ROCKNIX"},{"device":"SM8250","project":"ROCKNIX"},{"device":"SM8550","project":"ROCKNIX"},{"device":"SM8650","project":"ROCKNIX"},{"device":"S905L3A","project":"ROCKNIX"},{"device":"RK3562","project":"ROCKNIX"}]'
+            MATRIX='[{"device":"RK3326","project":"ROCKNIX"},{"device":"RK3326S","project":"ROCKNIX"},{"device":"RK3399","project":"ROCKNIX"},{"device":"RK3566","project":"ROCKNIX"},{"device":"RK3588","project":"ROCKNIX"},{"device":"S922X","project":"ROCKNIX"},{"device":"H700","project":"ROCKNIX"},{"device":"SDM845","project":"ROCKNIX"},{"device":"SM8250","project":"ROCKNIX"},{"device":"SM8550","project":"ROCKNIX"},{"device":"SM8650","project":"ROCKNIX"},{"device":"S905L3A","project":"ROCKNIX"},{"device":"RK3562","project":"ROCKNIX"}]'
           else
             MATRIX="[$SELECTED_MATRIX]"
           fi

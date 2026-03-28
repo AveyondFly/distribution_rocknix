@@ -1,0 +1,64 @@
+--- mali-bifrost-r52p0-00eac0/product/kernel/drivers/gpu/arm/midgard/platform/devicetree/mali_kbase_runtime_pm.c.orig	2026-03-27 20:46:14.593944039 +0800
++++ mali-bifrost-r52p0-00eac0/product/kernel/drivers/gpu/arm/midgard/platform/devicetree/mali_kbase_runtime_pm.c	2026-03-27 21:33:27.013395075 +0800
+@@ -38,7 +38,10 @@
+ 	for (i = 0; i < kbdev->nr_regulators; i++) {
+ 		if (WARN_ON(kbdev->regulators[i] == NULL))
+ 			;
+-		else if (!regulator_is_enabled(kbdev->regulators[i]))
++		else
++			/* Always call regulator_enable() to maintain proper
++			 * reference counting, regardless of current state.
++			 */
+ 			WARN_ON(regulator_enable(kbdev->regulators[i]));
+ 	}
+ #endif
+@@ -60,7 +63,9 @@
+ 			;
+ 		else if (__clk_is_enabled(kbdev->clocks[i])) {
+ 			clk_disable_unprepare(kbdev->clocks[i]);
+-			WARN_ON(__clk_is_enabled(kbdev->clocks[i]));
++			/* Shared clocks may still be enabled by other modules,
++			 * so skip the WARN_ON check for __clk_is_enabled.
++			 */
+ 		}
+ 	}
+ 
+@@ -68,7 +73,10 @@
+ 	for (i = 0; i < kbdev->nr_regulators; i++) {
+ 		if (WARN_ON(kbdev->regulators[i] == NULL))
+ 			;
+-		else if (regulator_is_enabled(kbdev->regulators[i]))
++		else
++			/* Always call regulator_disable() to maintain proper
++			 * reference counting, matching the enable call.
++			 */
+ 			WARN_ON(regulator_disable(kbdev->regulators[i]));
+ 	}
+ #endif
+@@ -207,6 +215,11 @@
+ 
+ 	dev_dbg(kbdev->dev, "%s\n", __func__);
+ 
++	/* Enable power control before telling runtime PM the device is active.
++	 * This ensures regulator reference counting is correct.
++	 */
++	enable_gpu_power_control(kbdev);
++
+ 	pm_runtime_set_autosuspend_delay(kbdev->dev, AUTO_SUSPEND_DELAY);
+ 	pm_runtime_use_autosuspend(kbdev->dev);
+ 
+@@ -234,6 +247,14 @@
+ 			 __func__, atomic_read(&kbdev->dev->power.usage_count));
+ 
+ 	pm_runtime_disable(kbdev->dev);
++
++	/* Disable power control to match the enable in runtime init.
++	 * This must be called after pm_runtime_disable() to ensure
++	 * no runtime PM operations are in progress.
++	 */
++#if !MALI_USE_CSF
++	disable_gpu_power_control(kbdev);
++#endif
+ }
+ #endif /* KBASE_PM_RUNTIME */
+ 

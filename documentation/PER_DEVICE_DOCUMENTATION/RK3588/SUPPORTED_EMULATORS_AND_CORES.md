@@ -11,7 +11,8 @@
 |Apple|Macintosh (macintosh)|1984|`mac`|.dsk .img .hfv .cmd .zip|**retroarch:** minivmac (default)<br>|
 |Arcade|Arcade (arcade)|0000|`arcade`|.zip .7z|**retroarch:** mame2003_plus (default)<br>**retroarch:** mame2010<br>**retroarch:** mame2015<br>**retroarch:** fbneo<br>**retroarch:** fbalpha2012<br>**retroarch:** fbalpha2019<br>**retroarch:** mame<br>|
 |Arcade|Daphne (daphne)|1996|`daphne`|.daphne .singe|**hypseus-singe:** hypseus-singe (default)<br>**retroarch:** daphne<br>|
-|Arcade|Final Burn Neo (fbn)|2002|`fbneo`|.7z .zip|**retroarch:** fbneo (default)<br>**retroarch:** mame2003_plus<br>**retroarch:** mame2010<br>**retroarch:** mame2015<br>**retroarch:** mame<br>**retroarch:** fbalpha2012<br>**retroarch:** fbalpha2019<br>|
+|Arcade|Final Burn Neo (fbn)|2002|`fbneo`|.7z .zip .fid .hak .FID .HAK|**retroarch:** fbneoplus (default)<br>**retroarch:** fbneo<br>**retroarch:** mame2003_plus<br>**retroarch:** mame2010<br>**retroarch:** mame2015<br>**retroarch:** mame<br>**retroarch:** fbalpha2012<br>**retroarch:** fbalpha2019<br>|
+|Arcade|Homebrew Mame (hbmame)|0000|`hbmame`|.zip .7z|**retroarch:** fbalpha2012_32b (default)<br>**retroarch:** nebularm_32b<br>**retroarch:** nebularm_legacy_32b<br>**retroarch:** fbneo_32b<br>**retroarch:** mame2003_plus_32b<br>|
 |Arcade|MAME (mame)|1997|`mame`|.7z .zip|**retroarch:** mame2003_plus (default)<br>**retroarch:** mame2010<br>**retroarch:** mame2015<br>**retroarch:** mame<br>**retroarch:** fbneo<br>**retroarch:** fbalpha2012<br>**retroarch:** fbalpha2019<br>|
 |Arduboy|Arduboy (arduboy)|2014|`arduboy`|.hex|**retroarch:** arduous (default)<br>|
 |Atari|Atari 2600 (atari2600)|1977|`atari2600`|.a26 .bin .zip .7z|**retroarch:** stella (default)<br>|
@@ -24,6 +25,7 @@
 |Bandai|SuFami Turbo (sufami)|1996|`sufami`|.st .zip .7z|**retroarch:** snes9x (default)<br>|
 |Bandai|Wonderswan (wonderswan)|1999|`wonderswan`|.ws .wsc .zip .7z|**retroarch:** beetle_wswan (default)<br>**mednafen:** wswan<br>|
 |Bandai|Wonderswan Color (wonderswancolor)|2000|`wonderswancolor`|.ws .wsc .zip .7z|**retroarch:** beetle_wswan (default)<br>**mednafen:** wswan<br>|
+|BBK|BBK 4980 (bbk)|2002|`bbk`|.bin .BIN .gam|**retroarch:** gam4980 (default)<br>|
 |belogic|Uzebox (uzebox)|2008|`uzebox`|.uze|**retroarch:** uzem (default)<br>|
 |Capcom|CPS-I (cps1)|1988|`cps1`|.zip .7z|**retroarch:** fbneo (default)<br>**retroarch:** mame2003_plus<br>**retroarch:** mame2010<br>**retroarch:** fbalpha2012<br>**AdvanceMame:** AdvanceMame<br>|
 |Capcom|CPS-II (cps2)|1993|`cps2`|.zip .7z|**retroarch:** fbneo (default)<br>**retroarch:** mame2003_plus<br>**retroarch:** mame2010<br>**retroarch:** fbalpha2012<br>**AdvanceMame:** AdvanceMame<br>|
@@ -71,7 +73,7 @@
 |Nintendo|NES (Hacks) (nesh)|1985|`nesh`|.nes .unif .unf .zip .7z|**retroarch:** nestopia (default)<br>**retroarch:** fceumm<br>**retroarch:** quicknes<br>**retroarch:** mesen<br>**mednafen:** nesh<br>|
 |Nintendo|Nintendo 3DS (3ds)|2010|`3ds`|.3ds .3dsx .app .axf .cci .cxi .cia .elf .z3dsx .zcia .zcci .zcxi|**azahar:** azahar-sa (default)<br>|
 |Nintendo|Nintendo 64 (n64)|1996|`n64`|.z64 .n64 .v64 .zip .7z|**retroarch:** mupen64plus_next (default)<br>**retroarch:** mupen64plus<br>**retroarch:** parallel_n64<br>**mupen64plus:** mupen64plus-sa<br>|
-|Nintendo|Nintendo DS (nds)|2005|`nds`|.nds .zip .7z|**drastic:** drastic-sa (default)<br>**retroarch:** melonds<br>**retroarch:** melondsds<br>**melonds:** melonds-sa<br>**retroarch:** desmume<br>|
+|Nintendo|Nintendo DS (nds)|2005|`nds`|.nds .zip .7z|**drastic:** drastic_adv-sa (default)<br>**drastic:** drastic-sa<br>**retroarch:** melonds<br>**retroarch:** melondsds<br>**melonds:** melonds-sa<br>**retroarch:** desmume<br>|
 |Nintendo|Nintendo DSiWare (ndsiware)|2008|`ndsiware`|.nds .zip .7z|**retroarch:** melondsds (default)<br>**melonds:** melonds-sa<br>|
 |Nintendo|Nintendo Entertainment System (nes)|1985|`nes`|.nes .unif .unf .zip .7z|**retroarch:** nestopia (default)<br>**retroarch:** fceumm<br>**retroarch:** quicknes<br>**retroarch:** mesen<br>**mednafen:** nes<br>|
 |Nintendo|Pokémon Mini (pokemini)|2001|`pokemini`|.min .zip .7z|**retroarch:** pokemini (default)<br>|
@@ -118,11 +120,13 @@
 |Sony|PlayStation 2 (ps2)|2000|`ps2`|.iso .mdf .nrg .bin .img .dump .gz .cso .chd|**aethersx2:** aethersx2-sa (default)<br>|
 |Sony|PlayStation Portable (psp)|2004|`psp`|.iso .cso .pbp .chd|**ppsspp:** ppsspp-sa (default)<br>**retroarch:** ppsspp<br>|
 |Sony|PSP Minis (pspminis)|2004|`pspminis`|.iso .cso .pbp .chd|**ppsspp:** ppsspp-sa (default)<br>**retroarch:** ppsspp<br>|
-|Sun Microsystems|J2ME (j2me)|2002|`j2me`|.jar|**retroarch:** freej2me (default)<br>|
+|Sun Microsystems|J2ME (j2me)|2002|`j2me`|.jar|**retroarch:** freej2me<br>**freej2me:** freej2me (default)<br>|
 |Thomson|MO/TO family (TO7, TO7/70, TO8, TO8D, TO9, TO9+, MO5 and MO6) (moto)|1982|`moto`|.fd .sap .k7 .m7 .m5 .rom|**retroarch:** theodore (default)<br>|
 |Various|CHIP-8 / S-CHIP / XO-CHIP (chip-8)|1978|`chip-8`|.ch8 .sc8 .xo8|**retroarch:** jaxe (default)<br>|
 |Various|EasyRPG (easyrpg)|2003|`easyrpg`|.zip .easyrpg .ldb|**retroarch:** easyrpg (default)<br>|
-|Various|OpenBOR (openbor)|2003|`openbor`|.pak|**OpenBOR:** OpenBOR (default)<br>|
+|Various|ONScripter (onscripter)|2000|`onscripter`|.ons|**retroarch:** onsyuri (default)<br>|
+|Various|OpenBOR (openbor)|2003|`openbor`|.pak|**OpenBOR:** OpenBOR (default)<br>**OpenBOR:** OpenBOR-ff<br>|
+|Various|PyMO (pymo)|2008|`pymo`|.pymo|**cpymo:** cpymo (default)<br>|
 |Various|ScummVM (scummvm)|2001|`games`|.sh .svm .scummvm|**scummvmsa:** scummvm (default)<br>**retroarch:** scummvm<br>|
 |Various|Vircon32 (vircon32)|2021|`vircon32`|.v32|**retroarch:** vircon32 (default)<br>|
 |Various|WASM-4 (wasm4)|2017|`wasm4`|.wasm .wat|**retroarch:** wasm4 (default)<br>|

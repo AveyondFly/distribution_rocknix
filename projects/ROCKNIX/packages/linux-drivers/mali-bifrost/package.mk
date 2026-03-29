@@ -20,7 +20,7 @@ case ${DEVICE} in
   PKG_URL="https://developer.arm.com/-/media/Files/downloads/mali-drivers/kernel/mali-valhall-gpu/VX504X08X-SW-99002-${PKG_VERSION}.tar"
   ;;
   *)
-  PKG_VERSION="b1405e8f82d26381ce94d79e47586531ea7a54db"
+  PKG_VERSION="422e192b7e3aa3140f34de34765b798817c1f749"
   PKG_URL="http://github.com/rocknix/mali_kbase/archive/${PKG_VERSION}.tar.gz"
   ;;
 esac

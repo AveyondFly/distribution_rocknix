@@ -2,11 +2,14 @@
 # Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
 
 PKG_NAME="u-boot"
-PKG_VERSION="v2025.10"
+PKG_VERSION="e769657b0aff93eabd97fdc8f80f5808f3d58312"
+PKG_SHA256="skip"
 PKG_LICENSE="GPL"
-PKG_SITE="https://www.denx.de/wiki/U-Boot"
-PKG_URL="https://github.com/u-boot/u-boot/archive/refs/tags/${PKG_VERSION}.tar.gz"
-PKG_DEPENDS_TARGET="toolchain Python3:host swig:host pyelftools:host u-boot-legacy"
+PKG_SITE="https://github.com/AveyondFly/u-boot"
+PKG_URL="${PKG_SITE}.git"
+PKG_GIT_CLONE_BRANCH="next-dev"
+GET_HANDLER_SUPPORT="git"
+PKG_DEPENDS_TARGET="toolchain Python3:host swig:host pyelftools:host"
 PKG_LONGDESC="Das U-Boot is a cross-platform bootloader for embedded systems."
 PKG_TOOLCHAIN="manual"
 
@@ -19,12 +22,12 @@ if [ -n "${UBOOT_FIRMWARE}" ]; then
 fi
 
 pre_make_target() {
-  PKG_UBOOT_CONFIG="rk3326-handheld_defconfig"
+  PKG_UBOOT_CONFIG="evb-rk3326_defconfig"
   PKG_RKBIN="$(get_build_dir rkbin)"
   PKG_MINILOADER="${PKG_RKBIN}/bin/rk33/rk3326_miniloader_v1.40.bin"
   PKG_BL31="${PKG_RKBIN}/bin/rk33/rk3326_bl31_v1.34.elf"
+  PKG_BL32="${PKG_RKBIN}/bin/rk33/rk3326_bl32_v2.18.bin"
   PKG_DDR_BIN="${PKG_RKBIN}/bin/rk33/rk3326_ddr_333MHz_v2.11.bin"
-  PKG_DDR_BIN_UART5="${PKG_RKBIN}/rk3326_ddr_uart5.bin"
 }
 
 make_target() {
@@ -39,65 +42,15 @@ make_target() {
   DEBUG=${PKG_DEBUG} CROSS_COMPILE="${TARGET_KERNEL_PREFIX}" LDFLAGS="" ARCH=arm \
         _python_sysroot="${TOOLCHAIN}" _python_prefix=/ _python_exec_prefix=/ \
         make HOSTCC="${HOST_CC}" HOSTLDFLAGS="-L${TOOLCHAIN}/lib" HOSTSTRIP="true" \
-        u-boot-dtb.bin
+        -j$(nproc)
   . ${RKHELPER}
-  mv uboot.bin uboot.bin.default
-
-  ./scripts/config --set-val CONFIG_DEBUG_UART_BASE 0xFF178000
-  ./scripts/config --set-str CONFIG_DEVICE_TREE_INCLUDES "rk3326-odroid-go2-emmc.dtsi rk3326-odroid-go2-uart5.dtsi"
-  DEBUG=${PKG_DEBUG} CROSS_COMPILE="${TARGET_KERNEL_PREFIX}" LDFLAGS="" ARCH=arm \
-        _python_sysroot="${TOOLCHAIN}" _python_prefix=/ _python_exec_prefix=/ \
-        make HOSTCC="${HOST_CC}" HOSTLDFLAGS="-L${TOOLCHAIN}/lib" HOSTSTRIP="true" \
-        u-boot-dtb.bin
-  PKG_DDR_BIN=${PKG_DDR_BIN_UART5} . ${RKHELPER}
-  mv uboot.bin uboot.bin.uart5
-}
-
-generate_custom_extlinux_conf_files() {
-  INI_FILES=""
-  for SUBDEVICE in ${SUBDEVICES}; do
-    if find_file_path config/${SUBDEVICE}_boot.ini; then
-      INI_FILES="${INI_FILES} ${FOUND_PATH}"
-    fi
-  done
-  EXTLCONF0=${INSTALL}/usr/share/bootloader/extlinux/extlinux.conf
-
-  echo "INI_FILES ${INI_FILES}"
-  for dtbase in $(xmlstarlet sel -t -v "//rocknix/${DEVICE}/*" ${CONFIGXML}); do
-    if ! grep -q "\<${dtbase}.dtb" ${INI_FILES}; then
-      EXTLCONF=${EXTLCONF0}.${dtbase##*-}
-      echo "Generating ${EXTLCONF} for ${dtbase}"
-      sed '/##/d;s|^.* FDT .*$|  FDT /'${dtbase}'.dtb|' ${EXTLCONF0} > ${EXTLCONF0}.${dtbase##*-}
-    fi
-  done
 }
 
 makeinstall_target() {
   mkdir -p $INSTALL/usr/share/bootloader
+  cp -av uboot.bin "${INSTALL}/usr/share/bootloader/uboot.bin"
 
-  for SUBDEVICE in ${SUBDEVICES}; do
-    if find_file_path config/${SUBDEVICE}_boot.ini; then
-      cp -av ${FOUND_PATH} .
-      sed -e "s/@DISTRO_BOOTLABEL@/${DISTRO_BOOTLABEL}/" \
-          -e "s/@DISTRO_DISKLABEL@/${DISTRO_DISKLABEL}/" \
-          -e "s/@EXTRA_CMDLINE@/${EXTRA_CMDLINE}/" \
-          -i "${SUBDEVICE}_boot.ini"
-      ./tools/mkimage -T script -d "${SUBDEVICE}_boot.ini" "${SUBDEVICE}_boot.scr"
-      cp -av "${SUBDEVICE}_boot.scr" "${INSTALL}/usr/share/bootloader/"
-    fi
-  done
-
-  cp -av uboot.bin.default "${INSTALL}/usr/share/bootloader/b_uboot.bin"
-  cp -av uboot.bin.uart5 "${INSTALL}/usr/share/bootloader/b_uboot.bin.uart5"
-  cp -av uboot.bin.default "${INSTALL}/usr/share/bootloader/uboot.bin"
-
-  find_dir_path config/extlinux || exit 3
-  cp -av ${FOUND_PATH} "${INSTALL}/usr/share/bootloader/"
-  sed -e "s/@EXTRA_CMDLINE@/${EXTRA_CMDLINE}/" \
-    -i ${INSTALL}/usr/share/bootloader/extlinux/*
-
-  generate_custom_extlinux_conf_files
-
-  find_dir_path config/stock && cp -av ${FOUND_PATH} "${INSTALL}/usr/share/bootloader/"
-  find_dir_path config/overlays && cp -av ${FOUND_PATH} "${INSTALL}/usr/share/bootloader/"
+  # Copy u-boot dtb for late initialization
+  mkdir -p $INSTALL/usr/share/bootloader/device_trees
+  cp -v ${PKG_DIR}/dtb/*.dtb ${INSTALL}/usr/share/bootloader/device_trees/
 }

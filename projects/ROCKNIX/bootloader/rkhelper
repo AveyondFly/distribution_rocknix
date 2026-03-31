@@ -25,7 +25,29 @@ esac
 
 # Merge trust.img
 case "${DEVICE}" in
-  RK3326*)
+  RK3326S)
+    cat >trust.ini <<EOF
+[VERSION]
+MAJOR=1
+MINOR=0
+[BL30_OPTION]
+SEC=0
+[BL31_OPTION]
+SEC=1
+PATH=${PKG_BL31}
+ADDR=0x00040000
+[BL32_OPTION]
+SEC=1
+PATH=${PKG_BL32}
+ADDR=0x08400000
+[BL33_OPTION]
+SEC=0
+[OUTPUT]
+PATH=trust.img
+EOF
+    ${PKG_RKBIN}/tools/trust_merger trust.ini
+    ;;
+  RK3326)
     cat >trust.ini <<EOF
 [BL30_OPTION]
 SEC=0

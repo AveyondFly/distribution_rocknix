@@ -422,7 +422,7 @@ makeinstall_target() {
   ### iD Software game engines
   add_emu_core idtech retroarch idtech
   add_es_system idtech
-  install_script "Scan id Tech Files.sh"
+  install_script "Scan id Tech Games.sh"
 
   ### Apple Macintosh Plus
   add_emu_core macintosh retroarch minivmac true
@@ -1052,6 +1052,8 @@ makeinstall_target() {
   add_emu_core scummvm scummvmsa scummvm true
   add_emu_core scummvm retroarch scummvm false
   add_es_system scummvm
+  add_system_dir /storage/roms/scummvm
+  install_script "Scan ScummVM Games.sh"
   install_script "Start ScummVM.sh"
 
   ### Joseph Weisbecker CHIP-8

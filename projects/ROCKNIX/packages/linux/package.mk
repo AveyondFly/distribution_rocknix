@@ -43,7 +43,7 @@ case ${DEVICE} in
         PKG_URL="https://www.kernel.org/pub/linux/kernel/v${PKG_VERSION/.*/}.x/${PKG_NAME}-${PKG_VERSION}.tar.xz"
         ;;
       S905L3A|S922X|RK3399|RK3566)
-        PKG_VERSION="6.18.20"
+        PKG_VERSION="6.18.21"
         PKG_URL="https://www.kernel.org/pub/linux/kernel/v${PKG_VERSION/.*/}.x/${PKG_NAME}-${PKG_VERSION}.tar.xz"
         ;;
       *)

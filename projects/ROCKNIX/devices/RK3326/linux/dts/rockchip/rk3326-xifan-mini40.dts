@@ -890,7 +890,7 @@
 	
 	vcc18-lcd {
 		vcc18_lcd_n: vcc18-lcd-n {
-			rockchip,pins = <3 RK_PA3 RK_FUNC_GPIO &pcfg_pull_none>;
+			rockchip,pins = <0 RK_PB5 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 	

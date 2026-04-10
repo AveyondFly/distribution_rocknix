@@ -58,6 +58,22 @@ if [ -e /storage/.please_resize_me ] ; then
 
   # just in case
   if [ ! -z "$DISK" -a ! -z "$PART" ] ; then
+    # resize_storage_XXG needs disk size strictly past that boundary (room for GAMES)
+    if [ -n "$TARGET_SIZE" ]; then
+      DISK_BYTES=$(blockdev --getsize64 "$DISK" 2>/dev/null) || DISK_BYTES=0
+      TARGET_GIB=${TARGET_SIZE%G}
+      if awk -v b="$DISK_BYTES" -v gib="$TARGET_GIB" 'BEGIN {
+          need = gib * 1024 * 1024 * 1024
+          exit ((b + 0) > need) ? 0 : 1
+        }'; then
+        :
+      else
+        echo "resize_storage: disk too small for ${TARGET_SIZE} layout; falling back to full storage resize." | tee -a $LOG
+        TARGET_SIZE=
+        rm -f /flash/resize_storage_*
+      fi
+    fi
+
     umount $PART
 
     echo "PARTITION RESIZING IN PROGRESS"

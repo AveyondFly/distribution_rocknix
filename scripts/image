@@ -84,7 +84,7 @@ DISTRO_VERSION=$(date +%Y%m%d)
 # Get origin url, fix git:// and git@github.com: urls if necessary
 ORIGIN_URL="$(git remote -v | awk '$1 == "origin" { print $2 }' | head -1 | sed -e 's#\.git$##' -e 's#^git:#https:#' -e 's#^git@github\.com:#https://github.com/#' -e 's#://.*@#://#')"
 
-eval "$(base64 -d <<< aWYgWyAiJHtPRkZJQ0lBTH0iID0gInllcyIgXTsgdGhlbgogIGV4cG9ydCBPU19CVUlMRD0ib2ZmaWNpYWwiCmVsaWYgWyAiJHtOSUdIVExZfSIgPSAieWVzIiBdOyB0aGVuCiAgZXhwb3J0IE9TX0JVSUxEPSJuaWdodGx5IgplbHNlCiAgZXhwb3J0IE9TX0JVSUxEPSJjb21tdW5pdHkiCmZp)"
+export OS_BUILD="auknix"
 
 if [ -n "${CUSTOM_VERSION}" ]; then
   DISTRO_VERSION="${CUSTOM_VERSION}"

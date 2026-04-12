@@ -129,4 +129,5 @@ echo "============================================="
 
 show_image "success.png"
 # Keep success image on screen indefinitely until user powers off
-sleep infinity
+sleep 5
+killall -9 mpv 2>/dev/null

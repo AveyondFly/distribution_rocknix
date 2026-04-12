@@ -8,6 +8,9 @@ mkimage_uboot() {
     # RK3566-Generic and RK3566-Powkiddy_x55
     echo "image: writing ${SUBDEVICE}_uboot.bin to $(basename "${DISK}")..."
     dd if="${RELEASE_DIR}/3rdparty/bootloader/${SUBDEVICE}_uboot.bin" of="${DISK}" bs=512 seek=64 conv=sync,noerror,notrunc >"${SAVE_ERROR}" 2>&1 || show_error
+  elif [ -f "${RELEASE_DIR}/3rdparty/bootloader/b_uboot.bin" ]; then
+    echo "image: writing b_uboot.bin to $(basename "${DISK}")..."
+    dd if="${RELEASE_DIR}/3rdparty/bootloader/b_uboot.bin" of="${DISK}" bs=512 seek=64 conv=sync,noerror,notrunc >"${SAVE_ERROR}" 2>&1 || show_error
   elif [ -f "${RELEASE_DIR}/3rdparty/bootloader/uboot.bin" ]; then
     echo "image: writing uboot.bin to $(basename "${DISK}")..."
     dd if="${RELEASE_DIR}/3rdparty/bootloader/uboot.bin" of="${DISK}" bs=512 seek=64 conv=sync,noerror,notrunc >"${SAVE_ERROR}" 2>&1 || show_error
@@ -53,11 +56,18 @@ EOF
 }
 
 mkimage_bootscr() {
-  if [ -f "${RELEASE_DIR}/3rdparty/bootloader/${SUBDEVICE}_boot.scr" ]; then
+  if [ -n "${SUBDEVICE}" ] && [ -f "${RELEASE_DIR}/3rdparty/bootloader/${SUBDEVICE}_boot.scr" ]; then
     echo "image: copying ${SUBDEVICE}_boot.scr..."
     mcopy "${RELEASE_DIR}/3rdparty/bootloader/${SUBDEVICE}_boot.scr" ::/boot.scr
+  elif [ -f "${RELEASE_DIR}/3rdparty/bootloader/boot.scr" ]; then
+    echo "image: copying boot.scr..."
+    mcopy "${RELEASE_DIR}/3rdparty/bootloader/boot.scr" ::/boot.scr
   else
-    echo "cannot find ${RELEASE_DIR}/3rdparty/bootloader/${SUBDEVICE}_boot.scr"
+    if [ -n "${SUBDEVICE}" ]; then
+      echo "cannot find ${SUBDEVICE}_boot.scr in ${RELEASE_DIR}/3rdparty/bootloader/"
+    else
+      echo "cannot find boot.scr in ${RELEASE_DIR}/3rdparty/bootloader/"
+    fi
     exit 2
   fi
 }

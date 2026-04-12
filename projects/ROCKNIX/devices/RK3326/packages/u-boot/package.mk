@@ -60,10 +60,13 @@ generate_custom_extlinux_conf_files() {
       INI_FILES="${INI_FILES} ${FOUND_PATH}"
     fi
   done
+  if [ -z "${SUBDEVICES}" ] && [ "${DEVICE}" = "RK3326" ] && find_file_path config/b_boot.ini; then
+    INI_FILES="${FOUND_PATH}"
+  fi
   EXTLCONF0=${INSTALL}/usr/share/bootloader/extlinux/extlinux.conf
 
   echo "INI_FILES ${INI_FILES}"
-  for dtbase in $(xmlstarlet sel -t -v "//rocknix/${DEVICE}/*" ${CONFIGXML}); do
+  for dtbase in $(xmlstarlet sel -t -m "//rocknix/${DEVICE}//file" -v "." -n "${CONFIGXML}"); do
     if ! grep -q "\<${dtbase}.dtb" ${INI_FILES}; then
       EXTLCONF=${EXTLCONF0}.${dtbase##*-}
       echo "Generating ${EXTLCONF} for ${dtbase}"
@@ -86,6 +89,15 @@ makeinstall_target() {
       cp -av "${SUBDEVICE}_boot.scr" "${INSTALL}/usr/share/bootloader/"
     fi
   done
+  if [ -z "${SUBDEVICES}" ] && [ "${DEVICE}" = "RK3326" ] && find_file_path config/b_boot.ini; then
+    cp -av "${FOUND_PATH}" ./boot.ini
+    sed -e "s/@DISTRO_BOOTLABEL@/${DISTRO_BOOTLABEL}/" \
+        -e "s/@DISTRO_DISKLABEL@/${DISTRO_DISKLABEL}/" \
+        -e "s/@EXTRA_CMDLINE@/${EXTRA_CMDLINE}/" \
+        -i boot.ini
+    ./tools/mkimage -T script -d boot.ini boot.scr
+    cp -av boot.scr "${INSTALL}/usr/share/bootloader/boot.scr"
+  fi
 
   cp -av uboot.bin.default "${INSTALL}/usr/share/bootloader/b_uboot.bin"
   cp -av uboot.bin.uart5 "${INSTALL}/usr/share/bootloader/b_uboot.bin.uart5"

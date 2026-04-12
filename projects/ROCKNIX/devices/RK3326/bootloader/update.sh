@@ -22,20 +22,6 @@ if [ -z "$BOOT_DISK" ]; then
   esac
 fi
 
-SUBDEVICE=$(sed -n 's|^.* uboot.hwid_adc=\([^, ]\),.*$|\1|p' /proc/cmdline)
-if [ -n "$SUBDEVICE" ]; then
-  log "Subdevice from cmdline: $SUBDEVICE"
-elif [ -f $BOOT_ROOT/boot.scr ]; then
-  grep -q "rk3326-anbernic-rg351m.dtb" $BOOT_ROOT/boot.scr && SUBDEVICE=a || SUBDEVICE=b
-  log "Subdevice from boot.scr: $SUBDEVICE"
-elif [ -f $BOOT_ROOT/boot.ini ]; then
-  grep -q "rk3326-anbernic-rg351m.dtb" $BOOT_ROOT/boot.ini && SUBDEVICE=a || SUBDEVICE=b
-  log "Subdevice from boot.ini: $SUBDEVICE"
-else
-  SUBDEVICE=a
-  log "Subdevice fallback: $SUBDEVICE"
-fi
-
 log "Updating device trees..."
 if [ -d "$BOOT_ROOT/device_trees" ]; then
   mv $BOOT_ROOT/device_trees/*.dtb $BOOT_ROOT
@@ -56,10 +42,7 @@ if [ ! -f $BOOT_ROOT/extlinux/extlinux.conf ]; then
 fi
 
 CONSOLEDEV=$(grep -l Y /sys/devices/platform/*/*/*/tty/tty*/console | head -1 | xargs -r dirname)
-if [ ${SUBDEVICE} == "a" ]; then
-  log "Using legacy u-boot "
-  UBOOT_VARIANT="a_uboot.bin"
-elif [ -z "${CONSOLEDEV}" ]; then
+if [ -z "${CONSOLEDEV}" ]; then
   log "Cannot find UART console"
   UBOOT_VARIANT="b_uboot.bin"
 elif grep -qi ff178000 "${CONSOLEDEV}/iomem_base"; then
@@ -82,8 +65,8 @@ for BOOT_IMAGE in ${UBOOT_VARIANT} uboot.bin b_uboot.bin; do
   fi
 done
 
-log "Updating boot.scr from ${SUBDEVICE}_boot.scr..."
-cp -f $SYSTEM_ROOT/usr/share/bootloader/${SUBDEVICE}_boot.scr $BOOT_ROOT/boot.scr
+log "Updating boot.scr..."
+cp -f $SYSTEM_ROOT/usr/share/bootloader/boot.scr $BOOT_ROOT/boot.scr
 # prevent interference (especially with legacy u-boot)
 if [ -f $BOOT_ROOT/boot.ini ]; then
   mv $BOOT_ROOT/boot.ini $BOOT_ROOT/boot.ini.bak

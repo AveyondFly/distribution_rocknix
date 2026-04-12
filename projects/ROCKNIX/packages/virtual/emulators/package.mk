@@ -1452,4 +1452,5 @@ makeinstall_target() {
 
   install_script "Generate SDL GameControllerDB.sh"
   install_script "Reset Drastic Cfg.sh"
+  install_script "rocknix2emmc.sh"
 }

@@ -1,0 +1,18 @@
+From: ROCKNIX
+Subject: rtl8733bs: Fix kernel module build by setting CONFIG_RTL8733BS in kernel build context
+
+When building with kernel build system (KERNELRELEASE is set), the
+CONFIG_RTL8733BS variable must be set to 'm' for obj-$(CONFIG_RTL8733BS)
+to correctly expand to obj-m.
+
+diff --git a/Makefile b/Makefile
+--- a/Makefile
++++ b/Makefile
+@@ -2387,6 +2387,7 @@ endif
+ 
+ ifneq ($(KERNELRELEASE),)
+ 
++export CONFIG_RTL8733BS = m
+ ########### this part for *.mk ############################
+ include $(src)/hal/phydm/phydm.mk
+ 

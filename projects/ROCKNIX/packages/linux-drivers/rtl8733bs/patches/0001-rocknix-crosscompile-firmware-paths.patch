@@ -1,0 +1,40 @@
+From: ROCKNIX port
+Subject: rtl8733bs: ROCKNIX cross-build + /lib/firmware paths
+
+- Disable I386_PC platform; add ROCKNIX minimal flags (cfg80211, little-endian).
+- Point efuse fallback file to /lib/firmware/rtl8733b/wifi_efuse_8733bs.map.
+
+diff --git a/Makefile b/Makefile
+--- a/Makefile
++++ b/Makefile
+@@ -151,7 +151,8 @@
+ #bit0: ROAM_ON_EXPIRED, #bit1: ROAM_ON_RESUME, #bit2: ROAM_ACTIVE
+ CONFIG_ROAMING_FLAG = 0x3
+ ###################### Platform Related #######################
+-CONFIG_PLATFORM_I386_PC = y
++CONFIG_PLATFORM_I386_PC = n
++CONFIG_PLATFORM_ROCKNIX = y
+ CONFIG_PLATFORM_ANDROID_X86 = n
+ CONFIG_PLATFORM_ANDROID_INTEL_X86 = n
+ CONFIG_PLATFORM_JB_X86 = n
+@@ -1109,6 +1110,8 @@
+ USER_EFUSE_MAP_PATH ?=
+ ifneq ($(USER_EFUSE_MAP_PATH),)
+ EXTRA_CFLAGS += -DEFUSE_MAP_PATH=\"$(USER_EFUSE_MAP_PATH)\"
++else ifeq ($(MODULE_NAME), 8733bs)
++EXTRA_CFLAGS += -DEFUSE_MAP_PATH=\"/lib/firmware/rtl8733b/wifi_efuse_8733bs.map\"
+ else ifeq ($(MODULE_NAME), 8189es)
+ EXTRA_CFLAGS += -DEFUSE_MAP_PATH=\"/system/etc/wifi/wifi_efuse_8189e.map\"
+ else ifeq ($(MODULE_NAME), 8723bs)
+@@ -1361,6 +1364,11 @@
+ EXTRA_CFLAGS += -DCONFIG_WAKE_ON_BT
+ endif
+ 
++ifeq ($(CONFIG_PLATFORM_ROCKNIX), y)
++EXTRA_CFLAGS += -DCONFIG_LITTLE_ENDIAN
++EXTRA_CFLAGS += -DCONFIG_IOCTL_CFG80211 -DRTW_USE_CFG80211_STA_EVENT
++endif
++
+ ifeq ($(CONFIG_PLATFORM_I386_PC), y)
+ EXTRA_CFLAGS += -DCONFIG_LITTLE_ENDIAN
+ EXTRA_CFLAGS += -DCONFIG_IOCTL_CFG80211 -DRTW_USE_CFG80211_STA_EVENT

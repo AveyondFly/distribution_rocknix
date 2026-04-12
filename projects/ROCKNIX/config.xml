@@ -68,6 +68,15 @@
       <file>rk3326-xifan-xf35h</file>
       <file>rk3326-xifan-xf40h</file>
       <file>rk3326-xifan-xf40v</file>
+      <file>rk3326-gameconsole-r36s-v2</file>
+      <file>rk3326-gameconsole-r36s-v3</file>
+      <file>rk3326-gameconsole-r36s-v4</file>
+      <file>rk3326-gameconsole-r36splus</file>
+      <file>rk3326-gameconsole-r36xxpromax</file>
+      <file>rk3326-gameconsole-r40xx</file>
+      <file>rk3326-gameconsole-r40xxpromax</file>
+      <file>rk3326-gameconsole-r45h</file>
+      <file>rk3326-gameconsole-r46h</file>
     </b>
   </RK3326>
   <RK3326S mkimage_options="dtb,extlinux,uboot" fdt="rk3326s-gamemt-e6.dtb" fdt_type="fdt" dtb_prefix="rockchip">

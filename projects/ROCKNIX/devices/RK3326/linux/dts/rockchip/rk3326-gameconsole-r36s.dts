@@ -11,7 +11,7 @@
 	model = "Game Console R36S";
 	compatible = "gameconsole,r35s", "gameconsole,r36s", "rockchip,rk3326";
 
-	rocknix,device_switch {
+	device_switch: rocknix,device_switch {
 		this = "r36s";
 	};
 

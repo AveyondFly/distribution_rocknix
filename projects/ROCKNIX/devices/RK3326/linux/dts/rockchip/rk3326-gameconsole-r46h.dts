@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * # Copyright (C) 2022-24 JELOS (https://github.com/JustEnoughLinuxOS)
+ */
+
+/dts-v1/;
+#include "rk3326-gameconsole-r36s.dts"
+
+/ {
+	model = "Game Console R46H";
+	compatible = "gameconsole,r45h", "gameconsole,r36s", "rockchip,rk3326";
+};
+
+&internal_display {
+	compatible = "rocknix,generic-dsi";
+	panel_description = "G size=52,70 delays=20,150,20,120,20 format=rgb888 lanes=4 flags=0xa03\0M clock=52272 horizontal=1024,24,8,33 vertical=768,16,8,8 default=1\0I seq=ee01\0I seq=ea07\0I seq=eb12\0I seq=0a8b\0I seq=1735\0I seq=1d33\0I seq=2101\0I seq=281c\0I seq=2927\0I seq=2a63\0I seq=2bb5\0I seq=2c00\0I seq=2d33\0I seq=2ff3\0I seq=ee02\0I seq=3978\0I seq=3978\0I seq=0000\0I seq=0118\0I seq=0215\0I seq=0310\0I seq=0418\0I seq=053f\0I seq=0611\0I seq=0711\0I seq=0811\0I seq=090f\0I seq=0a10\0I seq=0b54\0I seq=0c14\0I seq=0d17\0I seq=0e35\0I seq=0f37\0I seq=103f\0I seq=2000\0I seq=2118\0I seq=2215\0I seq=2310\0I seq=2412\0I seq=2537\0I seq=260b\0I seq=270d\0I seq=280d\0I seq=290b\0I seq=2a10\0I seq=2b54\0I seq=2c14\0I seq=2d17\0I seq=2e35\0I seq=2f37\0I seq=303f\0I seq=ee04\0I seq=0004\0I seq=0101\0I seq=0280\0I seq=0304\0I seq=0400\0I seq=0616\0I seq=0703\0I seq=0813\0I seq=090a\0I seq=0a0f\0I seq=0b10\0I seq=2280\0I seq=2408\0I seq=2a00\0I seq=ee05\0I seq=0004\0I seq=0108\0I seq=0255\0I seq=0305\0I seq=0400\0I seq=0504\0I seq=0600\0I seq=0713\0I seq=081e\0I seq=0966\0I seq=0d22\0I seq=1008\0I seq=110c\0I seq=1255\0I seq=1305\0I seq=1914\0I seq=1a76\0I seq=2300\0I seq=4313\0I seq=4044\0I seq=4100\0I seq=3001\0I seq=3101\0I seq=3200\0I seq=3314\0I seq=3414\0I seq=35b4\0I seq=3601\0I seq=3701\0I seq=3800\0I seq=3914\0I seq=3a14\0I seq=4401\0I seq=4581\0I seq=4605\0I seq=ee06\0I seq=0023\0I seq=0101\0I seq=0204\0I seq=06cd\0I seq=0867\0I seq=0945\0I seq=0a23\0I seq=0b01\0I seq=ee07\0I seq=003c\0I seq=0120\0I seq=0220\0I seq=0321\0I seq=0421\0I seq=053c\0I seq=063c\0I seq=0704\0I seq=0804\0I seq=090c\0I seq=0a0c\0I seq=0b01\0I seq=0c15\0I seq=0d15\0I seq=0e17\0I seq=0f17\0I seq=1011\0I seq=1111\0I seq=1213\0I seq=1313\0I seq=140d\0I seq=150d\0I seq=203c\0I seq=2120\0I seq=2220\0I seq=2321\0I seq=2421\0I seq=253c\0I seq=263c\0I seq=2704\0I seq=2804\0I seq=290c\0I seq=2a0c\0I seq=2b00\0I seq=2c14\0I seq=2d14\0I seq=2e16\0I seq=2f16\0I seq=3010\0I seq=3110\0I seq=3212\0I seq=3312\0I seq=340d\0I seq=350d\0I seq=ee08\0I seq=1000\0I seq=12da\0I seq=1410\0I seq=2269\0I seq=ee0f\0I seq=0001\0I seq=0110\0I seq=ee00\0I seq=ea00\0I seq=eb00\0I seq=11 wait=200\0I seq=29 wait=20";
+};

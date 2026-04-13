@@ -1,0 +1,300 @@
+From 363dd68a1efeea1ec3b350200757892e5f515356 Mon Sep 17 00:00:00 2001
+From: root <root@ubuntu.com>
+Date: Mon, 13 Apr 2026 09:54:36 +0800
+Subject: [PATCH] Adapt driver for Linux 6.18+ kernel API changes
+
+- Add ccflags-y support in Makefile for kernel 5.x+ build system
+- Add linux/timer.h include and adapt timer API changes:
+  from_timer -> timer_container_of (6.18+)
+  del_timer_sync -> timer_delete_sync (6.18+)
+  del_timer -> timer_delete (6.18+)
+- Rename hmac_sha256 functions with rtw_ prefix to avoid conflict
+  with kernel's crypto/sha2.h definitions
+- Update cfg80211 ops callbacks for new kernel signatures:
+  set_wiphy_params: add radio_idx parameter
+  set_tx_power: add radio_idx parameter
+  get_tx_power: add radio_idx and link_id parameters
+  set_monitor_channel: add net_device parameter
+  get_channel: add link_id parameter
+
+All changes use LINUX_VERSION_CODE macros for backward compatibility.
+---
+ Makefile                      |  5 +++++
+ core/crypto/sha256-prf.c      | 14 +++++++-------
+ core/crypto/sha256.c          | 10 +++++-----
+ core/crypto/sha256.h          | 13 +++++++------
+ core/rtw_swcrypto.c           |  2 +-
+ include/osdep_service_linux.h | 20 +++++++++++++++++---
+ os_dep/linux/ioctl_cfg80211.c | 17 +++++++++++++++--
+ 7 files changed, 57 insertions(+), 24 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 9b192f4..f0bbfee 100644
+--- a/Makefile
++++ b/Makefile
+@@ -2597,3 +2597,8 @@ $(foreach flag,$(subst -I,,$(_INC_CFLAGS)),\
+ )
+ EXTRA_CFLAGS := $(_EXTRA_CFLAGS) $(_INC_CFLAGS)
+ endif
++
++# For Linux kernel 5.x and later, use ccflags-y instead of EXTRA_CFLAGS
++# Make sure include path is properly set for the driver
++ccflags-y += -I$(src)/include
++ccflags-y += $(EXTRA_CFLAGS)
+diff --git a/core/crypto/sha256-prf.c b/core/crypto/sha256-prf.c
+index 642b38f..3993a3b 100644
+--- a/core/crypto/sha256-prf.c
++++ b/core/crypto/sha256-prf.c
+@@ -15,7 +15,7 @@
+ 
+ 
+ /**
+- * sha256_prf - SHA256-based Pseudo-Random Function (IEEE 802.11r, 8.5.1.5.2)
++ * rtw_sha256_prf - SHA256-based Pseudo-Random Function (IEEE 802.11r, 8.5.1.5.2)
+  * @key: Key for PRF
+  * @key_len: Length of the key in bytes
+  * @label: A unique label for each purpose of the PRF
+@@ -28,16 +28,16 @@
+  * This function is used to derive new, cryptographically separate keys from a
+  * given key.
+  */
+-int sha256_prf(const u8 *key, size_t key_len, const char *label,
++int rtw_sha256_prf(const u8 *key, size_t key_len, const char *label,
+ 		const u8 *data, size_t data_len, u8 *buf, size_t buf_len)
+ {
+-	return sha256_prf_bits(key, key_len, label, data, data_len, buf,
++	return rtw_sha256_prf_bits(key, key_len, label, data, data_len, buf,
+ 			       buf_len * 8);
+ }
+ 
+ 
+ /**
+- * sha256_prf_bits - IEEE Std 802.11-2012, 11.6.1.7.2 Key derivation function
++ * rtw_sha256_prf_bits - IEEE Std 802.11-2012, 11.6.1.7.2 Key derivation function
+  * @key: Key for KDF
+  * @key_len: Length of the key in bytes
+  * @label: A unique label for each purpose of the PRF
+@@ -52,7 +52,7 @@ int sha256_prf(const u8 *key, size_t key_len, const char *label,
+  * significant 1-7 bits of the last octet in the output are not part of the
+  * requested output.
+  */
+-int sha256_prf_bits(const u8 *key, size_t key_len, const char *label,
++int rtw_sha256_prf_bits(const u8 *key, size_t key_len, const char *label,
+ 		    const u8 *data, size_t data_len, u8 *buf,
+ 		    size_t buf_len_bits)
+ {
+@@ -79,12 +79,12 @@ int sha256_prf_bits(const u8 *key, size_t key_len, const char *label,
+ 		plen = buf_len - pos;
+ 		WPA_PUT_LE16(counter_le, counter);
+ 		if (plen >= SHA256_MAC_LEN) {
+-			if (hmac_sha256_vector(key, key_len, 4, addr, len,
++			if (rtw_hmac_sha256_vector(key, key_len, 4, addr, len,
+ 					       &buf[pos]) < 0)
+ 				return -1;
+ 			pos += SHA256_MAC_LEN;
+ 		} else {
+-			if (hmac_sha256_vector(key, key_len, 4, addr, len,
++			if (rtw_hmac_sha256_vector(key, key_len, 4, addr, len,
+ 					       hash) < 0)
+ 				return -1;
+ 			os_memcpy(&buf[pos], hash, plen);
+diff --git a/core/crypto/sha256.c b/core/crypto/sha256.c
+index ea5d9e3..002b833 100644
+--- a/core/crypto/sha256.c
++++ b/core/crypto/sha256.c
+@@ -14,7 +14,7 @@
+ 
+ 
+ /**
+- * hmac_sha256_vector - HMAC-SHA256 over data vector (RFC 2104)
++ * rtw_hmac_sha256_vector - HMAC-SHA256 over data vector (RFC 2104)
+  * @key: Key for HMAC operations
+  * @key_len: Length of the key in bytes
+  * @num_elem: Number of elements in the data vector
+@@ -23,7 +23,7 @@
+  * @mac: Buffer for the hash (32 bytes)
+  * Returns: 0 on success, -1 on failure
+  */
+-int hmac_sha256_vector(const u8 *key, size_t key_len, size_t num_elem,
++int rtw_hmac_sha256_vector(const u8 *key, size_t key_len, size_t num_elem,
+ 		       const u8 *addr[], const size_t *len, u8 *mac)
+ {
+ 	unsigned char k_pad[64]; /* padding - key XORd with ipad/opad */
+@@ -89,7 +89,7 @@ int hmac_sha256_vector(const u8 *key, size_t key_len, size_t num_elem,
+ 
+ 
+ /**
+- * hmac_sha256 - HMAC-SHA256 over data buffer (RFC 2104)
++ * rtw_hmac_sha256 - HMAC-SHA256 over data buffer (RFC 2104)
+  * @key: Key for HMAC operations
+  * @key_len: Length of the key in bytes
+  * @data: Pointers to the data area
+@@ -97,8 +97,8 @@ int hmac_sha256_vector(const u8 *key, size_t key_len, size_t num_elem,
+  * @mac: Buffer for the hash (32 bytes)
+  * Returns: 0 on success, -1 on failure
+  */
+-int hmac_sha256(const u8 *key, size_t key_len, const u8 *data,
++int rtw_hmac_sha256(const u8 *key, size_t key_len, const u8 *data,
+ 		size_t data_len, u8 *mac)
+ {
+-	return hmac_sha256_vector(key, key_len, 1, &data, &data_len, mac);
++	return rtw_hmac_sha256_vector(key, key_len, 1, &data, &data_len, mac);
+ }
+diff --git a/core/crypto/sha256.h b/core/crypto/sha256.h
+index 5219022..829846a 100644
+--- a/core/crypto/sha256.h
++++ b/core/crypto/sha256.h
+@@ -11,19 +11,20 @@
+ 
+ #define SHA256_MAC_LEN 32
+ 
+-int hmac_sha256_vector(const u8 *key, size_t key_len, size_t num_elem,
++/* Use rtw_ prefix to avoid conflict with kernel's hmac_sha256 in Linux 6.18+ */
++int rtw_hmac_sha256_vector(const u8 *key, size_t key_len, size_t num_elem,
+ 		       const u8 *addr[], const size_t *len, u8 *mac);
+-int hmac_sha256(const u8 *key, size_t key_len, const u8 *data,
++int rtw_hmac_sha256(const u8 *key, size_t key_len, const u8 *data,
+ 		size_t data_len, u8 *mac);
+-int sha256_prf(const u8 *key, size_t key_len, const char *label,
++int rtw_sha256_prf(const u8 *key, size_t key_len, const char *label,
+ 	       const u8 *data, size_t data_len, u8 *buf, size_t buf_len);
+-int sha256_prf_bits(const u8 *key, size_t key_len, const char *label,
++int rtw_sha256_prf_bits(const u8 *key, size_t key_len, const char *label,
+ 		    const u8 *data, size_t data_len, u8 *buf,
+ 		    size_t buf_len_bits);
+-void tls_prf_sha256(const u8 *secret, size_t secret_len,
++void rtw_tls_prf_sha256(const u8 *secret, size_t secret_len,
+ 		    const char *label, const u8 *seed, size_t seed_len,
+ 		    u8 *out, size_t outlen);
+-int hmac_sha256_kdf(const u8 *secret, size_t secret_len,
++int rtw_hmac_sha256_kdf(const u8 *secret, size_t secret_len,
+ 		    const char *label, const u8 *seed, size_t seed_len,
+ 		    u8 *out, size_t outlen);
+ 
+diff --git a/core/rtw_swcrypto.c b/core/rtw_swcrypto.c
+index 2f1c343..8e0d2c4 100644
+--- a/core/rtw_swcrypto.c
++++ b/core/rtw_swcrypto.c
+@@ -291,6 +291,6 @@ void _tdls_generate_tpk(void *sta, const u8 *own_addr, const u8 *bssid)
+ 
+ 	_rtw_memcpy(data + 2 * ETH_ALEN, bssid, ETH_ALEN);
+ 
+-	sha256_prf(key_input, SHA256_MAC_LEN, "TDLS PMK", data, sizeof(data), (u8 *)&psta->tpk, sizeof(psta->tpk));
++	rtw_sha256_prf(key_input, SHA256_MAC_LEN, "TDLS PMK", data, sizeof(data), (u8 *)&psta->tpk, sizeof(psta->tpk));
+ }
+ #endif /* CONFIG_TDLS */
+diff --git a/include/osdep_service_linux.h b/include/osdep_service_linux.h
+index e693552..2b2f339 100644
+--- a/include/osdep_service_linux.h
++++ b/include/osdep_service_linux.h
+@@ -50,6 +50,7 @@
+ #include <linux/if_arp.h>
+ #include <linux/rtnetlink.h>
+ #include <linux/delay.h>
++#include <linux/timer.h>
+ #include <linux/interrupt.h>	/* for struct tasklet_struct */
+ #include <linux/ip.h>
+ #include <linux/kthread.h>
+@@ -359,6 +360,19 @@ __inline static _list	*get_list_head(_queue	*queue)
+ 	return &(queue->queue);
+ }
+ 
++/* Linux 6.18+ renamed timer APIs */
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0))
++#define rtw_from_timer(var, callback_timer, timer_fieldname) \
++	timer_container_of(var, callback_timer, timer_fieldname)
++#define rtw_del_timer_sync(timer) timer_delete_sync(timer)
++#define rtw_del_timer(timer) timer_delete(timer)
++#else
++#define rtw_from_timer(var, callback_timer, timer_fieldname) \
++	from_timer(var, callback_timer, timer_fieldname)
++#define rtw_del_timer_sync(timer) del_timer_sync(timer)
++#define rtw_del_timer(timer) del_timer(timer)
++#endif
++
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
+ static inline void timer_hdl(struct timer_list *in_timer)
+ #else
+@@ -366,7 +380,7 @@ static inline void timer_hdl(unsigned long cntx)
+ #endif
+ {
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
+-	_timer *ptimer = from_timer(ptimer, in_timer, timer);
++	_timer *ptimer = rtw_from_timer(ptimer, in_timer, timer);
+ #else
+ 	_timer *ptimer = (_timer *)cntx;
+ #endif
+@@ -395,12 +409,12 @@ __inline static void _set_timer(_timer *ptimer, u32 delay_time)
+ 
+ __inline static void _cancel_timer(_timer *ptimer, u8 *bcancelled)
+ {
+-	*bcancelled = del_timer_sync(&ptimer->timer) == 1 ? 1 : 0;
++	*bcancelled = rtw_del_timer_sync(&ptimer->timer) == 1 ? 1 : 0;
+ }
+ 
+ __inline static void _cancel_timer_async(_timer *ptimer)
+ {
+-	del_timer(&ptimer->timer);
++	rtw_del_timer(&ptimer->timer);
+ }
+ 
+ static inline void _init_workitem(_workitem *pwork, void *pfunc, void *cntx)
+diff --git a/os_dep/linux/ioctl_cfg80211.c b/os_dep/linux/ioctl_cfg80211.c
+index 3f68f53..3c4b145 100644
+--- a/os_dep/linux/ioctl_cfg80211.c
++++ b/os_dep/linux/ioctl_cfg80211.c
+@@ -3741,7 +3741,11 @@ static void cfg80211_rtw_abort_scan(struct wiphy *wiphy,
+ }
+ #endif
+ 
+-static int cfg80211_rtw_set_wiphy_params(struct wiphy *wiphy, u32 changed)
++static int cfg80211_rtw_set_wiphy_params(struct wiphy *wiphy,
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0))
++	int radio_idx,
++#endif
++	u32 changed)
+ {
+ #if 0
+ 	struct iwm_priv *iwm = wiphy_to_iwm(wiphy);
+@@ -4746,6 +4750,9 @@ static int cfg80211_rtw_set_txpower(struct wiphy *wiphy,
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
+ 	struct wireless_dev *wdev,
+ #endif
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0))
++	int radio_idx,
++#endif
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)) || defined(COMPAT_KERNEL_RELEASE)
+ 	enum nl80211_tx_power_setting type, int mbm)
+ #else
+@@ -4807,6 +4814,9 @@ exit:
+ static int cfg80211_rtw_get_txpower(struct wiphy *wiphy,
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
+ 	struct wireless_dev *wdev,
++#endif
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0))
++	int radio_idx, unsigned int link_id,
+ #endif
+ 	int *dbm)
+ {
+@@ -7031,7 +7041,7 @@ exit:
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
+ static int cfg80211_rtw_get_channel(struct wiphy *wiphy,
+ 	struct wireless_dev *wdev,
+-#if (defined(CONFIG_MLD_KERNEL_PATCH) || (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 2)))
++#if (defined(CONFIG_MLD_KERNEL_PATCH) || (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 2)) || (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0)))
+ 	unsigned int link_id,
+ #endif
+ 	struct cfg80211_chan_def *chandef)
+@@ -7123,6 +7133,9 @@ static void rtw_get_chbwoff_from_cfg80211_chan_def(
+ #endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0)) */
+ 
+ static int cfg80211_rtw_set_monitor_channel(struct wiphy *wiphy
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0))
++	, struct net_device *dev
++#endif
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
+ 	, struct cfg80211_chan_def *chandef
+ #else
+-- 
+2.34.1
+

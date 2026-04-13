@@ -8,8 +8,12 @@
 
 arguments="$@"
 
-CORE="${arguments##*--core=}"  # read from --core= onwards
-CORE="${CORE%% *}"  # until a space is found
+if [ -n "$3" ]; then
+  CORE="$3"
+else
+  CORE="${arguments##*--core=}"  # read from --core= onwards
+  CORE="${CORE%% *}"  # until a space is found
+fi
 
 if [ "$CORE" = "advanced_drastic" ]; then
 	cd /storage/.config/advanced_drastic

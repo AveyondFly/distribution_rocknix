@@ -8,10 +8,19 @@
 
 arguments="$@"
 
-CORE="${arguments##*--core=}"  # read from --core= onwards
-OB="${CORE%% *}"  # until a space is found
-EMU="${arguments##*--emulator=}"
-EMU="${EMU%% *}"
+if [ -n "$3" ]; then
+  OB="$3"
+else
+  CORE="${arguments##*--core=}"  # read from --core= onwards
+  OB="${CORE%% *}"  # until a space is found
+fi
+
+if [ -n "$4" ]; then
+  EMU="$4"
+else
+  EMU="${arguments##*--emulator=}"
+  EMU="${EMU%% *}"
+fi
 
 pakname=$(basename "$1")
 pakname="${pakname%.*}"

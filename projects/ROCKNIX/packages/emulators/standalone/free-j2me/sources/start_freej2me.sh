@@ -2,17 +2,7 @@
 . /etc/profile
 . /etc/os-release
 
-arguments="$@"
-
-EMULATOR="${arguments##*--emulator=}"  # read from --emulator= onwards
-EMULATOR="${EMULATOR%% *}"  # until a space is found
-
 ROMNAME="${1}"
-
-
-if [[ "${EMULATOR}" = "libretro" ]]; then
-	/usr/bin/runemu.sh "$@"
-else
 
 if [ ! -f "/storage/.config/java/sdl_interface" ]; then
     cp -rf /usr/config/java /storage/.config/
@@ -48,11 +38,8 @@ export JAVA_TOOL_OPTIONS
 
 #jslisten set "java"
 
-
 gamedir=`dirname "$1"`
 
 java -jar $GAME_JAR "$1"
 
 kill -9 `pidof gptokeyb`
-
-fi

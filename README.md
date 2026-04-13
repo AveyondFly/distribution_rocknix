@@ -24,19 +24,26 @@ This is an **unofficial** fork of ROCKNIX that provides support for additional d
 #### RK3326 Devices (image-b)
 | Brand | Models |
 |-------|--------|
-| Diium | D007, D-R28S |
-| GameConsole | HG36, K36, K36S, R36T, R36TMax, R36Ultra, R50S, T16Max, U8, U8-V2, XGB36 |
-| GameMT | E6 |
-| PortableGame | A10Mini, A10Mini-V2 |
-| Clone R36s | Type 2 (with/without amplifier), Type 3, Type 4, Sauce V03/V04 |
-| XiFan | DC35V, DC40V, Mini40, MyMini, R36Max, R36Max2, R36Pro, XF28, XF35H, XF40H, XF40V |
+| Anbernic | RG351M, RG351V |
 | BatleXP | G350 |
+| Clone R36s | Type 2 (with/without amplifier), Type 3, Type 4, Sauce V03/V04 |
+| Diium | D007, D-R28S |
+| GameConsole | HG36, K36, K36S, R33S, R36S, R36S Plus, R36T, R36TMax, R36Ultra, R36XXProMax, R40XX, R40XX ProMax, R45H, R46H, R50S, RX6H, T16Max, U8, U8-V2, XGB36 |
+| Gameforce | CHI |
+| GameMT | E6 |
+| Generic | EE Clone |
+| MagicX | XU10, XU Mini M |
+| ODROID-GO | Advance, Advance Black Edition, Super |
+| PortableGame | A10Mini, A10Mini-V2 |
+| Powkiddy | RGB10, RGB10X, RGB20S |
+| XiFan | DC35V, DC40V, Mini40, MyMini, R36Max, R36Max2, R36Pro, XF28, XF35H, XF40H, XF40V |
 
 #### RK3566 Devices (Specific image)
 | Brand | Models |
 |-------|--------|
 | GameMT | E5P, E6P |
 | MiniLong | Pocket1 |
+| Powkiddy | x35H, x35S |
 
 #### S905L3A Android TV Boxes
 | Brand | Models |

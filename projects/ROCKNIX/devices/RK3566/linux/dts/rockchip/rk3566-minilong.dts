@@ -132,7 +132,7 @@
 
 		/* analog mux define */
 		io-channel-names = "key-RY", "key-RX", "key-LY", "key-LX";
-		io-channels = <&saradc 1>,<&saradc 0>,<&saradc 2>, <&saradc 3>;
+		io-channels = <&saradc 1>,<&saradc 0>,<&saradc 3>, <&saradc 2>;
 
 		/* gpio pincontrol setup */
 		pinctrl-names = "default";

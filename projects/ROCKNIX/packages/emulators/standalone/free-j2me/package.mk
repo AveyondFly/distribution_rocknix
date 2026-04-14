@@ -27,7 +27,10 @@ makeinstall_target() {
   
   # Copy sdl_interface frontend
   cp ${PKG_BUILD}/cpp/sdl2/sdl_interface ${INSTALL}/usr/config/java/
-  
+
+  mkdir -p ${INSTALL}/usr/config/java/lib
+  cp ${PKG_BUILD}/cpp/native/lib/* ${INSTALL}/usr/config/java/lib/
+
   # Copy additional files if they exist
   if [ -f ${PKG_BUILD}/cpp/sdl2/keymap.cfg ]; then
     cp ${PKG_BUILD}/cpp/sdl2/keymap.cfg ${INSTALL}/usr/config/java/

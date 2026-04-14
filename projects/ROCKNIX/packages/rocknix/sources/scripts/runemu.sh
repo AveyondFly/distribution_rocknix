@@ -316,6 +316,9 @@ case ${EMULATOR} in
       "shell")
         RUNTHIS='${RUN_SHELL} "${ROMNAME}"'
       ;;
+      "nds"|"OpenBOR")
+        RUNTHIS='${RUN_SHELL} "/usr/bin/start_${EMULATOR}.sh" "${ROMNAME}" "${PLATFORM}" "${CORE}" "${EMULATOR}"'
+      ;;
       *)
         RUNTHIS='${RUN_SHELL} "/usr/bin/start_${CORE%-*}.sh" "${ROMNAME}" "${PLATFORM}" "${CORE}" "${EMULATOR}"'
       ;;

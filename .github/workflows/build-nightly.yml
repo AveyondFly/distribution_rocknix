@@ -217,20 +217,20 @@ jobs:
        run: |
          git remote add distribution-nightly https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/${{ github.repository_owner }}/distribution-nightly.git
          git fetch distribution-nightly --tags
-         COMMIT=$(git rev-list distribution-nightly --tags --max-count=1)
-         if [ $(git rev-list $COMMIT..HEAD --count) -eq 0 ]; then
-           echo "new_commits=false" >> $GITHUB_ENV
-         else
+         COMMIT=$(git rev-list distribution-nightly --tags --max-count=1 2>/dev/null || echo "")
+         if [ -n "$COMMIT" ]; then
            COMMIT_MSG=$(printf "Changelog since last nightly:\n\n%s" \
            "$(git log --max-count=100 --format="- %s (by %an)" $COMMIT..$GITHUB_SHA | grep -v "Merge pull request")")
-           echo "commit_msg<<EOF" >> "$GITHUB_OUTPUT"
-           echo "$COMMIT_MSG" >> "$GITHUB_OUTPUT"
-           echo "EOF" >> "$GITHUB_OUTPUT"
-           git config --unset-all http.https://github.com/.extraheader
-           git tag -f nightly-${{ env.DATE }}
-           git push -f distribution-nightly nightly-${{ env.DATE }}
-           echo "new_commits=true" >> $GITHUB_ENV
+         else
+           COMMIT_MSG="Initial nightly release"
          fi
+         echo "commit_msg<<EOF" >> "$GITHUB_OUTPUT"
+         echo "$COMMIT_MSG" >> "$GITHUB_OUTPUT"
+         echo "EOF" >> "$GITHUB_OUTPUT"
+         git config --unset-all http.https://github.com/.extraheader
+         git tag -f nightly-${{ env.DATE }}
+         git push -f distribution-nightly nightly-${{ env.DATE }}
+         echo "new_commits=true" >> $GITHUB_ENV
          git remote rm distribution-nightly
      - name: release nightly
        if: env.new_commits == 'true'

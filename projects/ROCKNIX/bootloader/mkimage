@@ -43,11 +43,16 @@ mkimage_extlinux() {
     echo "image: set extlinux.conf to $fdt_type /$(get_fdt)..."
     mkdir -p "${IMG_TMP}/extlinux"
 
+    local boot_args="boot=LABEL=${DISTRO_BOOTLABEL} disk=LABEL=${DISTRO_DISKLABEL}"
+    if [ "${DEVICE}" = "RK3566" ]; then
+      boot_args="boot=UUID=${UUID_SYSTEM} disk=UUID=${UUID_STORAGE}"
+    fi
+
     cat << EOF > "${IMG_TMP}/extlinux/extlinux.conf"
 LABEL ${DISTRO}
   LINUX /${KERNEL_NAME}
   ${fdt_type} /$(get_fdt)
-  APPEND boot=LABEL=${DISTRO_BOOTLABEL} disk=LABEL=${DISTRO_DISKLABEL} ${EXTRA_CMDLINE}
+  APPEND ${boot_args} ${EXTRA_CMDLINE}
 EOF
 
     echo "image: copying extlinux.conf..."

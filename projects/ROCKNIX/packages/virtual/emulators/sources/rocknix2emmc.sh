@@ -118,6 +118,33 @@ sleep 2
 echo "Formatting ${DST_DISK}p2 as EXT4..."
 mkfs.ext4 -F -L STORAGE ${DST_DISK}p2
 
+echo "Step 4: Updating extlinux.conf with new UUIDs (if hardcoded)..."
+mkdir -p /tmp/emmc_boot
+set +e
+mount ${DST_DISK}p1 /tmp/emmc_boot
+MOUNT_RET=$?
+set -e
+
+if [ $MOUNT_RET -eq 0 ]; then
+    NEW_BOOT_UUID=$(blkid -s UUID -o value ${DST_DISK}p1 || echo "")
+    NEW_DISK_UUID=$(blkid -s UUID -o value ${DST_DISK}p2 || echo "")
+
+    if [ -f /tmp/emmc_boot/extlinux/extlinux.conf ]; then
+        if [ -n "$NEW_BOOT_UUID" ]; then
+            sed -i -E "s/boot=UUID=[a-zA-Z0-9-]+/boot=UUID=${NEW_BOOT_UUID}/g" /tmp/emmc_boot/extlinux/extlinux.conf
+        fi
+        if [ -n "$NEW_DISK_UUID" ]; then
+            sed -i -E "s/disk=UUID=[a-zA-Z0-9-]+/disk=UUID=${NEW_DISK_UUID}/g" /tmp/emmc_boot/extlinux/extlinux.conf
+        fi
+        echo "Updated extlinux.conf UUIDs."
+    fi
+
+    umount /tmp/emmc_boot
+    rmdir /tmp/emmc_boot
+else
+    echo "Warning: Could not mount eMMC boot partition to update extlinux.conf."
+fi
+
 trap - ERR
 
 echo "============================================="

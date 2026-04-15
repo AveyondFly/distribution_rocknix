@@ -28,6 +28,10 @@ if [ -d "$PPSSPP_FONTS" ]; then
   done
 fi
 
+if [ -f "/usr/config/modules/Reset Drastic Cfg.sh" ]; then
+  bash "/usr/config/modules/Reset Drastic Cfg.sh"
+fi
+
 event_type="EV_KEY"
 event_btn_a="BTN_EAST"
 event_btn_b="BTN_SOUTH"

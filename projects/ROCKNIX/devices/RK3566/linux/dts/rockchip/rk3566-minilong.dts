@@ -390,6 +390,18 @@
 		regulator-max-microvolt = <3300000>;
 		regulator-name = "vcc_wifi";
 	};
+
+	vcc_sd: regulator-vcc-sd {
+		compatible = "regulator-fixed";
+		gpio = <&gpio0 RK_PA5 GPIO_ACTIVE_LOW>;
+		pinctrl-0 = <&vcc_sd_h>;
+		pinctrl-names = "default";
+		regulator-name = "vcc_sd";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		enable-active-low;
+		startup-delay-us = <10000>;
+	};
 /*
 	vibrator:vibrator {
 		compatible = "pwm-vibrator";
@@ -463,18 +475,9 @@
 		panel_description =
                 "G size=229,143 delays=120,120,120,120,20 format=rgb888 lanes=4 flags=0xa03",
 
-                "M clock=46014 horizontal=720,150,14,20 vertical=960,30,8,20 default=1",
-                "M clock=47000 horizontal=720,15,15,20 vertical=960,30,212,20",
-                "M clock=47000 horizontal=720,15,45,20 vertical=960,30,165,20",
-                "M clock=47090 horizontal=720,15,41,20 vertical=960,30,173,20",
-                "M clock=47150 horizontal=720,15,45,20 vertical=960,30,15,20",
-                "M clock=53130 horizontal=720,15,35,20 vertical=960,30,116,20",
-                "M clock=47400 horizontal=720,15,15,20 vertical=960,30,17,20",
-                "M clock=47430 horizontal=720,15,20,20 vertical=960,30,10,20",
-                "M clock=49150 horizontal=720,15,39,20 vertical=960,30,20,20",
-                "M clock=72110 horizontal=720,15,34,20 vertical=960,30,201,20",
-                "M clock=72540 horizontal=720,15,20,20 vertical=960,30,30,20",
-                "M clock=94710 horizontal=720,15,15,20 vertical=960,30,15,20",
+		"M clock=74151 horizontal=720,460,14,20 vertical=960,30,8,20 default=1",
+                "M clock=46014 horizontal=720,150,14,20 vertical=960,30,8,20",
+		"M clock=128010 horizontal=720,630,15,20 vertical=960,30,8,20",
 
                 "I seq=ff988103",
                 "I seq=0100", "I seq=0200", "I seq=0372", "I seq=0400", "I seq=0500", "I seq=0609", "I seq=0700",
@@ -1068,17 +1071,24 @@
 				<2 RK_PC1 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
+
+	vcc-sd {
+		vcc_sd_h: vcc-sd-h {
+			rockchip,pins =
+				<0 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
 };
 
 &pmu_io_domains {
 	status = "okay";
 	pmuio1-supply = <&vcc3v3_pmu>;
-	pmuio2-supply = <&vcca1v8_pmu>;
+	pmuio2-supply = <&vcc3v3_pmu>;
 	vccio1-supply = <&vccio_acodec>;
 	vccio3-supply = <&vccio_sd>;
 	vccio4-supply = <&vcca1v8_pmu>;
-	vccio5-supply = <&vcc2v8_dvp>;
-	vccio6-supply = <&vcc1v8_dvp>;
+	vccio5-supply = <&vcc_3v3>;
+	vccio6-supply = <&vcc_3v3>;
 	vccio7-supply = <&vcc_3v3>;
 };
 
@@ -1114,6 +1124,7 @@
 		    <&sdmmc0_det>;
 	pinctrl-names = "default";
 	sd-uhs-sdr104;
+	vmmc-supply = <&vcc_sd>;
 	vqmmc-supply = <&vccio_sd>;
 	status = "okay";
 };
@@ -1143,7 +1154,8 @@
 		    <&sdmmc2m1_det>;
 	pinctrl-names = "default";
 	sd-uhs-sdr104;
-	vqmmc-supply = <&vcc2v8_dvp>;
+	vmmc-supply = <&vcc_sd>;
+	vqmmc-supply = <&vccio_sd>;
 	status = "okay";
 };
 
@@ -1178,7 +1190,7 @@
 };
 
 &usb_host1_xhci {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb2phy0 {

@@ -218,7 +218,8 @@ makeinstall_target() {
   add_es_system amstradcpc
 
   ### Arcade
-  add_emu_core arcade retroarch mame2003_plus true
+  add_emu_core arcade retroarch fbneoplus true
+  add_emu_core arcade retroarch mame2003_plus false
   add_emu_core arcade retroarch mame2010 false
   add_emu_core arcade retroarch mame2015 false
   add_emu_core arcade retroarch fbneo false
@@ -234,6 +235,17 @@ makeinstall_target() {
   add_emu_core hbmame retroarch fbneo_32b false
   add_emu_core hbmame retroarch mame2003_plus_32b false
   add_es_system hbmame
+
+  ### varcade
+  add_emu_core varcade retroarch mame2003_plus true
+  add_emu_core varcade retroarch fbneoplus false
+  add_emu_core varcade retroarch mame2010 false
+  add_emu_core varcade retroarch mame2015 false
+  add_emu_core varcade retroarch fbneo false
+  add_emu_core varcade retroarch fbalpha2012 false
+  add_emu_core varcade retroarch fbalpha2019 false
+  add_emu_core varcade retroarch mame false
+  add_es_system varcade
 
   ### Arduboy
   add_emu_core arduboy retroarch arduous true

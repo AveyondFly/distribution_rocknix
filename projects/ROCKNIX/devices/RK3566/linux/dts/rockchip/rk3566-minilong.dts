@@ -791,6 +791,7 @@
 		reg = <0x3a>;
 		enable-gpios = <&gpio4 RK_PC3 GPIO_ACTIVE_HIGH>;
 		status = "okay";
+		awinic,joystick-leds;
 		#address-cells = <1>;
 		#size-cells = <0>;
 		led@1 {

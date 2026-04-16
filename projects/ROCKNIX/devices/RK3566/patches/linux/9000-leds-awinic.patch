@@ -1,0 +1,186 @@
+--- a/drivers/leds/leds-aw200xx.c	2026-04-16 19:16:51.583122013 +0800
++++ b/drivers/leds/leds-aw200xx.c	2026-04-16 19:33:13.341531759 +0800
+@@ -19,6 +19,8 @@
+ #include <linux/regmap.h>
+ #include <linux/time.h>
+ #include <linux/units.h>
++#include <linux/workqueue.h>
++#include <linux/delay.h>
+ 
+ #define AW200XX_DIM_MAX                  (BIT(6) - 1)
+ #define AW200XX_FADE_MAX                 (BIT(8) - 1)
+@@ -120,6 +122,10 @@
+ 	u32 num_leds;
+ 	u32 display_rows;
+ 	struct gpio_desc *hwen;
++	bool is_joystick_rgb;
++	struct delayed_work rgb_work;
++	u32 rgb_offset;
++	char current_mode[16];
+ 	struct aw200xx_led leds[] __counted_by(num_leds);
+ };
+ 
+@@ -182,6 +188,138 @@
+ };
+ ATTRIBUTE_GROUPS(dim);
+ 
++
++static void wheel(u8 pos, u8 *r, u8 *g, u8 *b)
++{
++	if (pos < 85) {
++		*r = pos * 3;
++		*g = 255 - pos * 3;
++		*b = 0;
++	} else if (pos < 170) {
++		pos -= 85;
++		*r = 255 - pos * 3;
++		*g = 0;
++		*b = pos * 3;
++	} else {
++		pos -= 170;
++		*r = 0;
++		*g = pos * 3;
++		*b = 255 - pos * 3;
++	}
++}
++
++static void aw200xx_set_color(struct aw200xx *chip, u8 r, u8 g, u8 b)
++{
++	int i;
++	mutex_lock(&chip->mutex);
++	for (i = 0; i < chip->num_leds; i++) {
++		struct aw200xx_led *led = &chip->leds[i];
++		u32 reg = AW200XX_REG_DIM(led->num, chip->cdef->display_size_columns);
++		int brightness = 0;
++		int color_c = (led->num - 1) % 3;
++		int dim;
++		
++		if (color_c == 0) brightness = g;
++		else if (color_c == 1) brightness = r;
++		else brightness = b;
++
++		dim = led->dim;
++		if (dim < 0)
++			dim = AW200XX_REG_FADE2DIM(brightness);
++
++		regmap_write(chip->regmap, reg, dim);
++		regmap_write(chip->regmap, AW200XX_REG_DIM2FADE(reg), brightness);
++	}
++	mutex_unlock(&chip->mutex);
++}
++
++static void aw200xx_rgb_work_handler(struct work_struct *work)
++{
++	struct delayed_work *dwork = to_delayed_work(work);
++	struct aw200xx *chip = container_of(dwork, struct aw200xx, rgb_work);
++	int i;
++
++	if (strcmp(chip->current_mode, "flow") != 0)
++		return;
++
++	mutex_lock(&chip->mutex);
++	for (i = 0; i < chip->num_leds; i++) {
++		struct aw200xx_led *led = &chip->leds[i];
++		u32 reg = AW200XX_REG_DIM(led->num, chip->cdef->display_size_columns);
++		int brightness = 0;
++		int rgb_idx = (led->num - 1) / 3;
++		int color_c = (led->num - 1) % 3;
++		u8 r, g, b;
++		u8 pos = (rgb_idx * 256 / 11 + chip->rgb_offset) % 256;
++		int dim;
++		
++		wheel(pos, &r, &g, &b);
++
++		if (color_c == 0) brightness = g;
++		else if (color_c == 1) brightness = r;
++		else brightness = b;
++
++		dim = led->dim;
++		if (dim < 0)
++			dim = AW200XX_REG_FADE2DIM(brightness);
++
++		regmap_write(chip->regmap, reg, dim);
++		regmap_write(chip->regmap, AW200XX_REG_DIM2FADE(reg), brightness);
++	}
++	mutex_unlock(&chip->mutex);
++
++	chip->rgb_offset += 5;
++	schedule_delayed_work(&chip->rgb_work, msecs_to_jiffies(50));
++}
++
++static ssize_t rgb_mode_show(struct device *dev, struct device_attribute *attr, char *buf)
++{
++	struct aw200xx *chip = dev_get_drvdata(dev);
++	return sysfs_emit(buf, "%s\n", chip->current_mode);
++}
++
++static ssize_t rgb_mode_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
++{
++	struct aw200xx *chip = dev_get_drvdata(dev);
++	char mode[16];
++
++	if (sscanf(buf, "%15s", mode) != 1)
++		return -EINVAL;
++
++	cancel_delayed_work_sync(&chip->rgb_work);
++	strscpy(chip->current_mode, mode, sizeof(chip->current_mode));
++
++	if (!strcmp(mode, "flow")) {
++		schedule_delayed_work(&chip->rgb_work, 0);
++	} else if (!strcmp(mode, "off") || !strcmp(mode, "0")) {
++		aw200xx_set_color(chip, 0, 0, 0);
++	} else if (!strcmp(mode, "red")) {
++		aw200xx_set_color(chip, 255, 0, 0);
++	} else if (!strcmp(mode, "green")) {
++		aw200xx_set_color(chip, 0, 255, 0);
++	} else if (!strcmp(mode, "blue")) {
++		aw200xx_set_color(chip, 0, 0, 255);
++	} else if (!strcmp(mode, "yellow")) {
++		aw200xx_set_color(chip, 255, 255, 0);
++	} else if (!strcmp(mode, "cyan")) {
++		aw200xx_set_color(chip, 0, 255, 255);
++	} else if (!strcmp(mode, "magenta")) {
++		aw200xx_set_color(chip, 255, 0, 255);
++	} else if (!strcmp(mode, "white")) {
++		aw200xx_set_color(chip, 255, 255, 255);
++	} else {
++		unsigned int r, g, b;
++		if (strlen(mode) == 6 && sscanf(mode, "%02x%02x%02x", &r, &g, &b) == 3) {
++			aw200xx_set_color(chip, r, g, b);
++		} else {
++			return -EINVAL;
++		}
++	}
++
++	return count;
++}
++static DEVICE_ATTR_RW(rgb_mode);
++
+ static int aw200xx_brightness_set(struct led_classdev *cdev,
+ 				  enum led_brightness brightness)
+ {
+@@ -379,6 +517,10 @@
+ 
+ static void aw200xx_disable(const struct aw200xx *const chip)
+ {
++	if (chip->is_joystick_rgb) {
++		cancel_delayed_work_sync((struct delayed_work *)&chip->rgb_work);
++		device_remove_file(&chip->client->dev, &dev_attr_rgb_mode);
++	}
+ 	gpiod_set_value_cansleep(chip->hwen, 0);
+ }
+ 
+@@ -563,6 +705,13 @@
+ 	chip->client = client;
+ 	i2c_set_clientdata(client, chip);
+ 
++	if (device_property_present(&client->dev, "awinic,joystick-leds")) {
++		chip->is_joystick_rgb = true;
++		strscpy(chip->current_mode, "off", sizeof(chip->current_mode));
++		INIT_DELAYED_WORK(&chip->rgb_work, aw200xx_rgb_work_handler);
++		device_create_file(&client->dev, &dev_attr_rgb_mode);
++	}
++
+ 	chip->regmap = devm_regmap_init_i2c(client, &aw200xx_regmap_config);
+ 	if (IS_ERR(chip->regmap))
+ 		return PTR_ERR(chip->regmap);

@@ -73,4 +73,6 @@ do
 done
 
 cd /usr/local/share/gmu
+gptokeyb -k "gmu.bin" &
 /usr/local/bin/gmu.bin -d /usr/local/etc/gmu -c /storage/.config/gmu/gmu.conf ${PLAYLIST}
+killall gptokeyb

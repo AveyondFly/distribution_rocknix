@@ -24,4 +24,8 @@ makeinstall_target() {
       cp -v ${PKG_BUILD}/cores/${core}_libretro.so ${INSTALL}/usr/lib/libretro/
     fi
   done
+
+  curl -Lo ${PKG_BUILD}/mod_cores_genesis_plus_gx_EX_libretro.so.zip https://github.com/AveyondFly/console_mod_res/releases/download/v0.9/mod_cores_genesis_plus_gx_EX_libretro.so.zip
+  unzip -o ${PKG_BUILD}/mod_cores_genesis_plus_gx_EX_libretro.so.zip -d ${PKG_BUILD}/cores
+  cp -v ${PKG_BUILD}/cores/genesis_plus_gx_EX_libretro.so ${INSTALL}/usr/lib/libretro/
 }

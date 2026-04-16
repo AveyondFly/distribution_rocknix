@@ -1088,6 +1088,7 @@ makeinstall_target() {
 
   ### Sega Genesis
   add_emu_core genesis retroarch genesis_plus_gx true
+  add_emu_core genesis retroarch genesis_plus_gx_EX false
   add_emu_core genesis retroarch genesis_plus_gx_wide false
   add_emu_core genesis retroarch picodrive false
   case ${DEVICE} in
@@ -1100,6 +1101,7 @@ makeinstall_target() {
   ### Sega Genesis Hacks
   add_emu_core genh retroarch genesis_plus_gx true
   add_emu_core genh retroarch genesis_plus_gx_wide false
+  add_emu_core genesis retroarch genesis_plus_gx_EX false
   add_emu_core genh retroarch picodrive false
   case ${DEVICE} in
     H700|RK3326*|RK3399|RK3566|RK3562|RK3588|SM8250|SM8550|SM8650)
@@ -1123,6 +1125,7 @@ makeinstall_target() {
   ### Sega MegaDrive
   add_emu_core megadrive retroarch genesis_plus_gx true
   add_emu_core megadrive retroarch genesis_plus_gx_wide false
+  add_emu_core genesis retroarch genesis_plus_gx_EX false
   add_emu_core megadrive retroarch picodrive false
   case ${DEVICE} in
     H700|RK3326*|RK3399|RK3566|RK3562|RK3588|SM8250|SM8550|SM8650)
@@ -1134,6 +1137,7 @@ makeinstall_target() {
   ### Sega MegaDrive Hacks
   add_emu_core megadriveh retroarch genesis_plus_gx true
   add_emu_core megadriveh retroarch genesis_plus_gx_wide false
+  add_emu_core genesis retroarch genesis_plus_gx_EX false
   add_emu_core megadriveh retroarch picodrive false
   case ${DEVICE} in
     H700|RK3326*|RK3399|RK3566|RK3562|RK3588|SM8250|SM8550|SM8650)

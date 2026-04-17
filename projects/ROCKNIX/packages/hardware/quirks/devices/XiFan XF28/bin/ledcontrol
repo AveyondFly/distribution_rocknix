@@ -1,0 +1,26 @@
+#!/bin/bash
+
+if [ "$1" = "list" ]; then
+    cat <<EOF
+OFF
+Scrolling
+Breathing
+Breathing_Red
+Breathing_Green
+Breathing_Blue
+Breathing_Blue_Red
+Breathing_Green_Blue
+Breathing_Red_Green
+Breathing_Red_Green_Blue
+Red_Green_Blue
+Blue_Red
+Blue
+Gree_Blue
+Green
+Red_Green
+Red
+EOF
+else
+    kill -9 `pidof ws2812`
+    ws2812 "$1" &
+fi

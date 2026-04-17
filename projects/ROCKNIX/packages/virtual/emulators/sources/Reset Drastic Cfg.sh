@@ -57,7 +57,9 @@ BEGIN {
 
             # 检测是否有右摇杆
             if (key == "rightx" || key == "righty") {
-                has_right_stick = 1
+                if (ENVIRON["NO_RIGHT_STICK"] == "") {
+                    has_right_stick = 1
+                }
             }
 
             # 检测是否有 guide 键

@@ -12,12 +12,6 @@ log() {
 
 performance 2>/dev/null
 
-### Run firstboot
-if [ -x "/usr/lib/autostart/firstboot/update.sh" ]; then
-  log "Run firstboot update.sh"
-  /usr/lib/autostart/firstboot/update.sh 2>&1 >>${BOOTLOG}
-fi
-
 ### Load platform specific quirks
 if [ -d "/usr/lib/autostart/quirks/platforms/${HW_DEVICE}" ]
 then
@@ -89,6 +83,15 @@ log "Startup complete..."
 
 ### Re-source the profile so we fetch the correct UI_SERVICE variable.
 . /etc/profile
+
+### Run firstboot
+if [ ! -e "/storage/mod.done" ]; then
+  if [ -x "/usr/lib/autostart/firstboot/update.sh" ]; then
+    log "Run firstboot update.sh"
+    /usr/lib/autostart/firstboot/update.sh 2>&1 >>${BOOTLOG}
+    touch /storage/mod.done
+  fi
+fi
 
 ### Lock is a prerequisite for emustation
 rm /var/lock/start.games 2>&1 >>${BOOTLOG}

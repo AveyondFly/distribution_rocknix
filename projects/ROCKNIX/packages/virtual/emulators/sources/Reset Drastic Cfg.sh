@@ -151,7 +151,14 @@ BEGIN {
             
             # 单摇杆特殊处理：左摇杆作为触屏光标（需要有左摇杆）
             if (has_right_stick == 0 && has_left_stick == 1) {
-                if (control_index == "CONTROL_INDEX_TOUCH_CURSOR_PRESS") {
+                if (control_index == "CONTROL_INDEX_MENU") {
+                    # 单摇杆模式只继承右摇杆的职责，
+                    # controls_b 的 MENU 清空，保留模板中的其他 MENU 按键。
+                    split(current_line, arr3, "=")
+                    if (length(arr3) >= 2) {
+                        current_line = arr3[1] "= 65535"
+                    }
+                } else if (control_index == "CONTROL_INDEX_TOUCH_CURSOR_PRESS") {
                     # L3 作为 cursor press
                     if ("leftstick" in key_map) {
                         new_value = key_map["leftstick"]
@@ -225,12 +232,20 @@ BEGIN {
             split(arr1[2], arr2, "]")
             control_index = arr2[1]
             
-            # MENU: 如果有 guide 键，设置 controls_a 的 MENU
-            if (control_index == "CONTROL_INDEX_MENU" && has_guide == 1) {
-                new_value = key_map["guide"]
+            # 单摇杆模式下清空 controls_a 上的左摇杆方向映射，
+            # 避免和 controls_b 的触屏光标重复占用同一根摇杆。
+            if (has_right_stick == 0 && has_left_stick == 1 &&
+                     (control_index == "CONTROL_INDEX_UP" ||
+                      control_index == "CONTROL_INDEX_DOWN" ||
+                      control_index == "CONTROL_INDEX_LEFT" ||
+                      control_index == "CONTROL_INDEX_RIGHT" ||
+                      control_index == "CONTROL_INDEX_UI_UP" ||
+                      control_index == "CONTROL_INDEX_UI_DOWN" ||
+                      control_index == "CONTROL_INDEX_UI_LEFT" ||
+                      control_index == "CONTROL_INDEX_UI_RIGHT")) {
                 split(current_line, arr3, "=")
                 if (length(arr3) >= 2) {
-                    current_line = arr3[1] "= " new_value
+                    current_line = arr3[1] "= 65535"
                 }
             }
             # 方向控件: 只有存在双摇杆时才设置（controls_a用左摇杆做方向）

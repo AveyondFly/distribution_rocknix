@@ -651,30 +651,6 @@ function set_translation() {
     esac
 }
 
-function set_aspectratio() {
-    local ASPECT_RATIO="$(game_setting ratio)"
-    case ${ASPECT_RATIO} in
-      0|false|none)
-        add_setting "none" "aspect_ratio_index" "22"
-      ;;
-      *)
-        for AR in ${!CORE_RATIOS[@]}
-        do
-            if [ "${CORE_RATIOS[${AR}]}" = "${ASPECT_RATIO}" ]
-            then
-                add_setting "none" "aspect_ratio_index" "${AR}"
-                break
-            fi
-        done
-      ;;
-    esac
-#    add_setting "positionx" "custom_viewport_x"
-#    add_setting "positiony" "custom_viewport_y"
-#    add_setting "width" "custom_viewport_width"
-#    add_setting "height" "custom_viewport_height"
-    add_setting "rotation" "video_rotation"
-}
-
 function set_filtering() {
     add_setting "smooth" "video_smooth"
 }
@@ -726,15 +702,36 @@ function set_filter() {
 }
 
 function set_overlay() {
+    local ASPECT_RATIO="$(game_setting ratio)"
+    local STD_AR_INDEX=""
+    case ${ASPECT_RATIO} in
+      0|false|none)
+        STD_AR_INDEX="22"
+      ;;
+      *)
+        for AR in ${!CORE_RATIOS[@]}
+        do
+            if [ "${CORE_RATIOS[${AR}]}" = "${ASPECT_RATIO}" ]
+            then
+                STD_AR_INDEX="${AR}"
+                break
+            fi
+        done
+      ;;
+    esac
+    add_setting "rotation" "video_rotation"
+
     local BEZEL="$(game_setting bezel)"
     case ${BEZEL} in
         0|false|none)
         ;;
         *)
-            write_bezel_config
+            write_bezel_config "$STD_AR_INDEX"
             exit 0
         ;;
     esac
+
+    add_setting "none" "aspect_ratio_index" "$STD_AR_INDEX"
 
     local OVERLAY="$(game_setting overlayset)"
     case ${OVERLAY} in
@@ -1122,6 +1119,8 @@ function setup_controllers() {
 
 # Function to write bezel configuration
 write_bezel_config() {
+    local default_ar_index="$1"
+    local final_ar_index="$default_ar_index"
     RETROARCH_OVERLAY_CONFIG="/tmp/.overlay.cfg"
 
     local json_output
@@ -1132,20 +1131,87 @@ write_bezel_config() {
         bezel_png=$(echo "$json_output" | jq -r '.png')
 
         if [ -n "$bezel_png" ] && [ -f "$bezel_png" ]; then
-            cat > "$RETROARCH_OVERLAY_CONFIG" << EOF
+            local bezel_info
+            bezel_info=$(echo "$json_output" | jq -r '.info')
+
+            if [ -n "$bezel_info" ] && [ "$bezel_info" != "null" ] && [ -f "$bezel_info" ] && [[ "$bezel_info" == *.cfg ]]; then
+                add_setting "none" "input_overlay_enable" "true"
+                add_setting "none" "input_overlay" "${bezel_info}"
+
+                local grh_parameter=""
+                local grh_ratio=""
+                local grh_integerscale=""
+                local grh_custom_viewport_width=""
+                local grh_custom_viewport_height=""
+                local grh_custom_viewport_x=""
+                local grh_custom_viewport_y=""
+                local grh_video_viewport_bias_x=""
+                local grh_video_viewport_bias_y=""
+                
+                eval $(grep -E '^grh_[a-zA-Z0-9_]+=' "$bezel_info" | tr -d '\r')
+                
+                if [ "$grh_parameter" = "1" ]; then
+                    if [ "$grh_integerscale" = "1" ]; then
+                        add_setting "none" "video_scale_integer" "true"
+                    else
+                        add_setting "none" "video_scale_integer" "false"
+                    fi
+                    
+                    if [ -n "$grh_video_viewport_bias_x" ]; then
+                        add_setting "none" "video_viewport_bias_x" "$grh_video_viewport_bias_x"
+                    else
+                        add_setting "none" "video_viewport_bias_x" "0.500000"
+                    fi
+                    
+                    if [ -n "$grh_video_viewport_bias_y" ]; then
+                        add_setting "none" "video_viewport_bias_y" "$grh_video_viewport_bias_y"
+                    else
+                        add_setting "none" "video_viewport_bias_y" "0.500000"
+                    fi
+                    
+                    case ${grh_ratio} in
+                      0|false|none)
+                      ;;
+                      *)
+                        for AR in ${!CORE_RATIOS[@]}
+                        do
+                            if [ "${CORE_RATIOS[${AR}]}" = "${grh_ratio}" ]
+                            then
+                                final_ar_index="${AR}"
+                                break
+                            fi
+                        done
+                      ;;
+                    esac
+                    
+                    if [ -n "$grh_custom_viewport_width" ]; then
+                        add_setting "none" "custom_viewport_width" "$grh_custom_viewport_width"
+                    fi
+                    if [ -n "$grh_custom_viewport_height" ]; then
+                        add_setting "none" "custom_viewport_height" "$grh_custom_viewport_height"
+                    fi
+                    if [ -n "$grh_custom_viewport_x" ]; then
+                        add_setting "none" "custom_viewport_x" "$grh_custom_viewport_x"
+                    fi
+                    if [ -n "$grh_custom_viewport_y" ]; then
+                        add_setting "none" "custom_viewport_y" "$grh_custom_viewport_y"
+                    fi
+                fi
+            else
+                cat > "$RETROARCH_OVERLAY_CONFIG" << EOF
 overlays = 1
 overlay0_overlay = "$bezel_png"
 overlay0_full_screen = true
 overlay0_descs = 0
 EOF
 
-            add_setting "none" "input_overlay_enable" "true"
-            add_setting "none" "input_overlay" "${RETROARCH_OVERLAY_CONFIG}"
-            return 0
+                add_setting "none" "input_overlay_enable" "true"
+                add_setting "none" "input_overlay" "${RETROARCH_OVERLAY_CONFIG}"
+            fi
         fi
     fi
 
-    return 1
+    add_setting "none" "aspect_ratio_index" "$final_ar_index"
 }
 
 # Function to check bezel file existence
@@ -1155,10 +1221,10 @@ check_bezel_file() {
 
     if [ -f "${base_path}/${file_name}.png" ]; then
         bezel_png="${base_path}/${file_name}.png"
-        if [ -f "${base_path}/${file_name}.info" ]; then
-            bezel_info="${base_path}/${file_name}.info"
-        elif [ -f "${base_path}/default.info" ]; then
-            bezel_info="${base_path}/default.info"
+        if [ -f "${base_path}/${file_name}.cfg" ]; then
+            bezel_info="${base_path}/${file_name}.cfg"
+        elif [ -f "${base_path}/default.cfg" ]; then
+            bezel_info="${base_path}/default.cfg"
         else
             bezel_info="${bezel_png}"
         fi
@@ -1173,21 +1239,15 @@ check_decorations() {
     local system_name="$2"
     local rom_name="$3"
 
-    if [ -d "${base_path}/games/${system_name}" ]; then
-        if check_bezel_file "${base_path}/games/${system_name}" "${rom_name}"; then
+    if [ -d "${base_path}/${system_name}" ]; then
+        if check_bezel_file "${base_path}/${system_name}" "${rom_name}"; then
             specific_to_game="true"
             return 0
         fi
-    fi
 
-    if [ -d "${base_path}/systems" ]; then
-        if check_bezel_file "${base_path}/systems" "${system_name}"; then
+        if check_bezel_file "${base_path}/${system_name}" "default"; then
             return 0
         fi
-    fi
-
-    if check_bezel_file "${base_path}" "default"; then
-        return 0
     fi
 
     return 1
@@ -1218,7 +1278,7 @@ get_bezel_infos() {
 
     # Check if bezel parameter is provided
     if [ -n "$bezel" ]; then
-        local bezel_base_path="${BEZEL_DIR}/${bezel}"
+        local bezel_base_path="${BEZEL_DIR}"
 
         if check_decorations "${bezel_base_path}" "${system}" "${rom_name}"; then
             cat << EOF
@@ -1268,7 +1328,6 @@ set_config_save &
 set_fps &
 set_cheevos &
 set_translation &
-set_aspectratio &
 set_filtering &
 set_integerscale &
 set_rgascale &

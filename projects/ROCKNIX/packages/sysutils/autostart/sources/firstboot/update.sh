@@ -6,6 +6,8 @@
 hidecursor
 ROM_DIR="/storage/roms"
 
+UPDATE_MODE="$1"
+
 function Test_Button_A(){
   evtest --query $event_dev $event_type $event_btn_a
 }
@@ -18,13 +20,16 @@ function Test_Button_B(){
 function Set_system() {
     SYSCFG="/storage/.config/system/configs/system.cfg"
     sed -i -e '/system.hostname\=/c\system.hostname\='"${1}"'' ${SYSCFG}
-    sed -i -e '/audio.volume\=/c\audio.volume\=60' ${SYSCFG}
-    sed -i -e '/rotate.root.password\=/c\rotate.root.password\=0' ${SYSCFG}
-    sed -i -e '/samba.enabled\=/c\samba.enabled\=0' ${SYSCFG}
-    sed -i -e '/ssh.enabled\=/c\ssh.enabled\=0' ${SYSCFG}
-    sed -i -e '/updates.enabled\=/c\updates.enabled\=0' ${SYSCFG}
-    sed -i -e '/system.autohotkeys\=/c\system.autohotkeys\=0' ${SYSCFG}
-    sed -i -e '/global.retroarch.menu_driver\=/c\global.retroarch.menu_driver\=ozone' ${SYSCFG}
+    
+    if [ "$UPDATE_MODE" != "device_change" ]; then
+        sed -i -e '/audio.volume\=/c\audio.volume\=60' ${SYSCFG}
+        sed -i -e '/rotate.root.password\=/c\rotate.root.password\=0' ${SYSCFG}
+        sed -i -e '/samba.enabled\=/c\samba.enabled\=0' ${SYSCFG}
+        sed -i -e '/ssh.enabled\=/c\ssh.enabled\=0' ${SYSCFG}
+        sed -i -e '/updates.enabled\=/c\updates.enabled\=0' ${SYSCFG}
+        sed -i -e '/system.autohotkeys\=/c\system.autohotkeys\=0' ${SYSCFG}
+        sed -i -e '/global.retroarch.menu_driver\=/c\global.retroarch.menu_driver\=ozone' ${SYSCFG}
+    fi
 }
 
 function Set_ra_ext() {
@@ -120,41 +125,43 @@ else
     echo "No suitable input device found." >/dev/tty0
 fi
 
-# 如果没有输入设备，直接默认 English
-if [ -z "$event_dev" ]; then
-    echo -e "No input device. Default to \033[32mEnglish\033[0m" >/dev/tty0
-    sed -i -e '/system\.language\=/c system\.language\=en_US' /storage/.config/system/configs/system.cfg
-    sync
-    exit 0
-fi
+if [ "$UPDATE_MODE" != "device_change" ]; then
+    # 如果没有输入设备，直接默认 English
+    if [ -z "$event_dev" ]; then
+        echo -e "No input device. Default to \033[32mEnglish\033[0m" >/dev/tty0
+        sed -i -e '/system\.language\=/c system\.language\=en_US' /storage/.config/system/configs/system.cfg
+        sync
+        exit 0
+    fi
 
-printf "\n " >/dev/tty0
-printf "\n==> Please set the system default language:" >/dev/tty0
-printf "\n " >/dev/tty0
-echo -e "\nPress \033[31mA\033[0m to \033[32mSimple Chinese\033[0m. \033[33mB\033[0m to \033[32mEnglish\033[0m.\n" >/dev/tty0
-time_start=$(date --date=`date +'%H:%M:%S'` +%s)
-while true
-do
-   Test_Button_A
-   if [ "$?" -eq "10" ]; then
-     sed -i -e '/system\.language\=/c system\.language\=zh_CN' /storage/.config/system/configs/system.cfg
-     sed -i -e '/system\.timezone\=/c system\.timezone\=Asia/Shanghai' /storage/.config/system/configs/system.cfg
-     echo -e "\033[31mA\033[0m - \033[32mSimple Chinese\033[0m" >/dev/tty0
-     break
-   fi
-   Test_Button_B
-   if [ "$?" -eq "10" ]; then
-     sed -i -e '/system\.language\=zh_CN/c system\.language\=en_US' /storage/.config/system/configs/system.cfg
-     echo -e "\033[33mB\033[0m - \033[32mEnglish\033[0m" >/dev/tty0
-     break
-   fi
-   time_end=$(date --date=`date +'%H:%M:%S'` +%s) && let "time_time=${time_end} - ${time_start}"
-   if [ $time_time -ge 9 ]; then
-     echo -e "Timeout $event_dev. Default to \033[32mEnglish\033[0m" >/dev/tty0
-     sed -i -e '/system\.language\=/c system\.language\=en_US' /storage/.config/system/configs/system.cfg
-     break
-   fi
-done
+    printf "\n " >/dev/tty0
+    printf "\n==> Please set the system default language:" >/dev/tty0
+    printf "\n " >/dev/tty0
+    echo -e "\nPress \033[31mA\033[0m to \033[32mSimple Chinese\033[0m. \033[33mB\033[0m to \033[32mEnglish\033[0m.\n" >/dev/tty0
+    time_start=$(date --date=`date +'%H:%M:%S'` +%s)
+    while true
+    do
+       Test_Button_A
+       if [ "$?" -eq "10" ]; then
+         sed -i -e '/system\.language\=/c system\.language\=zh_CN' /storage/.config/system/configs/system.cfg
+         sed -i -e '/system\.timezone\=/c system\.timezone\=Asia/Shanghai' /storage/.config/system/configs/system.cfg
+         echo -e "\033[31mA\033[0m - \033[32mSimple Chinese\033[0m" >/dev/tty0
+         break
+       fi
+       Test_Button_B
+       if [ "$?" -eq "10" ]; then
+         sed -i -e '/system\.language\=zh_CN/c system\.language\=en_US' /storage/.config/system/configs/system.cfg
+         echo -e "\033[33mB\033[0m - \033[32mEnglish\033[0m" >/dev/tty0
+         break
+       fi
+       time_end=$(date --date=`date +'%H:%M:%S'` +%s) && let "time_time=${time_end} - ${time_start}"
+       if [ $time_time -ge 9 ]; then
+         echo -e "Timeout $event_dev. Default to \033[32mEnglish\033[0m" >/dev/tty0
+         sed -i -e '/system\.language\=/c system\.language\=en_US' /storage/.config/system/configs/system.cfg
+         break
+       fi
+    done
+fi
 
 # 获取分辨率并交换宽高的功能
 TARGET_RES="1920x1080 1080x1920 1024x768 1280x720 720x1280 960x720 720x960 544x960 960x544 720x720 480x640 640x480 480x320 320x480"
@@ -431,14 +438,17 @@ case "${QUIRK_DEVICE}" in
     "Powkiddy RGB10")
         echo "${QUIRK_DEVICE}"
         Set_system "RGB10"
+        amixer -c 0 -M cset name="Playback Mux" HP
 	set_setting key.dpad.events 1
     ;;
     "Powkiddy RGB20S")
         echo "${QUIRK_DEVICE}"
+        amixer -c 0 -M cset name="Playback Mux" HP
         Set_system "RGB20S"
     ;;
     "Powkiddy RGB10X")
         echo "${QUIRK_DEVICE}"
+        amixer -c 0 -M cset name="Playback Mux" HP
         Set_system "RGB10X"
     ;;
 # 曼特科技

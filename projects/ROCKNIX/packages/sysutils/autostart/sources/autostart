@@ -89,7 +89,13 @@ if [ ! -e "/storage/mod.done" ]; then
   if [ -x "/usr/lib/autostart/firstboot/update.sh" ]; then
     log "Run firstboot update.sh"
     /usr/lib/autostart/firstboot/update.sh 2>&1 >>${BOOTLOG}
-    touch /storage/mod.done
+    echo "$QUIRK_DEVICE" > /storage/mod.done
+  fi
+elif [ "$(cat /storage/mod.done 2>/dev/null)" != "$QUIRK_DEVICE" ]; then
+  if [ -x "/usr/lib/autostart/firstboot/update.sh" ]; then
+    log "Run firstboot update.sh (device changed)"
+    /usr/lib/autostart/firstboot/update.sh "device_change" 2>&1 >>${BOOTLOG}
+    echo "$QUIRK_DEVICE" > /storage/mod.done
   fi
 fi
 

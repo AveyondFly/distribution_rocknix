@@ -120,7 +120,6 @@ BEGIN {
 
     # 特殊功能 - 默认映射（双摇杆手柄）
     control_mapping["CONTROL_INDEX_MENU"] = "leftstick"
-    control_mapping["CONTROL_INDEX_SWAP_SCREENS"] = "guide"
     control_mapping["CONTROL_INDEX_SWAP_ORIENTATION_A"] = "lefttrigger"
     control_mapping["CONTROL_INDEX_SWAP_ORIENTATION_B"] = "righttrigger"
 

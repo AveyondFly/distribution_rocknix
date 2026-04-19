@@ -155,7 +155,7 @@ if [ "$UPDATE_MODE" != "device_change" ]; then
          break
        fi
        time_end=$(date --date=`date +'%H:%M:%S'` +%s) && let "time_time=${time_end} - ${time_start}"
-       if [ $time_time -ge 9 ]; then
+       if [ $time_time -ge 59 ]; then
          echo -e "Timeout $event_dev. Default to \033[32mEnglish\033[0m" >/dev/tty0
          sed -i -e '/system\.language\=/c system\.language\=en_US' /storage/.config/system/configs/system.cfg
          break

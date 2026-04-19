@@ -9,4 +9,5 @@ DEVICE_PLAYBACK_PATH_HP="SPK"
 DEVICE_BATTERY_LED_STATUS="true"
 DEVICE_TEMP_SENSOR="/sys/devices/virtual/thermal/thermal_zone0/temp"
 NO_RIGHT_STICK="1"
+HOTKEY="guide"
 EOF

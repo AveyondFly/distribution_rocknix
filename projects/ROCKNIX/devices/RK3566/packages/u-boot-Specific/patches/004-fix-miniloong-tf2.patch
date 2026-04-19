@@ -1,0 +1,200 @@
+diff --git a/dst/upstream/src/arm64/rockchip/rk3566-quartz64-a.dts b/dts/upstream/src/arm64/rockchip/rk3566-quartz64-a.dts
+index a9021c5..0ec72e5 100644
+--- a/dts/upstream/src/arm64/rockchip/rk3566-quartz64-a.dts
++++ b/dts/upstream/src/arm64/rockchip/rk3566-quartz64-a.dts
+@@ -12,9 +12,10 @@
+ 	compatible = "pine64,quartz64-a", "rockchip,rk3566";
+ 
+ 	aliases {
+-		ethernet0 = &gmac1;
+-		mmc0 = &sdmmc0;
+-		mmc1 = &sdhci;
++		mmc0 = &sdhci;
++		mmc1 = &sdmmc0;
++		mmc2 = &sdmmc2;
++		mmc3 = &sdmmc1;
+ 	};
+ 
+ 	chosen: chosen {
+@@ -266,30 +267,7 @@
+ };
+ 
+ &gmac1 {
+-	assigned-clocks = <&cru SCLK_GMAC1_RX_TX>,
+-			  <&cru SCLK_GMAC1_RGMII_SPEED>,
+-			  <&cru SCLK_GMAC1>;
+-	assigned-clock-parents = <&cru SCLK_GMAC1_RGMII_SPEED>,
+-				 <&cru SCLK_GMAC1>,
+-				 <&gmac1_clkin>;
+-	clock_in_out = "input";
+-	phy-supply = <&vcc_3v3>;
+-	phy-mode = "rgmii";
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&gmac1m0_miim
+-		     &gmac1m0_tx_bus2
+-		     &gmac1m0_rx_bus2
+-		     &gmac1m0_rgmii_clk
+-		     &gmac1m0_clkinout
+-		     &gmac1m0_rgmii_bus>;
+-	snps,reset-gpio = <&gpio0 RK_PC3 GPIO_ACTIVE_LOW>;
+-	snps,reset-active-low;
+-	/* Reset time is 20ms, 100ms for rtl8211f */
+-	snps,reset-delays-us = <0 20000 100000>;
+-	tx_delay = <0x30>;
+-	rx_delay = <0x10>;
+-	phy-handle = <&rgmii_phy1>;
+-	status = "okay";
++	status = "disabled";
+ };
+ 
+ &gpu {
+@@ -503,15 +481,15 @@
+ 				regulator-max-microvolt = <1800000>;
+ 				regulator-name = "vcc1v8_dvp";
+ 				regulator-state-mem {
+-					regulator-off-in-suspend;
++					regulator-on-in-suspend;
+ 				};
+ 			};
+ 
+ 			vcc2v8_dvp: LDO_REG9 {
+ 				regulator-always-on;
+ 				regulator-boot-on;
+-				regulator-min-microvolt = <2800000>;
+-				regulator-max-microvolt = <2800000>;
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <3300000>;
+ 				regulator-name = "vcc2v8_dvp";
+ 				regulator-state-mem {
+ 					regulator-off-in-suspend;
+@@ -562,18 +540,11 @@
+ };
+ 
+ &mdio1 {
+-	rgmii_phy1: ethernet-phy@0 {
+-		compatible = "ethernet-phy-ieee802.3-c22";
+-		reg = <0>;
+-	};
++	status = "disabled";
+ };
+ 
+ &pcie2x1 {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&pcie_reset_h>;
+-	reset-gpios = <&gpio1 RK_PB2 GPIO_ACTIVE_HIGH>;
+-	vpcie3v3-supply = <&vcc3v3_pcie_p>;
+-	status = "okay";
++	status = "disabled";
+ };
+ 
+ &pinctrl {
+@@ -643,16 +614,15 @@
+ };
+ 
+ &pmu_io_domains {
++	status = "okay";
+ 	pmuio1-supply = <&vcc3v3_pmu>;
+-	pmuio2-supply = <&vcc3v3_pmu>;
++	pmuio2-supply = <&vcca1v8_pmu>;
+ 	vccio1-supply = <&vccio_acodec>;
+-	vccio2-supply = <&vcc_1v8>;
+ 	vccio3-supply = <&vccio_sd>;
+-	vccio4-supply = <&vcc_1v8>;
+-	vccio5-supply = <&vcc_3v3>;
++	vccio4-supply = <&vcca1v8_pmu>;
++	vccio5-supply = <&vcc2v8_dvp>;
+ 	vccio6-supply = <&vcc1v8_dvp>;
+ 	vccio7-supply = <&vcc_3v3>;
+-	status = "okay";
+ };
+ 
+ &sdhci {
+@@ -666,13 +636,13 @@
+ 
+ &sdmmc0 {
+ 	bus-width = <4>;
++	cap-mmc-highspeed;
+ 	cap-sd-highspeed;
+-	cd-gpios = <&gpio0 RK_PA4 GPIO_ACTIVE_LOW>;
+ 	disable-wp;
++	pinctrl-0 = <&sdmmc0_bus4>, <&sdmmc0_clk>, <&sdmmc0_cmd>,
++		    <&sdmmc0_det>;
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&sdmmc0_bus4 &sdmmc0_clk &sdmmc0_cmd &sdmmc0_det>;
+ 	sd-uhs-sdr104;
+-	vmmc-supply = <&vcc3v3_sd>;
+ 	vqmmc-supply = <&vccio_sd>;
+ 	status = "okay";
+ };
+@@ -684,11 +654,22 @@
+ 	keep-power-in-suspend;
+ 	mmc-pwrseq = <&sdio_pwrseq>;
+ 	non-removable;
++	pinctrl-0 = <&sdmmc1_bus4>, <&sdmmc1_cmd>, <&sdmmc1_clk>;
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&sdmmc1_bus4 &sdmmc1_cmd &sdmmc1_clk>;
+-	sd-uhs-sdr104;
+ 	vmmc-supply = <&vcc_wl>;
+-	vqmmc-supply = <&vcc_1v8>;
++	status = "okay";
++};
++
++&sdmmc2 {
++	bus-width = <4>;
++	cap-mmc-highspeed;
++	cap-sd-highspeed;
++	disable-wp;
++	pinctrl-0 = <&sdmmc2m1_bus4>, <&sdmmc2m1_cmd>, <&sdmmc2m1_clk>,
++		    <&sdmmc2m1_det>;
++	pinctrl-names = "default";
++	sd-uhs-sdr104;
++	vqmmc-supply = <&vcc2v8_dvp>;
+ 	status = "okay";
+ };
+ 
+@@ -720,8 +701,7 @@
+  * pin 17 - spi1_cs0_m1
+  */
+ &spi1 {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&spi1m1_cs0 &spi1m1_pins>;
++	status = "disabled";
+ };
+ 
+ &tsadc {
+@@ -789,7 +769,8 @@
+ };
+ 
+ &usb_host0_xhci {
+-	dr_mode = "host";
++	phys = <&usb2phy0_otg>;
++	phy-names = "usb2-phy";
+ 	status = "okay";
+ };
+ 
+@@ -808,22 +789,19 @@
+ };
+ 
+ &usb2phy0_otg {
+-	phy-supply = <&vcc5v0_usb20_otg>;
+ 	status = "okay";
+ };
+ 
+ &usb2phy1 {
+-	status = "okay";
++	status = "disabled";
+ };
+ 
+ &usb2phy1_host {
+-	phy-supply = <&vcc5v0_usb20_host>;
+-	status = "okay";
++	status = "disabled";
+ };
+ 
+ &usb2phy1_otg {
+-	phy-supply = <&vcc5v0_usb20_host>;
+-	status = "okay";
++	status = "disabled";
+ };
+ 
+ &vop {

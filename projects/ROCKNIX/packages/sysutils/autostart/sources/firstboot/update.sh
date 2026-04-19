@@ -204,6 +204,11 @@ case "$detected_res" in
         ;;
 esac
 
+if [ "$HW_DEVICE" = "RK3326" ]; then
+    sed -i -e '/gba.shaderset\=/c\gba.shaderset\=handheld/dot.glslp' /storage/.config/system/configs/system.cfg
+    sed -i -e '/gbah.shaderset\=/c\gbah.shaderset\=handheld/dot.glslp' /storage/.config/system/configs/system.cfg
+fi
+
 # 获取 QUIRK_DEVICE
 if [ -z "$QUIRK_DEVICE" ]; then
     QUIRK_DEVICE="$(tr -d '\0' </sys/firmware/devicetree/base/model 2>/dev/null)"

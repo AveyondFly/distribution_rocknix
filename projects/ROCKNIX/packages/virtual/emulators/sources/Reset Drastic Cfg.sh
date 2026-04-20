@@ -1,5 +1,7 @@
 #!/bin/bash
 
+. /etc/profile
+
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)  # 脚本绝对路径
 SDL_DB_FILE="/storage/.config/SDL-GameControllerDB/gamecontrollerdb.txt" # 目标DB文件
 JOYGUID_BIN="/usr/bin/joyguid"     # joyguid路径
@@ -28,7 +30,7 @@ fi
 # 生成临时文件
 tmp_file=$(mktemp)
 
-awk -v mapping_str="$mapping_line" '
+awk -v mapping_str="$mapping_line" -v no_right_stick="$NO_RIGHT_STICK" '
 BEGIN {
     # Hat 方向掩码到值的映射 (Drastic 使用 0x440 | mask)
     hat_values["1"] = 1089  # up:    0x440 | 1 = 0x441
@@ -57,7 +59,7 @@ BEGIN {
 
             # 检测是否有右摇杆
             if (key == "rightx" || key == "righty") {
-                if (ENVIRON["NO_RIGHT_STICK"] == "") {
+                if (no_right_stick == "") {
                     has_right_stick = 1
                 }
             }

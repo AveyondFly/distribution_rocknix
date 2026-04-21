@@ -39,4 +39,9 @@ makeinstall_target() {
   cp ${PKG_DIR}/sources/j2me.gptk ${INSTALL}/usr/config/java/
   mkdir -p ${INSTALL}/usr/bin
   cp ${PKG_DIR}/sources/start_freej2me.sh ${INSTALL}/usr/bin/
+
+  curl -Lo ${PKG_BUILD}/jdk.zip https://github.com/AveyondFly/console_mod_res/releases/download/v0.9/jdk.zip
+  mkdir -p ${INSTALL}/usr/share/java/
+  cp ${PKG_BUILD}/jdk.zip ${INSTALL}/usr/share/java/
+
 }

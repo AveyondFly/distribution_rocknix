@@ -92,6 +92,11 @@ function Set_ra_ext() {
 	sed -i -e '/menu_widget_scale_factor\ \=/c\menu_widget_scale_factor\ \=\ \"'${2}'\"' ${RACFG}
 }
 
+if [ ! -e "/roms/bios/jdk" ]; then
+  unzip -oq /usr/share/java/jdk.zip -d /roms/bios &>/dev/null
+fi
+ln -sf /roms/bios/jdk /storage/jdk
+
 # 处理 ppsspp 字体软链接
 PPSSPP_FONTS="/storage/.config/ppsspp/assets"
 if [ -d "$PPSSPP_FONTS" ]; then

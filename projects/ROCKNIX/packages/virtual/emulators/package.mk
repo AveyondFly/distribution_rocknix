@@ -1023,6 +1023,7 @@ makeinstall_target() {
       add_emu_core psx retroarch pcsx_rearmed true
       ;;
   esac
+  add_emu_core psx retroarch pcsx_rearmed_rumble_32b false
   add_emu_core psx duckstation duckstation-sa false
   add_emu_core psx retroarch swanstation false
   add_es_system psx

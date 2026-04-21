@@ -1,0 +1,39 @@
+From d563f9971383bfde4d01b474784c16c0a4d21a14 Mon Sep 17 00:00:00 2001
+From: root <root@ubuntu.com>
+Date: Tue, 21 Apr 2026 11:48:56 +0800
+Subject: [PATCH 2/2] Add aarch64 and x86_64 target cross-compilation support
+ via Makefile patch
+
+---
+ engine/Makefile | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/engine/Makefile b/engine/Makefile
+index e6b0efb6..0250e5b5 100644
+--- a/engine/Makefile
++++ b/engine/Makefile
+@@ -110,10 +110,10 @@ ARCHFLAGS       = -m64
+ LIBRARIES       = $(SDKPATH)/usr/lib
+ CFLAGS          += -DAMD64
+ # Workaround for GCC 9
+-CFLAGS          +=  -Wno-error=stringop-overflow
++CFLAGS          += -Wno-error=format-overflow -Wno-error=stringop-truncation -Wno-error=stringop-overflow
+ endif
+ 
+-ifdef BUILD_LINUX_LE_arm
++ifdef BUILD_LINUX_aarch64
+ TARGET 	        = $(VERSION_NAME).elf
+ TARGET_FINAL    = $(VERSION_NAME)
+ TARGET_PLATFORM = LINUX
+@@ -130,7 +130,7 @@ INCLUDES        = $(SDKPATH)/usr/include \
+ OBJTYPE         = elf
+ LIBRARIES       = $(SDKPATH)/usr/lib
+ # Workaround for GCC 9
+-CFLAGS          += -Wno-error=format-overflow -Wno-error=implicit-function-declaration -Wno-error=unused-variable -Wno-error=unused-label -Wno-error=stringop-overflow
++CFLAGS          += -Wno-error=format-overflow -Wno-error=stringop-truncation -Wno-error=implicit-function-declaration -Wno-error=unused-variable -Wno-error=unused-label -Wno-error=stringop-overflow
+ endif
+ 
+ ifdef BUILD_DARWIN
+-- 
+2.34.1
+

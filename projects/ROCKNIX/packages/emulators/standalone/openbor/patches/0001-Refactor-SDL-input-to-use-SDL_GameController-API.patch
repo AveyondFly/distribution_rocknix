@@ -1,0 +1,1173 @@
+From 0ee78abdd5bd1fc9825af368d7d48980f8f4cf55 Mon Sep 17 00:00:00 2001
+From: root <root@ubuntu.com>
+Date: Mon, 20 Apr 2026 22:31:30 +0800
+Subject: [PATCH 1/2] Refactor SDL input to use SDL_GameController API
+
+- Replace SDL_Joystick with SDL_GameController for standardized mappings
+- Replace custom joystick events with SDL_CONTROLLERBUTTONDOWN/UP and SDL_CONTROLLERAXISMOTION
+- Update default mappings (CONTROL_DEFAULT2_FIRE1, etc) to use SDL_CONTROLLER_BUTTON_*
+- Replace static key name arrays with dynamic SDL_GameControllerGetStringForButton/Axis
+- Reduce JOY_MAX_INPUTS from 64 to 35 to fit controller constraints
+---
+ engine/openbor.c         |  12 +-
+ engine/sdl/control.c     | 196 +++++++----------
+ engine/sdl/control.h     | 115 +++++-----
+ engine/sdl/joysticks.c   | 465 ++++++++-------------------------------
+ engine/sdl/joysticks.h   |   2 +-
+ engine/sdl/menu.c        |   2 +-
+ engine/sdl/video.c       |   2 +-
+ engine/source/savedata.h |  14 +-
+ 8 files changed, 255 insertions(+), 553 deletions(-)
+
+diff --git a/engine/openbor.c b/engine/openbor.c
+index 4aeffac4..5cbe229f 100644
+--- a/engine/openbor.c
++++ b/engine/openbor.c
+@@ -2515,7 +2515,7 @@ void execute_pdie_script(int index)
+ 
+ void clearbuttons(int player)
+ {
+-    savedata.joyrumble[player] = 0;
++    savedata.joyrumble[player] = 1;
+ 
+     if (player == 0)
+     {
+@@ -2627,6 +2627,9 @@ void clearsettings()
+     savedata.compatibleversion = COMPATIBLEVERSION;
+     savedata.gamma = 0;
+     savedata.brightness = 0;
++    savedata.usesound = 1;
++    savedata.soundrate = 44100;
++    savedata.soundbits = 16;
+     global_config.cheats = CHEAT_OPTIONS_ALL_MENU;
+     savedata.soundvol = 100; //Kratus (02-2023) Changed the default master volume
+     savedata.usemusic = 1;
+@@ -2639,7 +2642,12 @@ void clearsettings()
+     savedata.logo = 1;
+     savedata.uselog = 1;
+     savedata.debuginfo = 0;
+-    savedata.fullscreen = 0;
++    savedata.debug_collision_attack = 0;
++    savedata.debug_collision_body = 0;
++    savedata.debug_collision_range = 0;
++    savedata.debug_position = 0;
++    savedata.debug_features = 0;
++    savedata.fullscreen = 1;
+     savedata.fpslimit = 1; // default to vsync
+ 
+ 	#if WII
+diff --git a/engine/sdl/control.c b/engine/sdl/control.c
+index 88afa65e..09d02427 100644
+--- a/engine/sdl/control.c
++++ b/engine/sdl/control.c
+@@ -22,7 +22,7 @@
+ #include "jniutils.h"
+ #endif
+ 
+-SDL_Joystick *joystick[JOY_LIST_TOTAL];         // SDL struct for joysticks
++SDL_GameController *joystick[JOY_LIST_TOTAL];         // SDL struct for joysticks
+ SDL_Haptic *joystick_haptic[JOY_LIST_TOTAL];   // SDL haptic for joysticks
+ static int usejoy;						        // To be or Not to be used?
+ static int numjoy;						        // Number of Joy(s) found
+@@ -119,117 +119,80 @@ void getPads(Uint8* keystate, Uint8* keystate_def)
+ 				borShutdown(0, DEFAULT_SHUTDOWN_MESSAGE);
+ 				break;
+ 
+-			case SDL_JOYBUTTONUP:
++									case SDL_CONTROLLERBUTTONUP:
+ 				for(i=0; i<JOY_LIST_TOTAL; i++)
+ 				{
+-					if(ev.jbutton.which == i)
++					if (joystick[i] && SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(joystick[i])) == ev.cbutton.which)
+ 					{
+-						if(joysticks[i].Type == JOY_TYPE_GAMEPARK)
+-						{
+-							if(ev.jbutton.button == 0 || ev.jbutton.button == 7 || ev.jbutton.button == 1) joysticks[i].Hats &= ~(JoystickBits[1]);
+-							if(ev.jbutton.button == 6 || ev.jbutton.button == 5 || ev.jbutton.button == 7) joysticks[i].Hats &= ~(JoystickBits[2]);
+-							if(ev.jbutton.button == 4 || ev.jbutton.button == 3 || ev.jbutton.button == 5) joysticks[i].Hats &= ~(JoystickBits[3]);
+-							if(ev.jbutton.button == 2 || ev.jbutton.button == 1 || ev.jbutton.button == 3) joysticks[i].Hats &= ~(JoystickBits[4]);
+-							if(ev.jbutton.button >= 8 && ev.jbutton.button <= 18) joysticks[i].Buttons &= ~(JoystickBits[ev.jbutton.button - 3]);
+-						}
+-						/*else
+-                        {
+-                            // add key flag from event
+-                            #ifdef ANDROID
+-                            joysticks[i].Buttons &= 0x00 << ev.jbutton.button;
+-                            #endif
+-                        }*/
++                        joysticks[i].Buttons &= ~(1 << ev.cbutton.button);
+ 					}
+ 				}
+ 				break;
+ 
+-			case SDL_JOYBUTTONDOWN:
++			case SDL_CONTROLLERBUTTONDOWN:
+ 				for(i=0; i<JOY_LIST_TOTAL; i++)
+ 				{
+-					if (SDL_JoystickInstanceID(joystick[i]) == ev.jbutton.which)
++					if (joystick[i] && SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(joystick[i])) == ev.cbutton.which)
+ 					{
+-						//printf("Button down: controller %i, button %i\n", i, ev.jbutton.button);
+-						lastjoy = 1 + i * JOY_MAX_INPUTS + ev.jbutton.button;
+-
+-						// add key flag from event
+-						/*#ifdef ANDROID
+-						joysticks[i].Buttons |= 0x01 << ev.jbutton.button;
+-						#endif*/
++						lastjoy = 1 + i * JOY_MAX_INPUTS + ev.cbutton.button;
++                        joysticks[i].Buttons |= 1 << ev.cbutton.button;
+ 					}
+ 				}
+ 				break;
+ 
+-			case SDL_JOYHATMOTION:
++			case SDL_CONTROLLERAXISMOTION:
+ 				for(i=0; i<JOY_LIST_TOTAL; i++)
+ 				{
+-					if (SDL_JoystickInstanceID(joystick[i]) == ev.jhat.which)
++					if (joystick[i] && SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(joystick[i])) == ev.caxis.which)
+ 					{
+-						int hatfirst = 1 + i * JOY_MAX_INPUTS + joysticks[i].NumButtons + 2*joysticks[i].NumAxes + 4*ev.jhat.hat;
+-						x = (joysticks[i].Hats >> (4*ev.jhat.hat)) & 0x0F; // hat's previous state
+-						if(ev.jhat.value & SDL_HAT_UP       && !(x & SDL_HAT_UP))       lastjoy = hatfirst;
+-						if(ev.jhat.value & SDL_HAT_RIGHT    && !(x & SDL_HAT_RIGHT))	lastjoy = hatfirst + 1;
+-						if(ev.jhat.value & SDL_HAT_DOWN     && !(x & SDL_HAT_DOWN))	    lastjoy = hatfirst + 2;
+-						if(ev.jhat.value & SDL_HAT_LEFT     && !(x & SDL_HAT_LEFT))	    lastjoy = hatfirst + 3;
+-						//if(lastjoy) fprintf(stderr, "SDL_JOYHATMOTION - Joystick %i Hat %i (Index %i)\n", i, ev.jhat.hat, lastjoy);
+-
+-						// add key flag from event (0x01 0x02 0x04 0x08)
+-						#ifdef ANDROID
+-						if(ev.jhat.value & SDL_HAT_UP)      joysticks[i].Hats |= SDL_HAT_UP         << (ev.jhat.hat*4);
+-						if(ev.jhat.value & SDL_HAT_RIGHT)   joysticks[i].Hats |= SDL_HAT_RIGHT      << (ev.jhat.hat*4);
+-						if(ev.jhat.value & SDL_HAT_DOWN)    joysticks[i].Hats |= SDL_HAT_DOWN       << (ev.jhat.hat*4);
+-						if(ev.jhat.value & SDL_HAT_LEFT)    joysticks[i].Hats |= SDL_HAT_LEFT       << (ev.jhat.hat*4);
+-						#endif
+-					}
+-				}
+-				break;
++						int axisfirst = 1 + i * JOY_MAX_INPUTS + SDL_CONTROLLER_BUTTON_MAX + 2*ev.caxis.axis;
++						x = (joysticks[i].Axes >> (2*ev.caxis.axis)) & 0x03; // previous state of axis
++						if(ev.caxis.value <  -1*T_AXIS && !(x & 0x01))		lastjoy = axisfirst;
++						if(ev.caxis.value >     T_AXIS && !(x & 0x02))		lastjoy = axisfirst + 1;
++                        
++						// Map Left Stick to D-Pad for 'lastjoy' (Menus)
++						if(ev.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX) {
++							if(ev.caxis.value < -1*T_AXIS && !(x & 0x01)) lastjoy = 1 + i * JOY_MAX_INPUTS + SDL_CONTROLLER_BUTTON_DPAD_LEFT;
++							if(ev.caxis.value >    T_AXIS && !(x & 0x02)) lastjoy = 1 + i * JOY_MAX_INPUTS + SDL_CONTROLLER_BUTTON_DPAD_RIGHT;
++						}
++						if(ev.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY) {
++							if(ev.caxis.value < -1*T_AXIS && !(x & 0x01)) lastjoy = 1 + i * JOY_MAX_INPUTS + SDL_CONTROLLER_BUTTON_DPAD_UP;
++							if(ev.caxis.value >    T_AXIS && !(x & 0x02)) lastjoy = 1 + i * JOY_MAX_INPUTS + SDL_CONTROLLER_BUTTON_DPAD_DOWN;
++						}
+ 
+-			case SDL_JOYAXISMOTION:
+-				for(i=0; i<JOY_LIST_TOTAL; i++)
+-				{
+-					if (SDL_JoystickInstanceID(joystick[i]) == ev.jaxis.which)
+-					{
+-						int axisfirst = 1 + i * JOY_MAX_INPUTS + joysticks[i].NumButtons + 2*ev.jaxis.axis;
+-						x = (joysticks[i].Axes >> (2*ev.jaxis.axis)) & 0x03; // previous state of axis
+-						if(ev.jaxis.value <  -1*T_AXIS && !(x & 0x01))		lastjoy = axisfirst;
+-						if(ev.jaxis.value >     T_AXIS && !(x & 0x02))		lastjoy = axisfirst + 1;
+-						//if(lastjoy) fprintf(stderr, "SDL_JOYAXISMOTION - Joystick %i Axis %i = Position %i (Index %i)\n", i, ev.jaxis.axis, ev.jaxis.value, lastjoy);
+-
+-						// add key flag from event
+-						#ifdef ANDROID
+-                        if(ev.jaxis.value < -1*T_AXIS)  { joysticks[i].Axes |= 0x01 << (ev.jaxis.axis*2); }
+-                        if(ev.jaxis.value >    T_AXIS)  { joysticks[i].Axes |= 0x02 << (ev.jaxis.axis*2); }
+-                        #endif
++                        joysticks[i].Axes &= ~(0x03 << (ev.caxis.axis*2));
++                        if(ev.caxis.value < -1*T_AXIS)  joysticks[i].Axes |= 0x01 << (ev.caxis.axis*2);
++                        if(ev.caxis.value >    T_AXIS)  joysticks[i].Axes |= 0x02 << (ev.caxis.axis*2);
+ 					}
+ 				}
+ 				break;
+ 
+-            // PLUG AND PLAY
+-            case SDL_JOYDEVICEADDED:
+-                if (ev.jdevice.which < JOY_LIST_TOTAL)
++            case SDL_CONTROLLERDEVICEADDED:
++                if (ev.cdevice.which < JOY_LIST_TOTAL)
+                 {
+-                    int i = ev.jdevice.which;
++                    int i = ev.cdevice.which;
+                     char buffer[MAX_BUFFER_LEN];
+                     char joy_name[MAX_BUFFER_LEN];
+                     open_joystick(i);
+                     //get_time_string(buffer, MAX_BUFFER_LEN, (time_t)ev.jdevice.timestamp, TIMESTAMP_PATTERN);
+                     get_now_string(buffer, MAX_BUFFER_LEN, TIMESTAMP_PATTERN);
+-                    numjoy = SDL_NumJoysticks();
++                    numjoy = 0; for(int x=0; x<SDL_NumJoysticks(); x++) { if(SDL_IsGameController(x)) numjoy++; }
+                     strcpy(joy_name,get_joystick_name(joysticks[i].Name));
+                     printf("Joystick: \"%s\" connected at port: %d at %s\n",joy_name,i,buffer);
+                 }
+                 break;
+ 
+-            case SDL_JOYDEVICEREMOVED:
+-                if (ev.jdevice.which < JOY_LIST_TOTAL)
++            case SDL_CONTROLLERDEVICEREMOVED:
++                if (ev.cdevice.which < JOY_LIST_TOTAL)
+                 {
+-                    int i = ev.jdevice.which;
++                    int i = ev.cdevice.which;
+                     if(joystick[i])
+                     {
+                         char buffer[MAX_BUFFER_LEN];
+                         char joy_name[MAX_BUFFER_LEN];
+                         get_now_string(buffer, MAX_BUFFER_LEN, TIMESTAMP_PATTERN);
+                         //close_joystick(i); //Kratus (20-04-21) disable the entire code to maintain joystick IDs
+-                        numjoy = SDL_NumJoysticks();
++                        numjoy = 0; for(int x=0; x<SDL_NumJoysticks(); x++) { if(SDL_IsGameController(x)) numjoy++; }
+                         strcpy(joy_name,get_joystick_name(joysticks[i].Name));
+                         printf("Joystick: \"%s\" disconnected from port: %d at %s\n",joy_name,i,buffer);
+                     }
+@@ -242,10 +205,10 @@ void getPads(Uint8* keystate, Uint8* keystate_def)
+ 
+ 	}
+ 
++	
+ 	if(joysticks[0].Type != JOY_TYPE_GAMEPARK)
+ 	{
+-		// new PC joystick code - forget about SDL joystick events, just do a state check
+-		SDL_JoystickUpdate();
++						SDL_GameControllerUpdate();
+ 		for(i = 0; i < JOY_LIST_TOTAL; i++)
+ 		{
+ 			// reset state
+@@ -253,38 +216,36 @@ void getPads(Uint8* keystate, Uint8* keystate_def)
+ 			if (joystick[i] == NULL) continue;
+ 
+ 			// check buttons
+-			for(j = 0; j < joysticks[i].NumButtons; j++)
++			for(j = 0; j < SDL_CONTROLLER_BUTTON_MAX; j++)
+             {
+-                joysticks[i].Buttons |= SDL_JoystickGetButton(joystick[i], j) << j;
++                joysticks[i].Buttons |= SDL_GameControllerGetButton(joystick[i], (SDL_GameControllerButton)j) << j;
+             }
+ 
+ 			// check axes
+-			for(j = 0; j < joysticks[i].NumAxes; j++)
++			for(j = 0; j < SDL_CONTROLLER_AXIS_MAX; j++)
+ 			{
+-				axis = SDL_JoystickGetAxis(joystick[i], j);
++				axis = SDL_GameControllerGetAxis(joystick[i], (SDL_GameControllerAxis)j);
+ 				if(axis < -1*T_AXIS)  { joysticks[i].Axes |= 0x01 << (j*2); }
+ 				if(axis >    T_AXIS)  { joysticks[i].Axes |= 0x02 << (j*2); }
+-			}
+-
+-			// check hats
+-			for(j = 0; j < joysticks[i].NumHats; j++)
+-            {
+-                //joysticks[i].Hats |= SDL_JoystickGetHat(joystick[i], j) << (j*4);
+ 
+-                Uint8 hat_value = SDL_JoystickGetHat(joystick[i], j);
+-                if(hat_value & SDL_HAT_UP)      joysticks[i].Hats |= SDL_HAT_UP     << (j*4);
+-                if(hat_value & SDL_HAT_RIGHT)   joysticks[i].Hats |= SDL_HAT_RIGHT  << (j*4);
+-                if(hat_value & SDL_HAT_DOWN)    joysticks[i].Hats |= SDL_HAT_DOWN   << (j*4);
+-                if(hat_value & SDL_HAT_LEFT)    joysticks[i].Hats |= SDL_HAT_LEFT   << (j*4);
+-            }
++				// Map Left Stick to D-Pad Buttons
++				if(j == SDL_CONTROLLER_AXIS_LEFTX) {
++					if(axis < -1*T_AXIS)  { joysticks[i].Buttons |= 1 << SDL_CONTROLLER_BUTTON_DPAD_LEFT; }
++					if(axis >    T_AXIS)  { joysticks[i].Buttons |= 1 << SDL_CONTROLLER_BUTTON_DPAD_RIGHT; }
++				}
++				if(j == SDL_CONTROLLER_AXIS_LEFTY) {
++					if(axis < -1*T_AXIS)  { joysticks[i].Buttons |= 1 << SDL_CONTROLLER_BUTTON_DPAD_UP; }
++					if(axis >    T_AXIS)  { joysticks[i].Buttons |= 1 << SDL_CONTROLLER_BUTTON_DPAD_DOWN; }
++				}
++			}
+ 
+-			// combine axis, hat, and button state into a single value
++			// combine axis and button state into a single value
+ 			joysticks[i].Data = joysticks[i].Buttons;
+-			joysticks[i].Data |= joysticks[i].Axes << joysticks[i].NumButtons;
+-			joysticks[i].Data |= joysticks[i].Hats << (joysticks[i].NumButtons + 2*joysticks[i].NumAxes);
++			joysticks[i].Data |= ((u64)joysticks[i].Axes) << SDL_CONTROLLER_BUTTON_MAX;
+ 		}
+ 	}
+ 
++
+ }
+ 
+ /*
+@@ -324,7 +285,7 @@ void joystick_scan(int scan)
+ 
+ 	if(!scan) return;
+ 
+-	numjoy = SDL_NumJoysticks();
++	numjoy = 0; for(int x=0; x<SDL_NumJoysticks(); x++) { if(SDL_IsGameController(x)) numjoy++; }
+ 	numjoyNoAcc = numjoy;
+ 
+ 	if (scan != 2)
+@@ -333,7 +294,7 @@ void joystick_scan(int scan)
+         {
+             char real_joy_name[MAX_BUFFER_LEN];
+ 
+-            strcpy(real_joy_name,SDL_JoystickNameForIndex(i));
++            strcpy(real_joy_name,SDL_GameControllerNameForIndex(i));
+             if (strcmp(real_joy_name, "Android Accelerometer") == 0)
+             {
+                 --numjoyNoAcc;
+@@ -357,7 +318,7 @@ void joystick_scan(int scan)
+ 	    int joy_idx = i;
+         char real_joy_name[MAX_BUFFER_LEN];
+ 
+-        strcpy(real_joy_name,SDL_JoystickNameForIndex(i));
++        strcpy(real_joy_name,SDL_GameControllerNameForIndex(i));
+ 
+         if (strcmp(real_joy_name, "Android Accelerometer") == 0)
+         {
+@@ -375,13 +336,13 @@ void joystick_scan(int scan)
+             if(numjoy == 1)
+             {
+                 printf("%s (%s) - %d axes, %d buttons, %d hat(s), rumble support: %s\n",
+-                        get_joystick_name(joysticks[joy_idx].Name), SDL_JoystickName(i), joysticks[joy_idx].NumAxes, joysticks[joy_idx].NumButtons, joysticks[joy_idx].NumHats, rumble_support);
++                        get_joystick_name(joysticks[joy_idx].Name), SDL_GameControllerNameForIndex(i), joysticks[joy_idx].NumAxes, joysticks[joy_idx].NumButtons, joysticks[joy_idx].NumHats, rumble_support);
+             }
+             else if(numjoy > 1)
+             {
+                 if(joy_idx) printf("\n");
+                 printf("%d. %s (%s) - %d axes, %d buttons, %d hat(s), rumble support: %s\n", i + 1,
+-                        get_joystick_name(joysticks[joy_idx].Name), SDL_JoystickName(i), joysticks[joy_idx].NumAxes, joysticks[joy_idx].NumButtons, joysticks[joy_idx].NumHats, rumble_support);
++                        get_joystick_name(joysticks[joy_idx].Name), SDL_GameControllerNameForIndex(i), joysticks[joy_idx].NumAxes, joysticks[joy_idx].NumButtons, joysticks[joy_idx].NumHats, rumble_support);
+             }
+         }
+ 	}
+@@ -394,18 +355,18 @@ void open_joystick(int i)
+ {
+     int j;
+ 
+-    if ( ( joystick[i] = SDL_JoystickOpen(i) ) == NULL )
++    if ( ( joystick[i] = SDL_GameControllerOpen(i) ) == NULL )
+     {
+        printf("\nWarning: Unable to initialize joystick in port: %d! SDL Error: %s\n", i, SDL_GetError());
+        return;
+     }
+-    joysticks[i].NumHats = SDL_JoystickNumHats(joystick[i]);
+-    joysticks[i].NumAxes = SDL_JoystickNumAxes(joystick[i]);
+-    joysticks[i].NumButtons = SDL_JoystickNumButtons(joystick[i]);
++    joysticks[i].NumHats = 0;
++    joysticks[i].NumAxes = SDL_CONTROLLER_AXIS_MAX;
++    joysticks[i].NumButtons = SDL_CONTROLLER_BUTTON_MAX;
+ 
+-    strcpy(joysticks[i].Name, SDL_JoystickName(i));
++    strcpy(joysticks[i].Name, SDL_GameControllerNameForIndex(i));
+ 
+-    joystick_haptic[i] = SDL_HapticOpenFromJoystick(joystick[i]);
++    joystick_haptic[i] = SDL_HapticOpenFromJoystick(SDL_GameControllerGetJoystick(joystick[i]));
+     if (joystick_haptic[i] != NULL)
+     {
+         //Get initialize rumble
+@@ -457,7 +418,7 @@ Reset single joystick
+ */
+ void close_joystick(int i)
+ {
+-	if(joystick[i] != NULL) SDL_JoystickClose(joystick[i]);
++	if(joystick[i] != NULL) SDL_GameControllerClose(joystick[i]);
+ 	if(joystick_haptic[i] != NULL) SDL_HapticClose(joystick_haptic[i]);
+ 	joystick[i] = NULL;
+ 	joystick_haptic[i] = NULL;
+@@ -472,7 +433,7 @@ void control_init(int joy_enable)
+ {
+ 	int i;
+ 
+-	usejoy = joy_enable;
++	usejoy = 1; // Force joy enable
+ 
+ 	//memset(joysticks, 0, sizeof(s_joysticks) * JOY_LIST_TOTAL);
+ 	for(i = 0; i < JOY_LIST_TOTAL; i++)
+@@ -481,7 +442,7 @@ void control_init(int joy_enable)
+         joystick_haptic[i] = NULL;
+ 		reset_joystick_map(i);
+ 	}
+-	joystick_scan(usejoy);
++	joystick_scan(1);
+ 
+ #ifdef ANDROID
+ 	for(i = 0; i < MAX_POINTERS; i++)
+@@ -526,8 +487,8 @@ enabling and disabling all joysticks.
+ */
+ int control_usejoy(int enable)
+ {
+-	usejoy = enable;
+-	return 0;
++	usejoy = 1; // Force joy enable
++	return 1;
+ }
+ 
+ #if ANDROID
+@@ -892,7 +853,7 @@ void control_update(s_playercontrols ** playercontrols, int numplayers)
+             }
+         }
+ 
+-		if(usejoy)
++		if(1) // Force joystick always on
+ 		{
+ 			for(i = 0; i < JOY_MAX_INPUTS; i++)
+ 			{
+@@ -918,13 +879,12 @@ void control_update(s_playercontrols ** playercontrols, int numplayers)
+ 
+ void control_rumble(int port, int ratio, int msec)
+ {
+-    #if SDL
+-    if (joystick[port] != NULL && joystick_haptic[port] != NULL) {
+-        if(SDL_HapticRumblePlay(joystick_haptic[port], ratio, msec) != 0)
+-        {
+-            //printf( "Warning: Unable to play rumble! %s\n", SDL_GetError() );
+-        }
+-    }
+-    #endif
++#if SDL
++	if (msec <= 0) return;
++	if (joystick[port] != NULL)
++	{
++		SDL_GameControllerRumble(joystick[port], 0xFFFF, 0xFFFF, msec);
++	}
++#endif
+ }
+ 
+diff --git a/engine/sdl/control.h b/engine/sdl/control.h
+index 8593fb1b..bcee3b60 100644
+--- a/engine/sdl/control.h
++++ b/engine/sdl/control.h
+@@ -12,68 +12,69 @@
+ // Generic control stuff (keyboard+joystick).
+ #include <SDL_keycode.h>
+ #include "joysticks.h"
++#include <SDL_gamecontroller.h>
+ 
+ #define	CONTROL_ESC                 SDL_SCANCODE_ESCAPE
+-#define	CONTROL_DEFAULT1_START		SDL_SCANCODE_RETURN
+-#define	CONTROL_DEFAULT1_UP         SDL_SCANCODE_UP
+-#define	CONTROL_DEFAULT1_DOWN		SDL_SCANCODE_DOWN
+-#define	CONTROL_DEFAULT1_LEFT		SDL_SCANCODE_LEFT
+-#define	CONTROL_DEFAULT1_RIGHT		SDL_SCANCODE_RIGHT
+-#define	CONTROL_DEFAULT1_FIRE1		SDL_SCANCODE_A
+-#define	CONTROL_DEFAULT1_FIRE2		SDL_SCANCODE_S
+-#define	CONTROL_DEFAULT1_FIRE3		SDL_SCANCODE_Z
+-#define	CONTROL_DEFAULT1_FIRE4		SDL_SCANCODE_X
+-#define	CONTROL_DEFAULT1_FIRE5		SDL_SCANCODE_D
+-#define	CONTROL_DEFAULT1_FIRE6		SDL_SCANCODE_F
+-#define	CONTROL_DEFAULT1_SCREENSHOT	SDL_SCANCODE_F12
+-#define	CONTROL_DEFAULT1_ESC        SDL_SCANCODE_ESCAPE
+-
+-#define	CONTROL_DEFAULT2_UP			((JOY_LIST_FIRST + 1) + JOY_MAX_INPUTS)
+-#define	CONTROL_DEFAULT2_RIGHT		((JOY_LIST_FIRST + 2) + JOY_MAX_INPUTS)
+-#define	CONTROL_DEFAULT2_DOWN		((JOY_LIST_FIRST + 3) + JOY_MAX_INPUTS)
+-#define	CONTROL_DEFAULT2_LEFT		((JOY_LIST_FIRST + 4) + JOY_MAX_INPUTS)
+-#define CONTROL_DEFAULT2_FIRE1		((JOY_LIST_FIRST + 5) + JOY_MAX_INPUTS)
+-#define CONTROL_DEFAULT2_FIRE2		((JOY_LIST_FIRST + 6) + JOY_MAX_INPUTS)
+-#define	CONTROL_DEFAULT2_FIRE3		((JOY_LIST_FIRST + 7) + JOY_MAX_INPUTS)
+-#define	CONTROL_DEFAULT2_FIRE4		((JOY_LIST_FIRST + 8) + JOY_MAX_INPUTS)
+-#define	CONTROL_DEFAULT2_FIRE5		((JOY_LIST_FIRST + 9) + JOY_MAX_INPUTS)
+-#define	CONTROL_DEFAULT2_FIRE6		((JOY_LIST_FIRST + 10) + JOY_MAX_INPUTS)
+-#define CONTROL_DEFAULT2_START		((JOY_LIST_FIRST + 11) + JOY_MAX_INPUTS)
+-#define CONTROL_DEFAULT2_SCREENSHOT ((JOY_LIST_FIRST + 12) + JOY_MAX_INPUTS)
+-#define	CONTROL_DEFAULT2_ESC        ((JOY_LIST_FIRST + 15) + JOY_MAX_INPUTS)
+-
+-#define	CONTROL_DEFAULT3_UP			((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS * 2))
+-#define	CONTROL_DEFAULT3_RIGHT		((JOY_LIST_FIRST + 2) + (JOY_MAX_INPUTS * 2))
+-#define	CONTROL_DEFAULT3_DOWN		((JOY_LIST_FIRST + 3) + (JOY_MAX_INPUTS * 2))
+-#define	CONTROL_DEFAULT3_LEFT		((JOY_LIST_FIRST + 4) + (JOY_MAX_INPUTS * 2))
+-#define CONTROL_DEFAULT3_FIRE1		((JOY_LIST_FIRST + 5) + (JOY_MAX_INPUTS * 2))
+-#define CONTROL_DEFAULT3_FIRE2		((JOY_LIST_FIRST + 6) + (JOY_MAX_INPUTS * 2))
+-#define	CONTROL_DEFAULT3_FIRE3		((JOY_LIST_FIRST + 7) + (JOY_MAX_INPUTS * 2))
+-#define	CONTROL_DEFAULT3_FIRE4		((JOY_LIST_FIRST + 8) + (JOY_MAX_INPUTS * 2))
+-#define	CONTROL_DEFAULT3_FIRE5		((JOY_LIST_FIRST + 9) + (JOY_MAX_INPUTS * 2))
+-#define	CONTROL_DEFAULT3_FIRE6		((JOY_LIST_FIRST + 10) + (JOY_MAX_INPUTS * 2))
+-#define CONTROL_DEFAULT3_START		((JOY_LIST_FIRST + 11) + (JOY_MAX_INPUTS * 2))
+-#define CONTROL_DEFAULT3_SCREENSHOT ((JOY_LIST_FIRST + 12) + (JOY_MAX_INPUTS * 2))
+-#define	CONTROL_DEFAULT3_ESC        ((JOY_LIST_FIRST + 15) + (JOY_MAX_INPUTS * 2))
+-
+-#define	CONTROL_DEFAULT4_UP			((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS * 3))
+-#define	CONTROL_DEFAULT4_RIGHT		((JOY_LIST_FIRST + 2) + (JOY_MAX_INPUTS * 3))
+-#define	CONTROL_DEFAULT4_DOWN		((JOY_LIST_FIRST + 3) + (JOY_MAX_INPUTS * 3))
+-#define	CONTROL_DEFAULT4_LEFT		((JOY_LIST_FIRST + 4) + (JOY_MAX_INPUTS * 3))
+-#define CONTROL_DEFAULT4_FIRE1		((JOY_LIST_FIRST + 5) + (JOY_MAX_INPUTS * 3))
+-#define CONTROL_DEFAULT4_FIRE2		((JOY_LIST_FIRST + 6) + (JOY_MAX_INPUTS * 3))
+-#define	CONTROL_DEFAULT4_FIRE3		((JOY_LIST_FIRST + 7) + (JOY_MAX_INPUTS * 3))
+-#define	CONTROL_DEFAULT4_FIRE4		((JOY_LIST_FIRST + 8) + (JOY_MAX_INPUTS * 3))
+-#define	CONTROL_DEFAULT4_FIRE5		((JOY_LIST_FIRST + 9) + (JOY_MAX_INPUTS * 3))
+-#define	CONTROL_DEFAULT4_FIRE6		((JOY_LIST_FIRST + 10) + (JOY_MAX_INPUTS * 3))
+-#define CONTROL_DEFAULT4_START		((JOY_LIST_FIRST + 11) + (JOY_MAX_INPUTS * 3))
+-#define CONTROL_DEFAULT4_SCREENSHOT ((JOY_LIST_FIRST + 12) + (JOY_MAX_INPUTS * 3))
+-#define	CONTROL_DEFAULT4_ESC        ((JOY_LIST_FIRST + 15) + (JOY_MAX_INPUTS * 3))
++#define	CONTROL_DEFAULT4_START		SDL_SCANCODE_RETURN
++#define	CONTROL_DEFAULT4_UP         SDL_SCANCODE_UP
++#define	CONTROL_DEFAULT4_DOWN		SDL_SCANCODE_DOWN
++#define	CONTROL_DEFAULT4_LEFT		SDL_SCANCODE_LEFT
++#define	CONTROL_DEFAULT4_RIGHT		SDL_SCANCODE_RIGHT
++#define	CONTROL_DEFAULT4_FIRE1		SDL_SCANCODE_A
++#define	CONTROL_DEFAULT4_FIRE2		SDL_SCANCODE_S
++#define	CONTROL_DEFAULT4_FIRE3		SDL_SCANCODE_Z
++#define	CONTROL_DEFAULT4_FIRE4		SDL_SCANCODE_X
++#define	CONTROL_DEFAULT4_FIRE5		SDL_SCANCODE_D
++#define	CONTROL_DEFAULT4_FIRE6		SDL_SCANCODE_F
++#define	CONTROL_DEFAULT4_SCREENSHOT	SDL_SCANCODE_F12
++#define	CONTROL_DEFAULT4_ESC        SDL_SCANCODE_ESCAPE
++
++#define	CONTROL_DEFAULT1_UP			((JOY_LIST_FIRST + 1) + SDL_CONTROLLER_BUTTON_DPAD_UP)
++#define	CONTROL_DEFAULT1_RIGHT		((JOY_LIST_FIRST + 1) + SDL_CONTROLLER_BUTTON_DPAD_RIGHT)
++#define	CONTROL_DEFAULT1_DOWN		((JOY_LIST_FIRST + 1) + SDL_CONTROLLER_BUTTON_DPAD_DOWN)
++#define	CONTROL_DEFAULT1_LEFT		((JOY_LIST_FIRST + 1) + SDL_CONTROLLER_BUTTON_DPAD_LEFT)
++#define CONTROL_DEFAULT1_FIRE1		((JOY_LIST_FIRST + 1) + SDL_CONTROLLER_BUTTON_A)
++#define CONTROL_DEFAULT1_FIRE2		((JOY_LIST_FIRST + 1) + SDL_CONTROLLER_BUTTON_X)
++#define	CONTROL_DEFAULT1_FIRE3		((JOY_LIST_FIRST + 1) + SDL_CONTROLLER_BUTTON_Y)
++#define	CONTROL_DEFAULT1_FIRE4		((JOY_LIST_FIRST + 1) + SDL_CONTROLLER_BUTTON_LEFTSHOULDER)
++#define	CONTROL_DEFAULT1_FIRE5		((JOY_LIST_FIRST + 1) + SDL_CONTROLLER_BUTTON_B) // JUMP
++#define	CONTROL_DEFAULT1_FIRE6		((JOY_LIST_FIRST + 1) + SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) // SPECIAL
++#define CONTROL_DEFAULT1_START		((JOY_LIST_FIRST + 1) + SDL_CONTROLLER_BUTTON_START)
++#define CONTROL_DEFAULT1_SCREENSHOT ((JOY_LIST_FIRST + 1) + SDL_CONTROLLER_BUTTON_LEFTSTICK)
++#define	CONTROL_DEFAULT1_ESC        ((JOY_LIST_FIRST + 1) + SDL_CONTROLLER_BUTTON_BACK)
++
++#define	CONTROL_DEFAULT2_UP			((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS) + SDL_CONTROLLER_BUTTON_DPAD_UP)
++#define	CONTROL_DEFAULT2_RIGHT		((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS) + SDL_CONTROLLER_BUTTON_DPAD_RIGHT)
++#define	CONTROL_DEFAULT2_DOWN		((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS) + SDL_CONTROLLER_BUTTON_DPAD_DOWN)
++#define	CONTROL_DEFAULT2_LEFT		((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS) + SDL_CONTROLLER_BUTTON_DPAD_LEFT)
++#define CONTROL_DEFAULT2_FIRE1		((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS) + SDL_CONTROLLER_BUTTON_A)
++#define CONTROL_DEFAULT2_FIRE2		((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS) + SDL_CONTROLLER_BUTTON_X)
++#define	CONTROL_DEFAULT2_FIRE3		((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS) + SDL_CONTROLLER_BUTTON_Y)
++#define	CONTROL_DEFAULT2_FIRE4		((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS) + SDL_CONTROLLER_BUTTON_LEFTSHOULDER)
++#define	CONTROL_DEFAULT2_FIRE5		((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS) + SDL_CONTROLLER_BUTTON_B)
++#define	CONTROL_DEFAULT2_FIRE6		((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS) + SDL_CONTROLLER_BUTTON_RIGHTSHOULDER)
++#define CONTROL_DEFAULT2_START		((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS) + SDL_CONTROLLER_BUTTON_START)
++#define CONTROL_DEFAULT2_SCREENSHOT ((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS) + SDL_CONTROLLER_BUTTON_LEFTSTICK)
++#define	CONTROL_DEFAULT2_ESC        ((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS) + SDL_CONTROLLER_BUTTON_BACK)
++
++#define	CONTROL_DEFAULT3_UP			((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS * 2) + SDL_CONTROLLER_BUTTON_DPAD_UP)
++#define	CONTROL_DEFAULT3_RIGHT		((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS * 2) + SDL_CONTROLLER_BUTTON_DPAD_RIGHT)
++#define	CONTROL_DEFAULT3_DOWN		((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS * 2) + SDL_CONTROLLER_BUTTON_DPAD_DOWN)
++#define	CONTROL_DEFAULT3_LEFT		((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS * 2) + SDL_CONTROLLER_BUTTON_DPAD_LEFT)
++#define CONTROL_DEFAULT3_FIRE1		((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS * 2) + SDL_CONTROLLER_BUTTON_A)
++#define CONTROL_DEFAULT3_FIRE2		((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS * 2) + SDL_CONTROLLER_BUTTON_X)
++#define	CONTROL_DEFAULT3_FIRE3		((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS * 2) + SDL_CONTROLLER_BUTTON_Y)
++#define	CONTROL_DEFAULT3_FIRE4		((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS * 2) + SDL_CONTROLLER_BUTTON_LEFTSHOULDER)
++#define	CONTROL_DEFAULT3_FIRE5		((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS * 2) + SDL_CONTROLLER_BUTTON_B)
++#define	CONTROL_DEFAULT3_FIRE6		((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS * 2) + SDL_CONTROLLER_BUTTON_RIGHTSHOULDER)
++#define CONTROL_DEFAULT3_START		((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS * 2) + SDL_CONTROLLER_BUTTON_START)
++#define CONTROL_DEFAULT3_SCREENSHOT ((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS * 2) + SDL_CONTROLLER_BUTTON_LEFTSTICK)
++#define	CONTROL_DEFAULT3_ESC        ((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS * 2) + SDL_CONTROLLER_BUTTON_BACK)
+ 
+ #define	CONTROL_NONE				((JOY_LIST_FIRST + 1) + (JOY_MAX_INPUTS * 99)) //Kratus (20-04-21) value used to clear all keys
+ 
+-#define JOYBUTTON(index, btn) (1 + i * JOY_MAX_INPUTS + btn)
+-#define JOYAXIS(index, axis, dir) (JOYBUTTON(index, joysticks[index].NumButtons) + 2 * axis + dir)
++#define JOYBUTTON(index, btn) (1 + index * JOY_MAX_INPUTS + btn)
++#define JOYAXIS(index, axis, dir) (JOYBUTTON(index, SDL_CONTROLLER_BUTTON_MAX) + 2 * axis + dir)
+ 
+ #define SDLK_FIRST SDL_SCANCODE_UNKNOWN
+ #define SDLK_LAST  SDL_NUM_SCANCODES
+diff --git a/engine/sdl/joysticks.c b/engine/sdl/joysticks.c
+index 6e9cbd7a..b44b9076 100644
+--- a/engine/sdl/joysticks.c
++++ b/engine/sdl/joysticks.c
+@@ -8,16 +8,13 @@
+ 
+ #include "sdlport.h"
+ #include "joysticks.h"
++#include <SDL_gamecontroller.h>
+ 
+ s_joysticks joysticks[JOY_LIST_TOTAL];
+ 
+ const char *JoystickKeyName[JOY_NAME_SIZE] = {
+ 	"...",
+     #define JOYSTICK_NAMES(x) \
+-	x" Up",             \
+-	x" Right",          \
+-	x" Down",           \
+-	x" Left",           \
+ 	x" Button 1",       \
+ 	x" Button 2",       \
+ 	x" Button 3",       \
+@@ -27,57 +24,32 @@ const char *JoystickKeyName[JOY_NAME_SIZE] = {
+ 	x" Button 7",       \
+ 	x" Button 8",       \
+ 	x" Button 9",       \
+-	x" Button 10",       \
+-	x" Button 11",       \
+-	x" Button 12",       \
+-	x" Button 13",       \
+-	x" Button 14",       \
+-	x" Button 15",       \
+-	x" Button 16",       \
+-	x" Button 17",       \
+-	x" Button 18",       \
+-	x" Button 19",       \
+-	x" Button 20",       \
+-	x" Button 21",       \
+-	x" Button 22",       \
+-	x" Button 23",       \
+-	x" Button 24",       \
+-	x" Button 25",       \
+-	x" Button 26",       \
+-	x" Button 27",       \
+-	x" Button 28",       \
+-	x" Button 29",       \
+-	x" Button 30",       \
+-	x" Button 31",       \
+-	x" Button 32",       \
++	x" Button 10",      \
++	x" Button 11",      \
++	x" Button 12",      \
++	x" Button 13",      \
++	x" Button 14",      \
++	x" Button 15",      \
++	x" Button 16",      \
++	x" Button 17",      \
++	x" Button 18",      \
++	x" Button 19",      \
++	x" Button 20",      \
++	x" Button 21",      \
++	x" Button 22",      \
++	x" Button 23",      \
++	x" Button 24",      \
++	x" Button 25",      \
++	x" Button 26",      \
++	x" Button 27",      \
++	x" Button 28",      \
++	x" Button 29",      \
++	x" Button 30",      \
++	x" Button 31",      \
++	x" Button 32",      \
+ 	x" Button 33",       \
+ 	x" Button 34",       \
+-	x" Button 35",       \
+-	x" Button 36",       \
+-	x" Button 37",       \
+-	x" Button 38",       \
+-	x" Button 39",       \
+-	x" Button 40",       \
+-	x" Button 41",       \
+-	x" Button 42",       \
+-	x" Button 43",       \
+-	x" Button 44",       \
+-	x" Button 45",       \
+-	x" Button 46",       \
+-	x" Button 47",       \
+-	x" Button 48",       \
+-	x" Button 49",       \
+-	x" Button 50",       \
+-	x" Button 51",       \
+-	x" Button 52",       \
+-	x" Button 53",       \
+-	x" Button 54",       \
+-	x" Button 55",       \
+-	x" Button 56",       \
+-	x" Button 57",       \
+-	x" Button 58",       \
+-	x" Button 59",       \
+-	x" Button 60",
++	x" Button 35",
+ 	JOYSTICK_NAMES("P1")
+ 	JOYSTICK_NAMES("P2")
+ 	JOYSTICK_NAMES("P3")
+@@ -122,32 +94,7 @@ const char *GameparkKeyName[JOY_NAME_SIZE] = {
+ 	x" unknown 32",       \
+ 	x" unknown 33",       \
+ 	x" unknown 34",       \
+-	x" unknown 35",       \
+-	x" unknown 36",       \
+-	x" unknown 37",       \
+-	x" unknown 38",       \
+-	x" unknown 39",       \
+-	x" unknown 40",       \
+-	x" unknown 41",       \
+-	x" unknown 42",       \
+-	x" unknown 43",       \
+-	x" unknown 44",       \
+-	x" unknown 45",       \
+-	x" unknown 46",       \
+-	x" unknown 47",       \
+-	x" unknown 48",       \
+-	x" unknown 49",       \
+-	x" unknown 50",       \
+-	x" unknown 51",       \
+-	x" unknown 52",       \
+-	x" unknown 53",       \
+-	x" unknown 54",       \
+-	x" unknown 55",       \
+-	x" unknown 56",       \
+-	x" unknown 57",       \
+-	x" unknown 58",       \
+-	x" unknown 59",       \
+-	x" unknown 60",
++	x" unknown 35",
+ 	GAMEPARK_NAMES("P1")
+ 	GAMEPARK_NAMES("P2")
+ 	GAMEPARK_NAMES("P3")
+@@ -156,309 +103,91 @@ const char *GameparkKeyName[JOY_NAME_SIZE] = {
+ };
+ 
+ const u64 JoystickBits[JOY_MAX_INPUTS + 1] = {
+-	0x0000000000000000, // No Buttons Pressed
+-	0x0000000000000001, // Hat Up
+-	0x0000000000000002,	// Hat Right
+-	0x0000000000000004, // Hat Down
+-	0x0000000000000008,	// Hat Left
+-	0x0000000000000010,	// Button 1
+-	0x0000000000000020,	// Button 2
+-	0x0000000000000040,	// Button 3
+-	0x0000000000000080,	// Button 4
+-	0x0000000000000100,	// Button 5
+-	0x0000000000000200,	// Button 6
+-	0x0000000000000400,	// Button 7
+-	0x0000000000000800,	// Button 8
+-	0x0000000000001000, // Button 9
+-	0x0000000000002000,	// Button 10
+-	0x0000000000004000,	// Button 11
+-	0x0000000000008000,	// Button 12
+-	0x0000000000010000,	// Button 13
+-	0x0000000000020000,	// Button 14
+-	0x0000000000040000,	// Button 15
+-	0x0000000000080000,	// Button 16
+-	0x0000000000100000,	// Button 17
+-	0x0000000000200000,	// Button 18
+-	0x0000000000400000,	// Button 19
+-	0x0000000000800000,	// Button 20
+-	0x0000000001000000,	// Button 21
+-	0x0000000002000000,	// Button 22
+-	0x0000000004000000,	// Button 23
+-	0x0000000008000000,	// Button 24
+-	0x0000000010000000,	// Button 25
+-	0x0000000020000000,	// Button 26
+-	0x0000000040000000,	// Button 27
+-	0x0000000080000000, // Button 28
+-
++	0x0000000000000000,
++	0x0000000000000001,
++	0x0000000000000002,
++	0x0000000000000004,
++	0x0000000000000008,
++	0x0000000000000010,
++	0x0000000000000020,
++	0x0000000000000040,
++	0x0000000000000080,
++	0x0000000000000100,
++	0x0000000000000200,
++	0x0000000000000400,
++	0x0000000000000800,
++	0x0000000000001000,
++	0x0000000000002000,
++	0x0000000000004000,
++	0x0000000000008000,
++	0x0000000000010000,
++	0x0000000000020000,
++	0x0000000000040000,
++	0x0000000000080000,
++	0x0000000000100000,
++	0x0000000000200000,
++	0x0000000000400000,
++	0x0000000000800000,
++	0x0000000001000000,
++	0x0000000002000000,
++	0x0000000004000000,
++	0x0000000008000000,
++	0x0000000010000000,
++	0x0000000020000000,
++	0x0000000040000000,
++	0x0000000080000000,
+ 	0x0000000100000000,
+ 	0x0000000200000000,
+-	0x0000000400000000,
+-	0x0000000800000000,
+-	0x0000001000000000,
+-	0x0000002000000000,
+-	0x0000004000000000,
+-	0x0000008000000000,
+-	0x0000010000000000,
+-	0x0000020000000000,
+-	0x0000040000000000,
+-	0x0000080000000000,
+-	0x0000100000000000,
+-	0x0000200000000000,
+-	0x0000400000000000,
+-	0x0000800000000000,
+-	0x0001000000000000,
+-	0x0002000000000000,
+-	0x0004000000000000,
+-	0x0008000000000000,
+-	0x0010000000000000,
+-	0x0020000000000000,
+-	0x0040000000000000,
+-	0x0080000000000000,
+-	0x0100000000000000,
+-	0x0200000000000000,
+-	0x0400000000000000,
+-	0x0800000000000000,
+-	0x1000000000000000,
+-	0x2000000000000000,
+-	0x4000000000000000,
+-	0x8000000000000000  // Button 60
++	0x0000000400000000
+ };
+ 
+-const char* JoystickButtonNames[JOY_NAME_SIZE] = {
+-	"...",
+-#define BUTTON_NAMES(x) \
+-	x" Button 1",       \
+-	x" Button 2",       \
+-	x" Button 3",       \
+-	x" Button 4",       \
+-	x" Button 5",       \
+-	x" Button 6",       \
+-	x" Button 7",       \
+-	x" Button 8",       \
+-	x" Button 9",       \
+-	x" Button 10",      \
+-	x" Button 11",      \
+-	x" Button 12",      \
+-	x" Button 13",      \
+-	x" Button 14",      \
+-	x" Button 15",      \
+-	x" Button 16",      \
+-	x" Button 17",      \
+-	x" Button 18",      \
+-	x" Button 19",      \
+-	x" Button 20",      \
+-	x" Button 21",      \
+-	x" Button 22",      \
+-	x" Button 23",      \
+-	x" Button 24",      \
+-	x" Button 25",      \
+-	x" Button 26",      \
+-	x" Button 27",      \
+-	x" Button 28",      \
+-	x" Button 29",      \
+-	x" Button 30",      \
+-	x" Button 31",      \
+-	x" Button 32",      \
+-	x" Button 33",       \
+-	x" Button 34",       \
+-	x" Button 35",       \
+-	x" Button 36",       \
+-	x" Button 37",       \
+-	x" Button 38",       \
+-	x" Button 39",       \
+-	x" Button 40",       \
+-	x" Button 41",       \
+-	x" Button 42",       \
+-	x" Button 43",       \
+-	x" Button 44",       \
+-	x" Button 45",       \
+-	x" Button 46",       \
+-	x" Button 47",       \
+-	x" Button 48",       \
+-	x" Button 49",       \
+-	x" Button 50",       \
+-	x" Button 51",       \
+-	x" Button 52",       \
+-	x" Button 53",       \
+-	x" Button 54",       \
+-	x" Button 55",       \
+-	x" Button 56",       \
+-	x" Button 57",       \
+-	x" Button 58",       \
+-	x" Button 59",       \
+-    x" Button 60",       \
+-    x" Button 61",       \
+-    x" Button 62",       \
+-    x" Button 63",       \
+-    x" Button 64",
+-	BUTTON_NAMES("P1")
+-	BUTTON_NAMES("P2")
+-	BUTTON_NAMES("P3")
+-	BUTTON_NAMES("P4")
+-};
+ 
+-const char* JoystickAxisNames[JOY_NAME_SIZE] = {
+-	"...",
+-#define AXIS_BUTTONS(x,n) \
+-    x" Axis "n" -",       \
+-    x" Axis "n" +",
+-#define AXIS_NAMES(x)     \
+-	AXIS_BUTTONS(x,"1")   \
+-	AXIS_BUTTONS(x,"2")   \
+-	AXIS_BUTTONS(x,"3")   \
+-	AXIS_BUTTONS(x,"4")   \
+-	AXIS_BUTTONS(x,"5")   \
+-	AXIS_BUTTONS(x,"6")   \
+-	AXIS_BUTTONS(x,"7")   \
+-	AXIS_BUTTONS(x,"8")   \
+-	AXIS_BUTTONS(x,"9")   \
+-	AXIS_BUTTONS(x,"10")  \
+-	AXIS_BUTTONS(x,"11")  \
+-	AXIS_BUTTONS(x,"12")  \
+-	AXIS_BUTTONS(x,"13")  \
+-	AXIS_BUTTONS(x,"14")  \
+-	AXIS_BUTTONS(x,"15")  \
+-	AXIS_BUTTONS(x,"16")  \
+-	AXIS_BUTTONS(x,"17")  \
+-	AXIS_BUTTONS(x,"18")  \
+-	AXIS_BUTTONS(x,"19")  \
+-	AXIS_BUTTONS(x,"20")  \
+-	AXIS_BUTTONS(x,"21")  \
+-	AXIS_BUTTONS(x,"22")  \
+-	AXIS_BUTTONS(x,"23")  \
+-	AXIS_BUTTONS(x,"24")  \
+-	AXIS_BUTTONS(x,"25")  \
+-	AXIS_BUTTONS(x,"26")  \
+-	AXIS_BUTTONS(x,"27")  \
+-	AXIS_BUTTONS(x,"28")  \
+-	AXIS_BUTTONS(x,"29")  \
+-	AXIS_BUTTONS(x,"30")  \
+-	AXIS_BUTTONS(x,"31")  \
+-	AXIS_BUTTONS(x,"32")
+-	AXIS_NAMES("P1")
+-	AXIS_NAMES("P2")
+-	AXIS_NAMES("P3")
+-	AXIS_NAMES("P4")
+-};
+ 
+-const char* JoystickHatNames[JOY_NAME_SIZE] = {
+-	"...",
+-#define HAT_BUTTONS(x,n) \
+-	x" Hat "n" Up",      \
+-	x" Hat "n" Right",   \
+-	x" Hat "n" Down",    \
+-	x" Hat "n" Left",
+-#define HAT_NAMES(x)     \
+-	HAT_BUTTONS(x,"1")   \
+-	HAT_BUTTONS(x,"2")   \
+-	HAT_BUTTONS(x,"3")   \
+-	HAT_BUTTONS(x,"4")   \
+-	HAT_BUTTONS(x,"5")   \
+-	HAT_BUTTONS(x,"6")   \
+-	HAT_BUTTONS(x,"7")   \
+-	HAT_BUTTONS(x,"8")   \
+-	HAT_BUTTONS(x,"9")   \
+-	HAT_BUTTONS(x,"10")   \
+-	HAT_BUTTONS(x,"11")   \
+-	HAT_BUTTONS(x,"12")   \
+-	HAT_BUTTONS(x,"13")   \
+-	HAT_BUTTONS(x,"14")   \
+-	HAT_BUTTONS(x,"15")   \
+-	HAT_BUTTONS(x,"16")
+-	HAT_NAMES("P1")
+-	HAT_NAMES("P2")
+-	HAT_NAMES("P3")
+-	HAT_NAMES("P4")
+-};
+ 
+-const char* JoystickUnknownNames[JOY_NAME_SIZE] = {
+-	"...",
+-#define UNKNOWN_NAMES(x) \
+-	x" unknown 1",       \
+-	x" unknown 2",       \
+-	x" unknown 3",       \
+-	x" unknown 4",       \
+-	x" unknown 5",       \
+-	x" unknown 6",       \
+-	x" unknown 7",       \
+-	x" unknown 8",       \
+-	x" unknown 9",       \
+-	x" unknown 10",      \
+-	x" unknown 11",      \
+-	x" unknown 12",      \
+-	x" unknown 13",      \
+-	x" unknown 14",      \
+-	x" unknown 15",      \
+-	x" unknown 16",      \
+-	x" unknown 17",      \
+-	x" unknown 18",      \
+-	x" unknown 19",      \
+-	x" unknown 20",      \
+-	x" unknown 21",      \
+-	x" unknown 22",      \
+-	x" unknown 23",      \
+-	x" unknown 24",      \
+-	x" unknown 25",      \
+-	x" unknown 26",      \
+-	x" unknown 27",      \
+-	x" unknown 28",      \
+-	x" unknown 29",      \
+-	x" unknown 30",      \
+-	x" unknown 31",      \
+-	x" unknown 32",      \
+-	x" unknown 33",       \
+-	x" unknown 34",       \
+-	x" unknown 35",       \
+-	x" unknown 36",       \
+-	x" unknown 37",       \
+-	x" unknown 38",       \
+-	x" unknown 39",       \
+-	x" unknown 40",       \
+-	x" unknown 41",       \
+-	x" unknown 42",       \
+-	x" unknown 43",       \
+-	x" unknown 44",       \
+-	x" unknown 45",       \
+-	x" unknown 46",       \
+-	x" unknown 47",       \
+-	x" unknown 48",       \
+-	x" unknown 49",       \
+-	x" unknown 50",       \
+-	x" unknown 51",       \
+-	x" unknown 52",       \
+-	x" unknown 53",       \
+-	x" unknown 54",       \
+-	x" unknown 55",       \
+-	x" unknown 56",       \
+-	x" unknown 57",       \
+-	x" unknown 58",       \
+-	x" unknown 59",       \
+-    x" unknown 60",       \
+-    x" unknown 61",       \
+-    x" unknown 62",       \
+-    x" unknown 63",       \
+-    x" unknown 64",
+-	UNKNOWN_NAMES("P1")
+-	UNKNOWN_NAMES("P2")
+-	UNKNOWN_NAMES("P3")
+-	UNKNOWN_NAMES("P4")
+-};
++
++
++
++
+ 
+ // Numbering order: buttons, then axes, then hats
+ const char* PC_GetJoystickKeyName(int portnum, int keynum)
+ {
+-	int keycode = (portnum*JOY_MAX_INPUTS) + keynum;
+-	int firstAxis = joysticks[portnum].NumButtons;
+-	int firstHat = firstAxis + (2*joysticks[portnum].NumAxes);
+-	int firstUnknown = firstHat + (4*joysticks[portnum].NumHats);
+-
+-	     if (keynum < firstAxis+1)            return JoystickButtonNames[keycode];
+-	else if (keynum < firstHat+1)             return JoystickAxisNames[keycode-firstAxis];
+-	else if (keynum < firstUnknown+1)         return JoystickHatNames[keycode-firstHat];
+-	else                                      return JoystickUnknownNames[keycode-firstUnknown];
++	int firstAxis = SDL_CONTROLLER_BUTTON_MAX;
++	static char name[64];
++	
++	if (keynum < firstAxis+1) {
++        if (keynum == 0) return "...";
++        int btn = keynum - 1;
++        const char* btn_name = SDL_GameControllerGetStringForButton((SDL_GameControllerButton)btn);
++        if(btn_name) sprintf(name, "P%d %s", portnum+1, btn_name);
++        else sprintf(name, "P%d Button %d", portnum+1, btn);
++        return name;
++	} else {
++        int axis_idx = (keynum - 1 - firstAxis) / 2;
++        int axis_dir = (keynum - 1 - firstAxis) % 2;
++        const char* axis_name = SDL_GameControllerGetStringForAxis((SDL_GameControllerAxis)axis_idx);
++        if(axis_name) sprintf(name, "P%d %s %s", portnum+1, axis_name, axis_dir == 0 ? "-" : "+");
++        else sprintf(name, "P%d Axis %d %s", portnum+1, axis_idx, axis_dir == 0 ? "-" : "+");
++        return name;
++    }
+ }
+ 
+ char* JOY_GetKeyName(int keycode)
+ {
++#ifdef OPENDINGUX
++	return OPENDINGUX_GetKeyName(keycode);
++#else
++	if (keycode >= JOY_LIST_FIRST && keycode <= JOY_LIST_LAST) {
++		int portnum = (keycode - JOY_LIST_FIRST - 1) / JOY_MAX_INPUTS;
++		int keynum = (keycode - JOY_LIST_FIRST - 1) % JOY_MAX_INPUTS + 1;
++		if (portnum >= 0 && portnum < JOY_LIST_TOTAL) {
++			return (char*)PC_GetJoystickKeyName(portnum, keynum);
++		}
++	}
++#if ANDROID || DARWIN || SDL2
+ 	return (char*)SDL_GetScancodeName(keycode);
++#else
++	return (char*)SDL_GetKeyName(keycode);
++#endif
++#endif
+ }
+diff --git a/engine/sdl/joysticks.h b/engine/sdl/joysticks.h
+index 310556e2..1d5c541d 100644
+--- a/engine/sdl/joysticks.h
++++ b/engine/sdl/joysticks.h
+@@ -21,7 +21,7 @@
+ #define JOY_TYPE_GAMEPARK  1
+ #define JOY_AXIS_X         0
+ #define JOY_AXIS_Y         1
+-#define JOY_MAX_INPUTS     64
++#define JOY_MAX_INPUTS     35 // 21 buttons + 6*2(12) axes + 2 buffer
+ #define	JOY_LIST_FIRST     600
+ #define JOY_LIST_TOTAL     4
+ #define	JOY_LIST_LAST      JOY_LIST_FIRST + JOY_MAX_INPUTS * JOY_LIST_TOTAL
+diff --git a/engine/sdl/menu.c b/engine/sdl/menu.c
+index c7babbb8..8e00bc5b 100644
+--- a/engine/sdl/menu.c
++++ b/engine/sdl/menu.c
+@@ -59,7 +59,7 @@ static s_screen* logscreen;
+ 
+ static int bpp = 32;
+ static int isWide = 0;
+-static int isFull = 0;
++static int isFull = 1;
+ static int dListTotal;
+ static int dListCurrentPosition;
+ static int dListScrollPosition;
+diff --git a/engine/sdl/video.c b/engine/sdl/video.c
+index 5b5e8db1..610abce1 100644
+--- a/engine/sdl/video.c
++++ b/engine/sdl/video.c
+@@ -42,7 +42,7 @@ int brightness = 0;
+ void initSDL()
+ {
+ 	SDL_DisplayMode video_info;
+-	int init_flags = SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC;
++	int init_flags = SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC;
+ 
+ 	SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "0");
+ 
+diff --git a/engine/source/savedata.h b/engine/source/savedata.h
+index 18473b85..4c2e0b44 100644
+--- a/engine/source/savedata.h
++++ b/engine/source/savedata.h
+@@ -15,17 +15,18 @@
+ /**
+  *  Only structures written to disk need to be packed.
+  */
+-#pragma pack(1)
+-
+ typedef struct
+ {
+     unsigned compatibleversion;
+     int gamma;
+     int brightness;
++    int usesound; // REDUNDANT
++    unsigned soundrate; // REDUNDANT
+     int soundvol; // SB volume
+     int usemusic; // Play music
+     int musicvol; // Music volume
+     int effectvol; // Sound fx volume
++    int soundbits; // REDUNDANT
+     int usejoy;
+     int mode; // Mode now saves
+     int windowpos;
+@@ -37,10 +38,14 @@ typedef struct
+     int logo;
+     int uselog;
+     int debuginfo; // FPS, Memory, etc...
++    int debug_collision_attack; // REDUNDANT
++    int debug_collision_body; // REDUNDANT
++    int debug_collision_range; // REDUNDANT
++    int debug_position; // REDUNDANT
++    int debug_features; // REDUNDANT
+     int fullscreen; // Window or Full Screen Mode
+     int stretch; // Stretch (1) or preserve aspect ratio (0) in fullscreen mode
+     int screen[1][2];
+-    int fpslimit; // Sync to monitor refresh (1), limit to 200/500 FPS (2, 3) or don't (0)
+ #if SDL
+     int usegl; // 1 if OpenGL is preferred over SDL software blitting
+     float hwscale; // Scale factor for OpenGL
+@@ -50,10 +55,9 @@ typedef struct
+ #if ANDROID
+     int is_touchpad_vibration_enabled;
+ #endif
++    int fpslimit; // Sync to monitor refresh (1), limit to 200/500 FPS (2, 3) or don't (0)
+ } s_savedata;
+ 
+-#pragma pack()
+-
+ extern s_savedata     savedata;
+ 
+ #endif
+-- 
+2.34.1
+

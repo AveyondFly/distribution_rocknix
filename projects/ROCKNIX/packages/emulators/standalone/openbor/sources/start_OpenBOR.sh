@@ -28,6 +28,9 @@ pakname="${pakname%.*}"
 CONFIGDIR="/storage/openbor"
 PAKS="${CONFIGDIR}/Paks"
 SAVES="${CONFIGDIR}/Saves"
+SCREENSHOTS="${CONFIGDIR}/ScreenShots"
+
+ln -s /roms/screenshots $SCREENSHOTS
 
 # Make sure the folders exists
   mkdir -p "${CONFIGDIR}"
@@ -39,15 +42,15 @@ SAVES="${CONFIGDIR}/Saves"
 
 # make a symlink to the pak
 ln -sf "$1" "${PAKS}"
-if [ ${OB} = "OpenBOR-ff4g" ]; then
-  ln -sf "$1".0* "${PAKS}"
-fi
+for f in "$1".0*; do
+  if [ -e "$f" ]; then
+    ln -sf "$f" "${PAKS}"
+  fi
+done
 
 # only create symlink to master.cfg if its the first time running the pak
 if [ ! -f "${SAVES}/${pakname}.cfg" ]; then
-	if [ ${OB} = "OpenBOR-ff4g" ]; then
-		ln -sf "${CONFIGDIR}/masterff4g.cfg" "${SAVES}/${pakname}.cfg"
-	elif [ ${OB} = "OpenBOR-ff" ]; then
+	if [ ${OB} = "OpenBOR-ff" ]; then
 		ln -sf "${CONFIGDIR}/masterff.cfg" "${SAVES}/${pakname}.cfg"
 	else
 		ln -sf "${CONFIGDIR}/master.cfg" "${SAVES}/${pakname}.cfg"

@@ -1,17 +1,18 @@
-From 5d057e7b6b350e2faa75c041d0081fb2963e980d Mon Sep 17 00:00:00 2001
-From: 5schatten <supervisedthinking@gmail.com>
-Date: Sat, 12 Oct 2019 19:24:14 +0200
-Subject: [PATCH] engine/Makefile: updated platform
+From 941d331a4c9bc0f581be2eef3248ec841144f6b4 Mon Sep 17 00:00:00 2001
+From: root <root@ubuntu.com>
+Date: Tue, 21 Apr 2026 11:48:56 +0800
+Subject: [PATCH 2/2] Add aarch64 and x86_64 target cross-compilation support
+ via Makefile patch
 
 ---
- engine/Makefile | 48 +++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 47 insertions(+), 1 deletion(-)
+ engine/Makefile | 46 ++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 46 insertions(+)
 
 diff --git a/engine/Makefile b/engine/Makefile
-index 8b0f9a65..6e8198e0 100644
+index 76174640..aa3a107b 100644
 --- a/engine/Makefile
 +++ b/engine/Makefile
-@@ -103,6 +103,52 @@ BUILD_DEBUG     = 1
+@@ -96,6 +96,52 @@ BUILD_DEBUG     = 1
  endif
  endif
  
@@ -64,12 +65,6 @@ index 8b0f9a65..6e8198e0 100644
  ifdef BUILD_DARWIN
  TARGET          = $(VERSION_NAME).elf
  TARGET_FINAL    = $(VERSION_NAME)
-@@ -195,7 +241,7 @@ ifdef BUILD_WIN
- STRIP 	        = $(WINDEV)/$(PREFIX)strip$(EXTENSION) $(TARGET) -o $(TARGET_FINAL)
- endif
- ifdef BUILD_LINUX
--STRIP 	        = $(LNXDEV)/$(PREFIX)strip $(TARGET) -o $(TARGET_FINAL)
-+STRIP 	        = $(PREFIX)-strip $(TARGET) -o $(TARGET_FINAL)
- endif
- ifdef BUILD_DARWIN
- STRIP           = $(PREFIX)strip $(TARGET) -o $(TARGET_FINAL)
+-- 
+2.34.1
+

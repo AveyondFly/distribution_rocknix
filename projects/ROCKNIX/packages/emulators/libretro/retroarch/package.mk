@@ -155,6 +155,19 @@ makeinstall_target() {
 
     # Copy achievements hooks script
     cp ${PKG_DIR}/scripts/call_achievements_hooks.sh ${INSTALL}/usr/share/libretro
+
+  mkdir -p ${INSTALL}/usr/share/misc/
+  curl -fsSL https://api.github.com/repos/AveyondFly/bezels/releases/latest \
+    | sed -n 's/.*"browser_download_url": "\(https:\/\/github\.com\/AveyondFly\/bezels\/releases\/download\/[^"]*\/bezels_[^"]*\.zip\)".*/\1/p' \
+    > ${PKG_BUILD}/bezels.urls
+  [ -s ${PKG_BUILD}/bezels.urls ] || { echo "(bezels assets not found)" ; exit 1 ; }
+
+  while read -r bezel_url
+  do
+    bezel_zip=${bezel_url##*/}
+    curl -fLo ${PKG_BUILD}/${bezel_zip} ${bezel_url}
+    cp ${PKG_BUILD}/${bezel_zip} ${INSTALL}/usr/share/misc/
+  done < ${PKG_BUILD}/bezels.urls
 }
 
 post_install() {

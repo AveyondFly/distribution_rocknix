@@ -99,6 +99,11 @@ makeinstall_target() {
   rm ${INSTALL}/usr/config/ppsspp/assets/gamecontrollerdb.txt
   ln -sf NotoSansJP-Regular.ttf ${INSTALL}/usr/config/ppsspp/assets/Roboto-Condensed.ttf
   curl -Lo ${INSTALL}/usr/config/ppsspp/PSP/Cheats/cheat.db https://raw.githubusercontent.com/Saramagrean/CWCheat-Database-Plus-/${CHEAT_DB_VERSION}/cheat.db
+
+  curl -Lo ${PKG_BUILD}/datas.zip https://github.com/AveyondFly/console_mod_res/releases/download/v0.9/datas.zip
+  mkdir -p ${INSTALL}/usr/share/misc/
+  cp ${PKG_BUILD}/datas.zip ${INSTALL}/usr/share/misc/
+
 }
 
 post_install() {

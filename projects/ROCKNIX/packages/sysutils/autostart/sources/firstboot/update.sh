@@ -93,9 +93,16 @@ function Set_ra_ext() {
 }
 
 if [ ! -e "/roms/bios/jdk" ]; then
+  echo "Installing JDK." >/dev/tty0
   unzip -oq /usr/share/java/jdk.zip -d /roms/bios &>/dev/null
 fi
 ln -sf /roms/bios/jdk /storage/jdk
+
+if [ ! -e "/storage/bezels" ]; then
+  echo "Copy bezels." >/dev/tty0
+  mkdir -p /storage/bezels
+  cp /usr/share/misc/bezels_*.zip /storage/bezels/
+fi
 
 # 处理 ppsspp 字体软链接
 PPSSPP_FONTS="/storage/.config/ppsspp/assets"
@@ -106,8 +113,10 @@ if [ -d "$PPSSPP_FONTS" ]; then
   done
 fi
 
-if [ -f "/usr/config/modules/Reset Drastic Cfg.sh" ]; then
-  bash "/usr/config/modules/Reset Drastic Cfg.sh"
+unzip -oq /usr/share/misc/datas.zip -d /storage
+
+if [ -f "/usr/config/modules/MOD_TOOLS/Reset Drastic Cfg.sh" ]; then
+  bash "/usr/config/modules/MOD_TOOLS/Reset Drastic Cfg.sh"
 fi
 
 event_type="EV_KEY"
@@ -215,6 +224,12 @@ case "$detected_res" in
         echo "$detected_res"
         ;;
 esac
+
+if [ -f "/usr/config/modules/MOD_TOOLS/Bezels Installer.sh" ]; then
+    bash "/usr/config/modules/MOD_TOOLS/Bezels Installer.sh" --skip-existing "${detected_res}"
+fi
+
+
 
 if [ "$HW_DEVICE" = "RK3326" ]; then
     sed -i -e '/gba.shaderset\=/c\gba.shaderset\=handheld/dot.glslp' /storage/.config/system/configs/system.cfg

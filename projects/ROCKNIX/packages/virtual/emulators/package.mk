@@ -107,11 +107,12 @@ case "${TARGET_TYPE}" in
 esac
 
 install_script() {
-  if [ ! -d "${INSTALL}/usr/config/modules" ]; then
-    mkdir -p ${INSTALL}/usr/config/modules
-  fi
-  cp -rf ${PKG_DIR}/sources/"${1}" ${INSTALL}/usr/config/modules
-  chmod 0755 ${INSTALL}/usr/config/modules/"${1}"
+  local src="${PKG_DIR}/sources/${1}"
+  local dest="${INSTALL}/usr/config/modules/${1}"
+
+  mkdir -p "$(dirname "${dest}")"
+  cp -rf "${src}" "${dest}"
+  chmod 0755 "${dest}"
 }
 
 makeinstall_target() {
@@ -1467,7 +1468,8 @@ makeinstall_target() {
   cp ${PKG_DIR}/autostart/* ${INSTALL}/usr/lib/autostart/common
   chmod 0755 ${INSTALL}/usr/lib/autostart/common/*
 
-  install_script "Generate SDL GameControllerDB.sh"
-  install_script "Reset Drastic Cfg.sh"
-  install_script "rocknix2emmc.sh"
+  install_script "MOD_TOOLS/Generate SDL GameControllerDB.sh"
+  install_script "MOD_TOOLS/Bezels Installer.sh"
+  install_script "MOD_TOOLS/Reset Drastic Cfg.sh"
+  install_script "MOD_TOOLS/rocknix2emmc.sh"
 }

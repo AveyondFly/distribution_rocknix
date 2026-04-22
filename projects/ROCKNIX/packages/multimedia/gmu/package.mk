@@ -6,7 +6,7 @@ PKG_VERSION="3aed18be8a50873ccfb31d2b135b0d22442ded59"
 PKG_LICENSE="GPLv2"
 PKG_SITE="https://github.com/jhe2/gmu"
 PKG_URL="${PKG_SITE}.git"
-PKG_DEPENDS_TARGET="toolchain SDL2 opus mpg123 libvorbis flac speex"
+PKG_DEPENDS_TARGET="toolchain SDL2 SDL2_image opus mpg123 libvorbis flac speex"
 PKG_LONGDESC="The Gmu Music Player"
 PKG_TOOLCHAIN="configure"
 
@@ -20,7 +20,7 @@ configure_target() {
   export TARGET_CFLAGS="${TARGET_CFLAGS} -fcommon"
   export SDL2CONFIG=${SYSROOT_PREFIX}/usr/bin/sdl2-config
   cd ${PKG_BUILD}
-  ./configure --enable=medialib
+  ./configure --enable=medialib --enable=sdl-frontend
 }
 
 make_target() {

@@ -16,6 +16,12 @@ case ${DEVICE} in
   ;;
 esac
 
+case ${DEVICE} in
+  RK3566|RK3562)
+    PKG_DEPENDS_TARGET+=" gamepadtester"
+  ;;
+esac
+
 # Fileman or Commander Filemanager
 case ${DEVICE} in
   RK3326*|RK3399|RK3566|RK3562|RK3588|S905L3A|S922X|SDM845|SM8250|SM8550|SM8650)

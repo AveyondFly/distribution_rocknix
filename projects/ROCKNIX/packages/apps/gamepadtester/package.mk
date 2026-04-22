@@ -2,27 +2,23 @@
 # Copyright (C) 2024 ROCKNIX (https://github.com/ROCKNIX)
 
 PKG_NAME="gamepadtester"
-PKG_VERSION="6ac49e67aa98fe3dd5c27f73306d65d4b7a82daa"
-PKG_LICENSE="GPLv3"
-PKG_SITE="https://github.com/timre13/GamepadTester"
-PKG_URL="${PKG_SITE}.git"
-PKG_DEPENDS_TARGET="toolchain SDL2 SDL2_gfx gamecontrollerdb"
-PKG_LONGDESC="A simple SDL GUI Gamepad tester"
-PKG_TOOLCHAIN="cmake"
-PKG_PATCH_DIRS+="${DEVICE}"
+PKG_VERSION="1.0"
+PKG_LICENSE="GPLv2"
+PKG_SITE=""
+PKG_URL=""
+PKG_DEPENDS_TARGET="toolchain SDL2 gamecontrollerdb"
+PKG_LONGDESC="A simple SDL GUI gamepad tester with rumble support"
+PKG_TOOLCHAIN="make"
 
-case ${DEVICE} in
-  SM8650|SM8550)
-    PKG_PATCH_DIRS+=" xbox"
-  ;;
-  *)
-    PKG_PATCH_DIRS+=" legacy"
-  ;;
-esac
+pre_make_target() {
+  cp -f ${PKG_DIR}/Makefile ${PKG_BUILD}
+  cp -f ${ROOT}/tools/sdl2-controller-test/src/controller_test.c ${PKG_BUILD}/controller_test.c
+  CFLAGS+=" -I$(get_build_dir SDL2)/include -D_REENTRANT"
+}
 
 makeinstall_target() {
   mkdir -p ${INSTALL}/usr/bin
-  cp -rf ${PKG_BUILD}/.${TARGET_NAME}/gamepad_test ${INSTALL}/usr/bin/gamepad-tester
+  cp -f ${PKG_BUILD}/gamepad-tester ${INSTALL}/usr/bin/gamepad-tester
   chmod 0755 ${INSTALL}/usr/bin/gamepad-tester
 
   mkdir -p ${INSTALL}/usr/config/modules

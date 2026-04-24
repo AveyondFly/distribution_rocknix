@@ -35,5 +35,17 @@ post_makeinstall_target() {
   cp -f ${PKG_DIR}/scripts/start_gmu.sh ${INSTALL}/usr/bin
   chmod +x ${INSTALL}/usr/bin/start_gmu.sh
 
+  cp -f ${PKG_DIR}/scripts/start_kplayer.sh ${INSTALL}/usr/bin
+  chmod +x ${INSTALL}/usr/bin/start_kplayer.sh
+
   ln -sf /usr/bin/start_gmu.sh "${INSTALL}/usr/config/gmu/playlists/Start Music Player.sh"
+  ln -sf /usr/bin/start_kplayer.sh "${INSTALL}/usr/config/gmu/playlists/Start KPlayer.sh"
+
+  curl -Lo ${PKG_BUILD}/kplayer.zip  https://github.com/AveyondFly/console_mod_res/releases/download/v0.9/kplayer.zip
+  unzip -oq ${PKG_BUILD}/kplayer.zip -d "${INSTALL}/usr/bin/"
+  chmod +x ${INSTALL}/usr/bin/kplayer
+
+  curl -Lo ${PKG_BUILD}/kebook.zip  https://github.com/AveyondFly/console_mod_res/releases/download/v0.9/kebook.zip
+  unzip -oq ${PKG_BUILD}/kebook.zip -d "${INSTALL}/usr/bin/"
+  chmod +x ${INSTALL}/usr/bin/kebook
 }

@@ -939,6 +939,10 @@ makeinstall_target() {
   add_emu_core openbor OpenBOR OpenBOR-ff false
   add_es_system openbor
 
+  ### EBook
+  add_emu_core ebook kebook kebook true
+  add_es_system ebook
+
   ### PyMO AVG Games
   add_emu_core pymo cpymo cpymo true
   add_es_system pymo

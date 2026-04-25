@@ -328,7 +328,7 @@
 
 	spk_amp: audio-amplifier {
 		compatible = "simple-audio-amplifier";
-		enable-gpios = <&gpio4 RK_PC2 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&gpio0 RK_PC0 GPIO_ACTIVE_HIGH>;
 		pinctrl-0 = <&spk_amp_enable_h>;
 		pinctrl-names = "default";
 		sound-name-prefix = "Speaker Amp";
@@ -354,7 +354,7 @@
 		regulator-max-microvolt = <3300000>;
 		regulator-name = "vcc_lcd";
 	};
-
+/*
 	vcc_spk: regulator-vcc-spk {
 		compatible = "regulator-fixed";
 		enable-active-high;
@@ -371,7 +371,7 @@
 			regulator-off-in-suspend;
 		};
 	};
-
+*/
 	vcc_sys: regulator-vcc-sys {
 		compatible = "regulator-fixed";
 		regulator-always-on;
@@ -979,7 +979,7 @@
 	audio-amplifier {
 		spk_amp_enable_h: spk-amp-enable-h {
 			rockchip,pins =
-				<4 RK_PC2 RK_FUNC_GPIO &pcfg_pull_none>;
+				<0 RK_PC0 RK_FUNC_GPIO &pcfg_pull_up>;
 		};
 	};
 

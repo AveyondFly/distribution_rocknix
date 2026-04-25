@@ -38,6 +38,9 @@ post_makeinstall_target() {
   cp -f ${PKG_DIR}/scripts/start_kplayer.sh ${INSTALL}/usr/bin
   chmod +x ${INSTALL}/usr/bin/start_kplayer.sh
 
+  cp -f ${PKG_DIR}/scripts/start_kebook.sh ${INSTALL}/usr/bin
+  chmod +x ${INSTALL}/usr/bin/start_kebook.sh
+
   ln -sf /usr/bin/start_gmu.sh "${INSTALL}/usr/config/gmu/playlists/Start Music Player.sh"
   ln -sf /usr/bin/start_kplayer.sh "${INSTALL}/usr/config/gmu/playlists/Start KPlayer.sh"
 

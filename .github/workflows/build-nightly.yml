@@ -143,12 +143,24 @@ jobs:
     with:
       OWNER_LC: ${{ needs.set-envs.outputs.OWNER_LC }}
 
+  rk3326-dtbselect-windows:
+    if: (github.event_name != 'schedule') || (github.repository == 'AveyondFly/distribution_rocknix' && github.ref_name == 'next')
+    needs:
+      - set-envs
+      - build-docker
+    uses: ./.github/workflows/build-rk3326-dtbselect-windows.yml
+    with:
+      # When the nightly device matrix has no RK3326, only a placeholder zip is produced (keeps the job unskipped for needs).
+      include_rk3326: "${{ contains(needs.set-envs.outputs.matrix, 'RK3326') }}"
+    secrets: inherit
+
   build-devices:
     if: (github.event_name != 'schedule') || (github.repository == 'AveyondFly/distribution_rocknix' && github.ref_name == 'next')
     name: Build Devices
     needs:
       - set-envs
       - build-docker
+      - rk3326-dtbselect-windows
     strategy:
       fail-fast: false
       matrix:

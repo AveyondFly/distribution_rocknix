@@ -1,0 +1,493 @@
+#!/usr/bin/env python3
+import os, sys, re, shutil, subprocess, tempfile
+from typing import Optional, List, Dict
+from dataclasses import dataclass
+
+# Windows 终端 ANSI
+if os.name == "nt":
+    try:
+        os.system("")
+    except Exception:
+        pass
+
+try:
+    from wcwidth import wcswidth as _wlen
+except Exception:
+    _wlen = lambda s: len(s)
+
+ANSI_RE = re.compile(r'\x1b\[[0-9;]*m')
+
+# ==== 路径 ====
+if getattr(sys, 'frozen', False):
+    ROOT_DIR = os.path.dirname(sys.executable)
+else:
+    ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+CONFIG_DIR = os.environ.get("RK3326_DTB_SELECT_CONFIG", os.path.join(ROOT_DIR, "config"))
+
+
+def _boot_write_root() -> str:
+    """ROCKNIX: 启动 FAT 挂载在 /flash；无则回退到脚本目录（本地测试）。"""
+    b = os.environ.get("ROCKNIX_BOOT", "/flash")
+    if os.path.isdir(b):
+        return b
+    return ROOT_DIR
+
+
+def _remount_flash(rw: bool) -> None:
+    if os.environ.get("RK3326_DTB_SELECT_NO_REMOUNT"):
+        return
+    if _boot_write_root() != "/flash":
+        return
+    mount = "/usr/bin/mount"
+    if not os.path.isfile(mount):
+        return
+    mode = "rw" if rw else "ro"
+    subprocess.run(
+        [mount, "-o", f"remount,{mode}", "/flash"],
+        check=False,
+        capture_output=True,
+    )
+
+# ==== 工具 ====
+def clear_screen():
+    os.system("cls" if os.name == "nt" else "clear")
+
+def wait_anykey(msg="按任意键退出..."):
+    print(msg, end="", flush=True)
+    if os.name == "nt":
+        try:
+            import msvcrt
+            _ = msvcrt.getwch()
+            print("")
+            return
+        except Exception:
+            pass
+    try:
+        input()
+    except EOFError:
+        pass
+
+# ==== 数据结构 ====
+@dataclass
+class DtbEntry:
+    dtb: str
+    tty: object
+    overlay: Optional[str] = None
+
+# ==== 设备映射 ====
+ALL_DEVICES: Dict[str, DtbEntry] = {
+    # R36s克隆
+    "R36S克隆 种类1带功放": DtbEntry("rk3326-xifan-r36pro.dtb", 101),
+    "R36S克隆 种类1不带功放": DtbEntry("rk3326-gameconsole-hg36.dtb", 101),
+    "R36S克隆 种类1不带功放并反转右摇杆": DtbEntry("rk3326-gameconsole-k36.dtb", 101),
+    "R36S克隆 种类2带功放": DtbEntry("rk3326-r36s-type2-with-amplifier.dtb", 101),
+    "R36S克隆 种类2不带功放": DtbEntry("rk3326-r36s-type2-without-amplifier.dtb", 101),
+    "R36S克隆 种类3": DtbEntry("rk3326-r36s-type3.dtb", 101),
+    "R36S克隆 种类4": DtbEntry("rk3326-r36s-type4.dtb", 101),
+
+    # R36s酱油
+    "R36S酱油 V03": DtbEntry("rk3326-r36s-sauce-v03.dtb", 202),
+    "R36S酱油 V04": DtbEntry("rk3326-r36s-sauce-v04.dtb", 202),
+
+    # K36系列
+    "K36 原始版本": DtbEntry("rk3326-gameconsole-k36.dtb", 202),
+
+    # BatleXP
+    "BatleXP G350": DtbEntry("rk3326-batlexp-g350.dtb", 101),
+
+    # 其他
+    "AISLPC K36s": DtbEntry("rk3326-gameconsole-k36s.dtb", 101),
+    "AISLPC R36T": DtbEntry("rk3326-gameconsole-r36t.dtb", 101),
+    "AISLPC R36TMax": DtbEntry("rk3326-gameconsole-r36tmax.dtb", 101),
+    "T16Max": DtbEntry("rk3326-gameconsole-t16max.dtb", 101),
+    "U8": DtbEntry("rk3326-gameconsole-u8.dtb", 101),
+    "U8 P2屏幕": DtbEntry("rk3326-gameconsole-u8-v2.dtb", 101),
+    "HG36/HG3506": DtbEntry("rk3326-gameconsole-hg36.dtb", 202),
+    "R36 Ultra": DtbEntry("rk3326-gameconsole-r36ultra.dtb", 101),
+    "XGB36": DtbEntry("rk3326-gameconsole-xgb36.dtb", 202),
+
+    # GameConsole
+    "GameConsole R33s": DtbEntry("rk3326-gameconsole-r33s.dtb", 202),
+    "GameConsole R36s P1屏幕": DtbEntry("rk3326-gameconsole-r36s.dtb", 202),
+    "GameConsole R36s P2屏幕": DtbEntry("rk3326-gameconsole-r36s-v2.dtb", 202),
+    "GameConsole R36s P3屏幕": DtbEntry("rk3326-gameconsole-r36s-v3.dtb", 202),
+    "GameConsole R36s P4屏幕": DtbEntry("rk3326-gameconsole-r36s-v4.dtb", 202),
+    "GameConsole R36xx": DtbEntry("rk3326-gameconsole-r36s-v4.dtb", 202),
+    "GameConsole R36H": DtbEntry("rk3326-gameconsole-r36s-v4.dtb", 202),
+    "GameConsole O30S": DtbEntry("rk3326-gameconsole-r36s-v4.dtb", 202),
+    "GameConsole R50S": DtbEntry("rk3326-gameconsole-r50s.dtb", 202,),
+    "GameConsole R36sPlus": DtbEntry("rk3326-gameconsole-r36splus.dtb", 202),
+    "GameConsole R36H ProMax": DtbEntry("rk3326-gameconsole-r45h.dtb", 202,),
+    "GameConsole R40XX": DtbEntry("rk3326-gameconsole-r40xx.dtb", 202,),
+    "GameConsole R40XX ProMax": DtbEntry("rk3326-gameconsole-r40xxpromax.dtb", 202,),
+    "GameConsole R45H": DtbEntry("rk3326-gameconsole-r45h.dtb", 202,),
+    "GameConsole R46H": DtbEntry("rk3326-gameconsole-r46h.dtb", 202,),
+
+    # 稀范科技
+    "稀范科技 MyMini": DtbEntry("rk3326-xifan-mymini.dtb", 101),
+    "稀范科技 Mini40": DtbEntry("rk3326-xifan-mini40.dtb", 101),
+    "稀范科技 XF35H": DtbEntry("rk3326-xifan-xf35h.dtb", 101),
+    "稀范科技 R36Max": DtbEntry("rk3326-xifan-r36max.dtb", 101),
+    "稀范科技 R36Pro": DtbEntry("rk3326-xifan-r36pro.dtb", 101),
+    "稀范科技 XF40H": DtbEntry("rk3326-xifan-xf40h.dtb", 101),
+    "稀范科技 XF40V": DtbEntry("rk3326-xifan-xf40v.dtb", 101),
+    "稀范科技 XF28": DtbEntry("rk3326-xifan-xf28.dtb", 101),
+    "稀范科技 DC35V": DtbEntry("rk3326-xifan-dc35v.dtb", 101),
+    "稀范科技 DC40V": DtbEntry("rk3326-xifan-dc40v.dtb", 101),
+    "稀范科技 R36Max2": DtbEntry("rk3326-xifan-r36max2.dtb", 202),
+
+    # 安伯尼克
+    "安伯尼克 RG351M": DtbEntry("rk3326-anbernic-rg351m.dtb", 101),
+    "安伯尼克 RG351V": DtbEntry("rk3326-anbernic-rg351v.dtb", 101),
+    "安伯尼克 RG351V P2屏幕": DtbEntry("rk3326-anbernic-rg351v.dtb", 101, "overlays-rg351v-p2"),
+    "安伯尼克 RG351MP": DtbEntry("rk3326-gameconsole-r36s.dtb", 202, "overlays-rg351mp-p2"),
+
+    # 亿米创
+    "YMC A10mini": DtbEntry("rk3326-portablegame-a10mini.dtb", 202),
+    "YMC A10mini V2": DtbEntry("rk3326-portablegame-a10mini-v2.dtb", 202),
+
+    # 迪优米
+    "Diium D-R28S": DtbEntry("rk3326-diium-dr28s.dtb", 101),
+    # "Diium D007(Plus)": DtbEntry("rk3326-diium-d007.dtb", 101),
+
+    # Magicx
+    "Magicx Xu10": DtbEntry("rk3326-magicx-xu10.dtb", 202),
+    "Magicx Xu Mini M": DtbEntry("rk3326-magicx-xu-mini-m.dtb", 101),
+
+    # 泡机堂
+    "PowKiddy RGB10": DtbEntry("rk3326-powkiddy-rgb10.dtb", 101),
+    "PowKiddy RGB10X": DtbEntry("rk3326-powkiddy-rgb10x.dtb", 101),
+    "PowKiddy RGB10S": DtbEntry("rk3326-powkiddy-rgb10s.dtb", 101),
+    "PowKiddy RGB2OS": DtbEntry("rk3326-powkiddy-rgb20s.dtb", 202),
+
+    # GAMEMT
+    "GAMEMT E6": DtbEntry("rk3326-gamemt-e6.dtb", 101),
+
+    # Odroid
+    "Odroid Go2": DtbEntry("rk3326-odroid-go2.dtb", 101),
+    "Odroid Go2 v11屏幕": DtbEntry("rk3326-odroid-go2-v11.dtb", 101),
+    "Odroid Go3": DtbEntry("rk3326-odroid-go3.dtb", 101),
+
+    # Batlexp
+    "Batlexp G350": DtbEntry("rk3326-batlexp-g350.dtb", 202),
+}
+
+# ==== 分组 ====
+CATEGORIES: Dict[str, Dict[str, DtbEntry]] = {
+    "稀范科技": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("稀范科技 ")},
+    "安伯尼克": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("安伯尼克 ")},
+    "亿米创": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("YMC ")},
+    "迪优米": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("Diium ")},
+    "Magicx": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("Magicx ")},
+    "泡机堂": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("PowKiddy ")},
+    "漫特科技": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("GAMEMT ")},
+    "Odroid": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("Odroid ")},
+    "GameConsole": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("GameConsole ")},
+    "R36S克隆": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("R36S克隆 ")},
+    "R36S酱油": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("R36S酱油 ")},
+    "K36系列": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("K36 ")},
+    "AISLPC": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("AISLPC ")},
+    "Batlexp": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("Batlexp ")},
+    "其他": {
+        "GameConsole T16Max|S6000": ALL_DEVICES["T16Max"],
+        "GameConsole U8": ALL_DEVICES["U8"],
+        "GameConsole U8 P2屏幕": ALL_DEVICES["U8 P2屏幕"],
+        "GameConsole HG36|HG3506": ALL_DEVICES["HG36/HG3506"],
+        "GameConsole R36Ultra": ALL_DEVICES["R36 Ultra"],
+        "GameConsole G26|XGB36": ALL_DEVICES["XGB36"],
+    },
+}
+
+# ==== 可见宽度 & UI ====
+def visible_width(s: str) -> int:
+    return _wlen(ANSI_RE.sub('', s))
+
+def pad_disp(s: str, width: int) -> str:
+    pad = max(width - visible_width(s), 0)
+    return s + ' ' * pad
+
+def center_disp(s: str, width: int) -> str:
+    w = visible_width(s)
+    if w >= width:
+        return s
+    left = (width - w) // 2
+    right = width - w - left
+    return ' ' * left + s + ' ' * right
+
+def color(s, bg=False, bright=True, enable=True):
+    if not enable:
+        return s
+    c = '44' if bg else '97'
+    if bright and not bg:
+        c = '97'
+    if bg and bright:
+        c = '44'
+    return f'\033[{c}m{s}\033[0m'
+
+def term_width():
+    try:
+        return shutil.get_terminal_size((80, 20)).columns
+    except Exception:
+        return 80
+
+def print_header(title: str, *, no_color=False, ascii_border=False):
+    tw = term_width()
+    border_char = '#' if ascii_border else '█'
+    bar = border_char * tw
+    print(color(pad_disp(bar, tw), bg=True, enable=not no_color))
+    print(color(center_disp(title, tw), bg=True, enable=not no_color))
+    print(color(pad_disp(bar, tw), bg=True, enable=not no_color))
+
+def render_single_column_menu(items: List[str], *, prompt="请选择：", no_color=False, ascii_border=False):
+    for i, name in enumerate(items, 1):
+        print(f"{i:>2}. {name}")
+    tw = term_width()
+    sep_char = '-' if ascii_border else '─'
+    print(sep_char * tw)
+    print(prompt)
+
+def choose_index(count: int) -> int:
+    while True:
+        s = input("输入编号：").strip()
+        if s.isdigit():
+            n = int(s)
+            if 1 <= n <= count:
+                return n - 1
+        print("无效编号，请重试。")
+
+# ==== TTY 解析 ====
+def _to_tty_name(v):
+    if v is None:
+        return None
+    if isinstance(v, int):
+        return f"ttyS{v % 100}"
+    s = str(v).strip()
+    if s.startswith("tty"):
+        return s
+    if s.isdigit():
+        return f"ttyS{int(s) % 100}"
+    return s
+
+def _to_vt_name(v):
+    if v is None:
+        return None
+    s = str(v).strip()
+    if s.startswith("tty"):
+        return s
+    if s.isdigit():
+        return f"tty{s}"
+    return s
+
+def _parse_tty_spec(tty_value):
+    serial = vt = debug = None
+    if isinstance(tty_value, dict):
+        serial = _to_tty_name(tty_value.get("serial"))
+        vt     = _to_vt_name(tty_value.get("vt"))
+        debug  = _to_tty_name(tty_value.get("debug", tty_value.get("serial")))
+    elif isinstance(tty_value, (list, tuple)):
+        if len(tty_value) == 3:
+            serial = _to_tty_name(tty_value[0])
+            vt     = _to_vt_name(tty_value[1])
+            debug  = _to_tty_name(tty_value[2])
+        elif len(tty_value) == 2:
+            serial = _to_tty_name(tty_value[0])
+            vt     = _to_vt_name(tty_value[1])
+            debug  = serial
+        elif len(tty_value) == 1:
+            serial = _to_tty_name(tty_value[0])
+            debug  = serial
+    else:
+        serial = _to_tty_name(tty_value)
+        debug  = serial
+    return serial, vt, debug
+
+# ==== APPEND / console 替换 ====
+def _apply_tty_in_bootargs_str(bootargs: str, tty_value):
+    serial_tty, vt_tty, debug_tty = _parse_tty_spec(tty_value)
+
+    idx = 0
+    console_re = re.compile(r'console=(?:/dev/)?tty[^\s,"]+(?P<speed>,\d+)?')
+
+    def repl_console(m):
+        nonlocal idx
+        idx += 1
+        speed = m.group("speed") or ""
+        if idx == 1 and serial_tty:
+            return f"console={serial_tty}{speed}"
+        if idx == 2 and vt_tty:
+            return f"console={vt_tty}"
+        return m.group(0)
+
+    bootargs = console_re.sub(repl_console, bootargs)
+
+    if debug_tty:
+        bootargs = re.sub(
+            r'systemd\.debug_shell=(?:/dev/)?tty[^\s,"]+',
+            f'systemd.debug_shell={debug_tty}',
+            bootargs
+        )
+
+    return bootargs
+
+def _apply_tty_in_append(content: str, tty_value):
+    """
+    在 extlinux.conf 里找到 APPEND 行，替换其中的 console= / systemd.debug_shell=
+    """
+    def _repl(m):
+        prefix = m.group(1)  # "APPEND "
+        args   = m.group(2)  # 原始参数串
+        new_args = _apply_tty_in_bootargs_str(args, tty_value)
+        return prefix + new_args
+
+    return re.sub(r'^(\s*APPEND\s+)(.*)$', _repl, content, flags=re.MULTILINE)
+
+# ==== 原子文件/目录操作 ====
+def atomic_write_text(path: str, text: str):
+    d = os.path.dirname(path)
+    os.makedirs(d, exist_ok=True)
+    with tempfile.NamedTemporaryFile('w', encoding='utf-8', newline='\n', dir=d, delete=False) as tf:
+        tf.write(text)
+        tmp = tf.name
+    os.replace(tmp, path)
+
+def atomic_replace_dir(src_dir: str, dst_dir: str):
+    if os.path.exists(dst_dir):
+        bak = dst_dir + ".bak"
+        try:
+            if os.path.exists(bak):
+                shutil.rmtree(bak)
+            os.replace(dst_dir, bak)
+        except Exception:
+            pass
+    os.replace(src_dir, dst_dir)
+    bak = dst_dir + ".bak"
+    if os.path.exists(bak):
+        shutil.rmtree(bak, ignore_errors=True)
+
+# ==== 生成 extlinux.conf / overlays ====
+def build_extlinux_conf(dtb_file: str, tty_value, overlay_dir: Optional[str], *, no_color=False):
+    if not os.path.isdir(CONFIG_DIR):
+        print("错误：缺少 config 目录 →", CONFIG_DIR)
+        return False
+
+    tpath = os.path.join(CONFIG_DIR, "extlinux.conf")
+    if not os.path.isfile(tpath):
+        print("错误：缺少模板 →", tpath)
+        return False
+
+    base = _boot_write_root()
+    remount = base == "/flash" and not os.environ.get("RK3326_DTB_SELECT_NO_REMOUNT")
+    if remount:
+        _remount_flash(True)
+
+    ok = True
+    try:
+        with open(tpath, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        content = content.replace("my.dtb", dtb_file)
+        content = _apply_tty_in_append(content, tty_value)
+
+        out_path = os.path.join(base, "extlinux", "extlinux.conf")
+        atomic_write_text(out_path, content)
+        print(color("已生成 extlinux.conf", bg=True, enable=not no_color), f"（DTB={dtb_file}）\n  → {out_path}")
+
+        overlays_path = os.path.join(base, "overlays")
+
+        if overlay_dir:
+            src = os.path.join(CONFIG_DIR, overlay_dir)
+            if not os.path.isdir(src):
+                print("错误：缺少 overlays 源目录 →", src)
+                ok = False
+            else:
+                tmp = os.path.join(tempfile.gettempdir(), "rk3326-dtb-select-overlays.tmp")
+                if os.path.exists(tmp):
+                    shutil.rmtree(tmp, ignore_errors=True)
+
+                shutil.copytree(src, tmp)
+                atomic_replace_dir(tmp, overlays_path)
+                print("已部署 overlays →", overlay_dir)
+        else:
+            if os.path.exists(overlays_path):
+                shutil.rmtree(overlays_path, ignore_errors=True)
+                print("已删除 overlays（当前机型无需 overlays）\n  →", overlays_path)
+    finally:
+        if remount:
+            sbin_sync = "/usr/bin/sync"
+            if os.path.isfile(sbin_sync):
+                subprocess.run([sbin_sync], check=False, capture_output=True)
+            _remount_flash(False)
+
+    return ok
+
+# ==== 主逻辑 ====
+def main():
+    clear_screen()
+
+    while True:
+        clear_screen()
+        print_header("请选择厂商 / 机型分类", no_color=False)
+        categories = list(CATEGORIES.keys())
+        for i, cat in enumerate(categories, 1):
+            count = len(CATEGORIES[cat])
+            print(f"{i:2}. {cat}（{count} 台设备）")
+        print(f"{len(categories) + 1:2}. 退出程序")
+        print("────────────────────────────────────────────")
+        choice = input("输入编号：").strip()
+
+        if not choice.isdigit():
+            continue
+        choice = int(choice)
+        if choice == len(categories) + 1:
+            clear_screen()
+            print_header("感谢使用，再见！", no_color=False)
+            break
+        if not (1 <= choice <= len(categories)):
+            continue
+
+        selected_cat = categories[choice - 1]
+
+        # 二级菜单
+        while True:
+            clear_screen()
+            print_header(f"当前分类：{selected_cat}", no_color=False)
+            models = list(CATEGORIES[selected_cat].keys())
+
+            for i, name in enumerate(models, 1):
+                print(f"{i:2}. {name}")
+            print(f"{len(models) + 1:2}. 返回上一级")
+            print("────────────────────────────────────────────")
+            sub_choice = input("输入编号：").strip()
+
+            if not sub_choice.isdigit():
+                continue
+            sub_choice = int(sub_choice)
+            if sub_choice == len(models) + 1:
+                break
+            if not (1 <= sub_choice <= len(models)):
+                continue
+
+            selected_name = models[sub_choice - 1]
+            entry = CATEGORIES[selected_cat][selected_name]
+            tty_value = entry.tty
+
+            clear_screen()
+            print_header("正在应用配置", no_color=False)
+            print(f"机型：{selected_name}\n")
+            s, v, d = _parse_tty_spec(tty_value)
+            print(f"  DTB     = {entry.dtb}")
+            print(f"  SERIAL  = {s or '（不改）'}")
+            print(f"  VT      = {v or '（不改）'}")
+            print(f"  DEBUG   = {d or '（不改）'}")
+            if entry.overlay:
+                print(f"  OVERLAY = {entry.overlay}")
+
+            ok = build_extlinux_conf(entry.dtb, tty_value, entry.overlay)
+            print("\n" + ("配置完成！" if ok else "配置失败，请检查 config 文件夹"))
+
+            wait_anykey("\n按任意键返回厂商列表...")
+            break
+
+if __name__ == "__main__":
+    main()

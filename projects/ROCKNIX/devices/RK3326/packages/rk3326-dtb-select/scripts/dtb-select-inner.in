@@ -1,0 +1,7 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
+# Run from /flash/dtb-select/ (FAT) or the copy under /usr/share
+DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+export RK3326_DTB_SELECT_CONFIG="${DIR}/config"
+exec /usr/bin/python3 "${DIR}/dtb_selector.py" "$@"

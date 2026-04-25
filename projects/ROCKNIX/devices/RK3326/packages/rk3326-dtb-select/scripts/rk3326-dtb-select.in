@@ -1,0 +1,4 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
+exec /usr/bin/python3 /usr/share/rk3326-dtb-select/dtb_selector.py "$@"

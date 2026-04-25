@@ -16,7 +16,7 @@
     <file>sun50i-h700-anbernic-rg34xx</file>
     <file>sun50i-h700-anbernic-rg34xx-sp</file>
   </H700>
-  <RK3326 mkimage_options="dtb,bootscr,extlinux,uboot" fdt_type="fdtdir" fdt="/" dtb_prefix="rockchip">
+  <RK3326 mkimage_options="dtb,bootscr,extlinux,uboot,rk3326_dtb_select" fdt_type="fdtdir" fdt="/" dtb_prefix="rockchip">
     <file>rk3326-anbernic-rg351m</file>
     <file>rk3326-anbernic-rg351v</file>
     <file>rk3326-gameconsole-r33s</file>

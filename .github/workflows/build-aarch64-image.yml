@@ -80,6 +80,33 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Get DtbselectWin64 (PyInstaller) for /flash
+        if: inputs.DEVICE == 'RK3326'
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: dtbselect-rk3326-windows
+          path: /tmp/dtbw-art
+
+      - name: Stage DtbselectWin64.exe (RK3326 prebuilt for package)
+        if: inputs.DEVICE == 'RK3326'
+        run: |
+          set -e
+          PRE=projects/ROCKNIX/devices/RK3326/packages/rk3326-dtb-select/prebuilt
+          rm -rf "${PRE}"
+          mkdir -p "${PRE}"
+          if [ -f /tmp/dtbw-art/dtbselect-rk3326-windows-x64.zip ]; then
+            unzip -o /tmp/dtbw-art/dtbselect-rk3326-windows-x64.zip -d /tmp/dtbw-ex
+            if [ -f /tmp/dtbw-ex/DtbselectWin64.exe ]; then
+              cp -a /tmp/dtbw-ex/DtbselectWin64.exe "${PRE}/DtbselectWin64.exe"
+              ls -la "${PRE}/DtbselectWin64.exe"
+            else
+              echo "Zip has no DtbselectWin64.exe; Windows installer skipped in image"
+            fi
+          else
+            echo "No dtbselect-rk3326-windows artifact; building image without DtbselectWin64.exe on /flash"
+          fi
+
       - name: Download arm (${{ inputs.DEVICE }})
         if: ${{ inputs.DEVICE != 'SM8650' }}
         uses: actions/download-artifact@v4

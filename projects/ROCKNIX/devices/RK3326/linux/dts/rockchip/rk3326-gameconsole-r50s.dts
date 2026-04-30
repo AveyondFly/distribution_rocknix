@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 /*
-* # Copyright (C) 2022-24 JELOS (https://github.com/JustEnoughLinuxOS)
+* # Copyright (C) 2022-26 AURKNIX (https://github.com/AveyondFly)
 */
 
 /dts-v1/;
@@ -179,6 +179,7 @@
 
 &internal_display {
 	compatible = "rocknix,generic-dsi";
+	rotation = <0x10e>;
 	panel_description =
 	"G size=69,139 delays=2,20,10,50,20 format=rgb888 lanes=2 flags=0xa03",
 	
@@ -227,7 +228,6 @@
 	"I seq=53ec", "I seq=55b3",
 	"I seq=5eff",
 	"I seq=29 wait=50";
-	rotation = <0x10e>;
 };
 
 &pinctrl {
@@ -252,7 +252,6 @@
 			<3 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>,
 			<3 RK_PB2 RK_FUNC_GPIO &pcfg_pull_up>,
 			<2 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>;
-			
 		};
 		
 	};

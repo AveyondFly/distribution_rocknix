@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 /*
-* Copyright (c) 2019 Hardkernel Co., Ltd
-* Copyright (c) 2020 Theobroma Systems Design und Consulting GmbH
-* Copyright (c) 2022 Maya Matuszczyk <maccraft123mc@gmail.com>
+* # Copyright (C) 2022-26 AURKNIX (https://github.com/AveyondFly)
 */
 
 /dts-v1/;
@@ -13,8 +11,8 @@
 #include "rk3326.dtsi"
 
 / {
-	model = "GameConsole R36T";
-	compatible = "gameconsole,r36t", "rockchip,rk3326";
+	model = "Game Console RX6H";
+	compatible = "gameconsole,rx6h", "rockchip,rk3326";
 	
 	aliases {
 		mmc2 = &sdio;
@@ -130,7 +128,7 @@
 		amux-a-gpios = <&gpio2 RK_PC0 GPIO_ACTIVE_LOW>;
 		amux-b-gpios = <&gpio2 RK_PB7 GPIO_ACTIVE_HIGH>;
 		/* adc mux enable gpio */
-		// amux-en-gpios = <&gpio2 RK_PB4 GPIO_ACTIVE_LOW>;
+		amux-en-gpios = <&gpio2 RK_PB4 GPIO_ACTIVE_LOW>;
 		
 		/* adc calculate scale */
 		button-adc-scale = <2>;
@@ -166,8 +164,8 @@
 		poll-interval = <10>;
 		
 		/* required for RG351MP */
-		invert-absx;
-		invert-absy;
+		invert-absrx;
+		invert-absry;
 		
 		/* gpio button auto repeat set value : default disable */
 		/*
@@ -227,7 +225,7 @@
 			linux,code = <BTN_EAST>;
 		};
 		sw6 {
-			gpios = <&gpio3 RK_PC1 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio3 RK_PC1 GPIO_ACTIVE_LOW> ;
 			label = "GPIO BTN-B";
 			linux,code = <BTN_SOUTH>;
 		};
@@ -293,6 +291,17 @@
 		};
 	};
 	
+    leds: pwm-leds {
+		compatible = "pwm-leds";
+
+        system_led: system-led {
+			label = "system-led";
+			pwms = <&pwm0 0 25000 0>;
+            max-brightness = <255>;
+			default-state = "on";
+		};
+	};
+
 	spk_amp: audio-amplifier {
 		compatible = "simple-audio-amplifier";
 		enable-gpios = <&gpio3 RK_PA7 GPIO_ACTIVE_HIGH>;
@@ -372,17 +381,6 @@
 		regulator-boot-on;
 		vin-supply = <&usb_midu>;
 	};
-	sdio_pwrseq: sdio-pwrseq {
-		compatible = "mmc-pwrseq-simple";
-		/*clocks = <&rk817 1>;
-		clock-names = "ext_clock";
-		*/
-		pinctrl-0 = <&wifi_enable_h>;
-		pinctrl-names = "default";
-		post-power-on-delay-ms = <2000>;
-		reset-gpios = <&gpio0 RK_PA2 GPIO_ACTIVE_LOW>;
-	};
-	
 };
 
 &dmc {
@@ -447,12 +445,12 @@
 		"G size=153,85 delays=20,20,20,120,20 format=rgb888 lanes=4 flags=0xe03",
 		
 		"M clock=30000 horizontal=640,46,2,44 vertical=480,16,2,14 default=1",
-		"M clock=19950 horizontal=640,46,11,44 vertical=480,16,29,14",
-		"M clock=19110 horizontal=640,46,5,44 vertical=480,16,10,14",
-		"M clock=19650 horizontal=640,46,33,44 vertical=480,16,5,14",
-		"M clock=22080 horizontal=640,46,20,44 vertical=480,16,2,14",
-		"M clock=26740 horizontal=640,46,10,44 vertical=480,16,95,14",
-		"M clock=23940 horizontal=640,46,11,44 vertical=480,16,29,14",
+		"M clock=30000 horizontal=640,168,32,161 vertical=480,16,90,14",
+		"M clock=30000 horizontal=640,168,31,161 vertical=480,16,90,14",
+		"M clock=30010 horizontal=640,168,43,161 vertical=480,16,83,14",
+		"M clock=30130 horizontal=640,168,31,161 vertical=480,16,14,14",
+		"M clock=35920 horizontal=640,168,30,161 vertical=480,16,92,14",
+		"M clock=31440 horizontal=640,168,32,161 vertical=480,16,14,14",
 		"M clock=23040 horizontal=640,46,20,44 vertical=480,16,2,14",
 		"M clock=22920 horizontal=640,46,2,44 vertical=480,16,11,14",
 		"M clock=35310 horizontal=640,46,32,44 vertical=480,16,104,14",
@@ -825,29 +823,18 @@
 };
 
 &sdio {
-    #address-cells = <1>;
-    #size-cells = <0>;
-	bus-width = <4>;
-	disable-wp;
-	max-frequency = <0x2faf080>;
-	keep-power-in-suspend;
-	mmc-pwrseq = <&sdio_pwrseq>;
-	no-mmc;
-	no-sd;
-	cap-sdio-irq;
-	non-removable;
 	cap-sd-highspeed;
-	supports-sdio;
-	supports-rk912;
+	cd-gpios = <&gpio0 RK_PA2 GPIO_ACTIVE_LOW>; /*[> CD GPIO <]*/
+	max-frequency = <0x5f5e100>;
+	card-detect-delay = <0x320>;
+	supports-sd;
+	sd-uhs-sdr12;
+	sd-uhs-sdr25;
+	sd-uhs-sdr50;
+	sd-uhs-sdr104;
+	vmmc-supply = <&vcc3v0_dvp>;
+	vqmmc-supply = <&vcc2v8_dvp>;
 	status = "okay";
-	wifi@1 {
-		reg = <1>;
-		interrupt-names = "host-wake";
-		interrupt-parent = <&gpio0>;
-		interrupts = <RK_PA5 IRQ_TYPE_LEVEL_HIGH>;
-		pinctrl-0 = <&wifi_host_wake_l>;
-		pinctrl-names = "default";
-	};
 };
 
 &emmc {
@@ -877,9 +864,7 @@
 
 /* FIQ Header(P2): 2(RXD:GPIO2.B4),3(TXD:.B6) */
 &uart2 {
-	status = "okay";
-	dma-names = "tx";
-	pinctrl-0 = <&uart2m1_xfer>;
+	status = "disabled";
 };
 
 &uart1 {
@@ -897,10 +882,6 @@
 
 &vopb_mmu {
 	status = "okay";
-};
-
-&uart2m1_xfer {
-	rockchip,pins = <2 RK_PB4 2 &pcfg_pull_up>;
 };
 
 &pinctrl {
@@ -924,9 +905,9 @@
 			<3 RK_PB2 RK_FUNC_GPIO &pcfg_pull_up>,
 			<2 RK_PB5 RK_FUNC_GPIO &pcfg_pull_up>,
 			<2 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>,
-			<2 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PC0 RK_FUNC_GPIO &pcfg_pull_up>,
 			<2 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>,
-			<2 RK_PC0 RK_FUNC_GPIO &pcfg_pull_up>;
+			<2 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>;
 		};
 		
 		btn_pins_vol: btn-pins-vol {
@@ -949,7 +930,7 @@
 	
 	vcc18-lcd {
 		vcc18_lcd_n: vcc18-lcd-n {
-			rockchip,pins = <0 RK_PB5 RK_FUNC_GPIO &pcfg_pull_none>;
+			rockchip,pins = <3 RK_PA3 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 	
@@ -995,13 +976,5 @@
 			<3 RK_PA7 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
-	sdio-pwrseq {
-		wifi_enable_h: wifi-enable-h {
-			rockchip,pins =
-			<0 RK_PA2 RK_FUNC_GPIO &pcfg_pull_none>;
-		};
-		wifi_host_wake_l: wifi-host-wake-l {
-			rockchip,pins = <0 RK_PA5 RK_FUNC_GPIO &pcfg_pull_down>;
-		};
-	};
+	
 };

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 /*
-* Copyright (c) 2019 Hardkernel Co., Ltd
-* Copyright (c) 2020 Theobroma Systems Design und Consulting GmbH
-* Copyright (c) 2022 Maya Matuszczyk <maccraft123mc@gmail.com>
+* # Copyright (C) 2022-26 AURKNIX (https://github.com/AveyondFly)
 */
 
 /dts-v1/;
@@ -14,7 +12,7 @@
 #include "retrogame_joypad_s2_f1.dtsi"
 
 / {
-	model = "GameConsole R36Ultra";
+	model = "Game Console R36Ultra";
 	compatible = "gameconsole,r36u", "rockchip,rk3326";
 	
 	aliases {

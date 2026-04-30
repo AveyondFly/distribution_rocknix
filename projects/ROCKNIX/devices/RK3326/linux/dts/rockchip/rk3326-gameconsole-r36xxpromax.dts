@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 /*
- * # Copyright (C) 2022-24 JELOS (https://github.com/JustEnoughLinuxOS)
- */
+* # Copyright (C) 2022-26 AURKNIX (https://github.com/AveyondFly)
+*/
 
 /dts-v1/;
 #include "rk3326-gameconsole-r36s.dts"
@@ -9,100 +9,271 @@
 / {
 	model = "Game Console R45H";
 	compatible = "gameconsole,r45h", "gameconsole,r36s", "rockchip,rk3326";
-
+	
 	dc_charger:dc-charger {
 		compatible = "gpio-charger";
 		charger-type = "mains";
-		gpios = <&gpio0 0x0b 0x00>;
+		gpios = <&gpio0 RK_PB3 GPIO_ACTIVE_HIGH>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&dc_det>;
 	};
-
+	
 };
 
 
 &rk817 {
 	regulators{
-			vcc_1v0: LDO_REG1 {
-					regulator-min-microvolt = <0xf4240>;
-					regulator-max-microvolt = <0xf4240>;
-					regulator-name = "vcc_1v0";
-					regulator-always-on;
-					regulator-boot-on;
-
-					regulator-state-mem {
-						regulator-off-in-suspend;
-						regulator-suspend-microvolt = <0xf4240>;
-					};
+		vcc_1v0: LDO_REG1 {
+			regulator-min-microvolt = <0xf4240>;
+			regulator-max-microvolt = <0xf4240>;
+			regulator-name = "vcc_1v0";
+			regulator-always-on;
+			regulator-boot-on;
+			
+			regulator-state-mem {
+				regulator-off-in-suspend;
+				regulator-suspend-microvolt = <0xf4240>;
 			};
-			vdd3v3_wifi: LDO_REG9 {
-				regulator-min-microvolt = <3300000>;
-				regulator-max-microvolt = <3300000>;
-				regulator-name = "vdd_wifi";
-				regulator-always-on;
-				regulator-boot-on;
-				
-				regulator-state-mem {
-					regulator-off-in-suspend;
-					regulator-suspend-microvolt = <3300000>;
-				};
+		};
+		vdd3v3_wifi: LDO_REG9 {
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-name = "vdd_wifi";
+			regulator-always-on;
+			regulator-boot-on;
+			
+			regulator-state-mem {
+				regulator-off-in-suspend;
+				regulator-suspend-microvolt = <3300000>;
 			};
-			otg_switch: OTG_SWITCH {
-				regulator-name = "otg_switch";
-				regulator-boot-on;
-				regulator-always-on;
-			};
+		};
+		otg_switch: OTG_SWITCH {
+			regulator-name = "otg_switch";
+			regulator-boot-on;
+			regulator-always-on;
+		};
 	};
-			charger {
-				rockchip,use-fuel-gauge-status;
-				rockchip,resistor-sense-micro-ohms = <0x2710>;
-				rockchip,sleep-enter-current-microamp = <0x493e0>;
-				rockchip,sleep-filter-current-microamp = <0x186a0>;
-			};
+	charger {
+		rockchip,use-fuel-gauge-status;
+		rockchip,resistor-sense-micro-ohms = <0x2710>;
+		rockchip,sleep-enter-current-microamp = <0x493e0>;
+		rockchip,sleep-filter-current-microamp = <0x186a0>;
+	};
 };
 
 &usb20_otg {
 	vbus-supply = <&otg_switch>;
 };
 
-/delete-node/ &device_switch;
-
 &joypad {
-		sw13 {
-			gpios = <&gpio0 0x0d 0x01>;
-			label = "GPIO BTN_FN";
-			linux,code = <0x13c>;
-		};
+	sw13 {
+		gpios = <&gpio0 RK_PB5 GPIO_ACTIVE_LOW>;
+		label = "GPIO BTN_FN";
+		linux,code = <BTN_MODE>;
+	};
 };
 
 &pinctrl {
 	btns {
 		btn_pins: btn-pins {
-			rockchip,pins = <1 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>,
-					<0 0x0d RK_FUNC_GPIO &pcfg_pull_up>,
-					<1 RK_PB5 RK_FUNC_GPIO &pcfg_pull_up>,
-					<1 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>,
-					<1 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>,
-					<1 RK_PA2 RK_FUNC_GPIO &pcfg_pull_up>,
-					<1 RK_PA5 RK_FUNC_GPIO &pcfg_pull_up>,
-					<1 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,
-					<1 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up>,
-					<2 RK_PA2 RK_FUNC_GPIO &pcfg_pull_up>,
-					<2 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>,
-					<2 RK_PA4 RK_FUNC_GPIO &pcfg_pull_up>,
-					<2 RK_PA5 RK_FUNC_GPIO &pcfg_pull_up>,
-					<2 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,
-					<2 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PB1 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PB2 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>;
-
+			rockchip,pins = 
+			<1 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>,
+			<0 RK_PB5 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PB5 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PA2 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PA5 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA2 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA4 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA5 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up>,
+			<3 RK_PB1 RK_FUNC_GPIO &pcfg_pull_up>,
+			<3 RK_PB2 RK_FUNC_GPIO &pcfg_pull_up>,
+			<3 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>,
+			<3 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>;	
 		};
 		
 	};
 };
 &internal_display {
 	compatible = "rocknix,generic-dsi";
-	panel_description = "G size=52,70 delays=20,150,20,120,20 format=rgb888 lanes=4 flags=0xa03\0M clock=52272 horizontal=1024,24,8,33 vertical=768,16,8,8 default=1\0I seq=ee01\0I seq=ea07\0I seq=eb12\0I seq=0a8b\0I seq=1735\0I seq=1d33\0I seq=2101\0I seq=281c\0I seq=2927\0I seq=2a63\0I seq=2bb5\0I seq=2c00\0I seq=2d33\0I seq=2ff3\0I seq=ee02\0I seq=3978\0I seq=3978\0I seq=0000\0I seq=0118\0I seq=0215\0I seq=0310\0I seq=0418\0I seq=053f\0I seq=0611\0I seq=0711\0I seq=0811\0I seq=090f\0I seq=0a10\0I seq=0b54\0I seq=0c14\0I seq=0d17\0I seq=0e35\0I seq=0f37\0I seq=103f\0I seq=2000\0I seq=2118\0I seq=2215\0I seq=2310\0I seq=2412\0I seq=2537\0I seq=260b\0I seq=270d\0I seq=280d\0I seq=290b\0I seq=2a10\0I seq=2b54\0I seq=2c14\0I seq=2d17\0I seq=2e35\0I seq=2f37\0I seq=303f\0I seq=ee04\0I seq=0004\0I seq=0101\0I seq=0280\0I seq=0304\0I seq=0400\0I seq=0616\0I seq=0703\0I seq=0813\0I seq=090a\0I seq=0a0f\0I seq=0b10\0I seq=2280\0I seq=2408\0I seq=2a00\0I seq=ee05\0I seq=0004\0I seq=0108\0I seq=0255\0I seq=0305\0I seq=0400\0I seq=0504\0I seq=0600\0I seq=0713\0I seq=081e\0I seq=0966\0I seq=0d22\0I seq=1008\0I seq=110c\0I seq=1255\0I seq=1305\0I seq=1914\0I seq=1a76\0I seq=2300\0I seq=4313\0I seq=4044\0I seq=4100\0I seq=3001\0I seq=3101\0I seq=3200\0I seq=3314\0I seq=3414\0I seq=35b4\0I seq=3601\0I seq=3701\0I seq=3800\0I seq=3914\0I seq=3a14\0I seq=4401\0I seq=4581\0I seq=4605\0I seq=ee06\0I seq=0023\0I seq=0101\0I seq=0204\0I seq=06cd\0I seq=0867\0I seq=0945\0I seq=0a23\0I seq=0b01\0I seq=ee07\0I seq=003c\0I seq=0120\0I seq=0220\0I seq=0321\0I seq=0421\0I seq=053c\0I seq=063c\0I seq=0704\0I seq=0804\0I seq=090c\0I seq=0a0c\0I seq=0b01\0I seq=0c15\0I seq=0d15\0I seq=0e17\0I seq=0f17\0I seq=1011\0I seq=1111\0I seq=1213\0I seq=1313\0I seq=140d\0I seq=150d\0I seq=203c\0I seq=2120\0I seq=2220\0I seq=2321\0I seq=2421\0I seq=253c\0I seq=263c\0I seq=2704\0I seq=2804\0I seq=290c\0I seq=2a0c\0I seq=2b00\0I seq=2c14\0I seq=2d14\0I seq=2e16\0I seq=2f16\0I seq=3010\0I seq=3110\0I seq=3212\0I seq=3312\0I seq=340d\0I seq=350d\0I seq=ee08\0I seq=1000\0I seq=12da\0I seq=1410\0I seq=2269\0I seq=ee0f\0I seq=0001\0I seq=0110\0I seq=ee00\0I seq=ea00\0I seq=eb00\0I seq=11 wait=200\0I seq=29 wait=20";
+	panel_description = 
+	"G size=52,70 delays=20,150,20,120,20 format=rgb888 lanes=4 flags=0xa03",
+
+	"M clock=52272 horizontal=1024,24,8,33 vertical=768,16,8,8 default=1",
+
+	"I seq=ee01",
+	"I seq=ea07",
+	"I seq=eb12",
+	"I seq=0a8b",
+	"I seq=1735",
+	"I seq=1d33",
+	"I seq=2101",
+	"I seq=281c",
+	"I seq=2927",
+	"I seq=2a63",
+	"I seq=2bb5",
+	"I seq=2c00",
+	"I seq=2d33",
+	"I seq=2ff3",
+	"I seq=ee02",
+	"I seq=3978",
+	"I seq=3978",
+	"I seq=0000",
+	"I seq=0118",
+	"I seq=0215",
+	"I seq=0310",
+	"I seq=0418",
+	"I seq=053f",
+	"I seq=0611",
+	"I seq=0711",
+	"I seq=0811",
+	"I seq=090f",
+	"I seq=0a10",
+	"I seq=0b54",
+	"I seq=0c14",
+	"I seq=0d17",
+	"I seq=0e35",
+	"I seq=0f37",
+	"I seq=103f",
+	"I seq=2000",
+	"I seq=2118",
+	"I seq=2215",
+	"I seq=2310",
+	"I seq=2412",
+	"I seq=2537",
+	"I seq=260b",
+	"I seq=270d",
+	"I seq=280d",
+	"I seq=290b",
+	"I seq=2a10",
+	"I seq=2b54",
+	"I seq=2c14",
+	"I seq=2d17",
+	"I seq=2e35",
+	"I seq=2f37",
+	"I seq=303f",
+	"I seq=ee04",
+	"I seq=0004",
+	"I seq=0101",
+	"I seq=0280",
+	"I seq=0304",
+	"I seq=0400",
+	"I seq=0616",
+	"I seq=0703",
+	"I seq=0813",
+	"I seq=090a",
+	"I seq=0a0f",
+	"I seq=0b10",
+	"I seq=2280",
+	"I seq=2408",
+	"I seq=2a00",
+	"I seq=ee05",
+	"I seq=0004",
+	"I seq=0108",
+	"I seq=0255",
+	"I seq=0305",
+	"I seq=0400",
+	"I seq=0504",
+	"I seq=0600",
+	"I seq=0713",
+	"I seq=081e",
+	"I seq=0966",
+	"I seq=0d22",
+	"I seq=1008",
+	"I seq=110c",
+	"I seq=1255",
+	"I seq=1305",
+	"I seq=1914",
+	"I seq=1a76",
+	"I seq=2300",
+	"I seq=4313",
+	"I seq=4044",
+	"I seq=4100",
+	"I seq=3001",
+	"I seq=3101",
+	"I seq=3200",
+	"I seq=3314",
+	"I seq=3414",
+	"I seq=35b4",
+	"I seq=3601",
+	"I seq=3701",
+	"I seq=3800",
+	"I seq=3914",
+	"I seq=3a14",
+	"I seq=4401",
+	"I seq=4581",
+	"I seq=4605",
+	"I seq=ee06",
+	"I seq=0023",
+	"I seq=0101",
+	"I seq=0204",
+	"I seq=06cd",
+	"I seq=0867",
+	"I seq=0945",
+	"I seq=0a23",
+	"I seq=0b01",
+	"I seq=ee07",
+	"I seq=003c",
+	"I seq=0120",
+	"I seq=0220",
+	"I seq=0321",
+	"I seq=0421",
+	"I seq=053c",
+	"I seq=063c",
+	"I seq=0704",
+	"I seq=0804",
+	"I seq=090c",
+	"I seq=0a0c",
+	"I seq=0b01",
+	"I seq=0c15",
+	"I seq=0d15",
+	"I seq=0e17",
+	"I seq=0f17",
+	"I seq=1011",
+	"I seq=1111",
+	"I seq=1213",
+	"I seq=1313",
+	"I seq=140d",
+	"I seq=150d",
+	"I seq=203c",
+	"I seq=2120",
+	"I seq=2220",
+	"I seq=2321",
+	"I seq=2421",
+	"I seq=253c",
+	"I seq=263c",
+	"I seq=2704",
+	"I seq=2804",
+	"I seq=290c",
+	"I seq=2a0c",
+	"I seq=2b00",
+	"I seq=2c14",
+	"I seq=2d14",
+	"I seq=2e16",
+	"I seq=2f16",
+	"I seq=3010",
+	"I seq=3110",
+	"I seq=3212",
+	"I seq=3312",
+	"I seq=340d",
+	"I seq=350d",
+	"I seq=ee08",
+	"I seq=1000",
+	"I seq=12da",
+	"I seq=1410",
+	"I seq=2269",
+	"I seq=ee0f",
+	"I seq=0001",
+	"I seq=0110",
+	"I seq=ee00",
+	"I seq=ea00",
+	"I seq=eb00",
+	"I seq=11 wait=200",
+	"I seq=29 wait=20";
 };

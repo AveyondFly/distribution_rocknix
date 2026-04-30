@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 /*
-* # Copyright (C) 2022-24 JELOS (https://github.com/JustEnoughLinuxOS)
+* # Copyright (C) 2022-26 AURKNIX (https://github.com/AveyondFly)
 */
 
 /dts-v1/;
@@ -11,8 +11,8 @@
 #include "rk3326.dtsi"
 
 / {
-	model = "Sauce R36s V04";
-	compatible = "xifan,r36s", "rockchip,rk3326";
+	model = "Sauce R36s Panel2";
+	compatible = "sauce,r36s", "rockchip,rk3326";
 	
 	aliases {
 		mmc1 = &sdio;

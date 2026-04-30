@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 /*
- * # Copyright (C) 2022-24 JELOS (https://github.com/JustEnoughLinuxOS)
- */
+* # Copyright (C) 2022-24 JELOS (https://github.com/JustEnoughLinuxOS)
+*/
 
 /dts-v1/;
 #include "rk3326-gameconsole-r3xs.dtsi"
@@ -10,11 +10,7 @@
 / {
 	model = "Game Console R33S";
 	compatible = "gameconsole,r33s", "rockchip,rk3326";
-
-	rocknix,device_switch {
-		this = "r33s";
-	};
-
+	
 	builtin_gamepad: r33s_joypad {
 		compatible = "rocknix-singleadc-joypad";
 		pinctrl-names = "default";
@@ -23,16 +19,16 @@
 		joypad-product = <0x0AA2>;
 		joypad-revision = <0x0100>;
 		joypad-vendor = <0x0001>;
-
+		
 		status = "okay";
 		amux-count = <0>;
 		/* poll device interval (ms), adc read interval */
-		poll-interval = <10>;	
+		poll-interval = <10>;
 		pwms = <&pwm0 0 1000000000 0>;
 		pwm-names = "enable";
 		rumble-boost-weak = <0x0000>;
 		rumble-boost-strong = <0x0000>;
-
+		
 		button-sw1 {
 			gpios = <&gpio1 RK_PB4 GPIO_ACTIVE_LOW>;
 			label = "DPAD-UP";
@@ -109,20 +105,20 @@
 &pinctrl {
 	btns {
 		btn_pins: btn-pins {
-				rockchip,pins =	<1 RK_PA2 RK_FUNC_GPIO &pcfg_pull_up>,
-						<1 RK_PA5 RK_FUNC_GPIO &pcfg_pull_up>,
-						<1 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,
-						<1 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up>,
-						<1 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>,
-						<1 RK_PB5 RK_FUNC_GPIO &pcfg_pull_up>,
-						<1 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>,
-						<1 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>,
-						<2 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,
-						<2 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up>,
-						<3 RK_PB1 RK_FUNC_GPIO &pcfg_pull_up>,
-						<3 RK_PB2 RK_FUNC_GPIO &pcfg_pull_up>,
-						<3 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>,
-						<3 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>;
+			rockchip,pins =	<1 RK_PA2 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PA5 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PB5 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up>,
+			<3 RK_PB1 RK_FUNC_GPIO &pcfg_pull_up>,
+			<3 RK_PB2 RK_FUNC_GPIO &pcfg_pull_up>,
+			<3 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>,
+			<3 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>;
 		};
 		
 	};

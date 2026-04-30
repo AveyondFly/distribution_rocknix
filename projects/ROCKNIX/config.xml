@@ -35,23 +35,27 @@
     <file>rk3326-diium-dr28s</file>
     <file>rk3326-gameconsole-hg36</file>
     <file>rk3326-gameconsole-k36</file>
-    <file>rk3326-gameconsole-k36s</file>
-    <file>rk3326-gameconsole-r36t</file>
-    <file>rk3326-gameconsole-r36tmax</file>
+    <file>rk3326-aislpc-k36s</file>
+    <file>rk3326-aislpc-r36t</file>
+    <file>rk3326-aislpc-r36tmax</file>
     <file>rk3326-gameconsole-r36ultra</file>
     <file>rk3326-gameconsole-r50s</file>
     <file>rk3326-gameconsole-t16max</file>
+    <file>rk3326-gameconsole-rx6h</file>
     <file>rk3326-gameconsole-u8-v2</file>
     <file>rk3326-gameconsole-u8</file>
     <file>rk3326-gameconsole-xgb36</file>
     <file>rk3326-gamemt-e6</file>
-    <file>rk3326-portablegame-a10mini-v2</file>
+    <file>rk3326-portablegame-a10mini-v4</file>
     <file>rk3326-portablegame-a10mini</file>
-    <file>rk3326-r36s-sauce-v03</file>
-    <file>rk3326-r36s-sauce-v04</file>
+    <file>rk3326-r36s-sauce-panel1</file>
+    <file>rk3326-r36s-sauce-panel2</file>
+    <file>rk3326-r36s-sauce-panel3</file>
+    <file>rk3326-r36s-sauce-panel4</file>
     <file>rk3326-r36s-type2-with-amplifier</file>
     <file>rk3326-r36s-type2-without-amplifier</file>
-    <file>rk3326-r36s-type3</file>
+    <file>rk3326-r36s-type3-panel1</file>
+    <file>rk3326-r36s-type3-panel2</file>
     <file>rk3326-r36s-type4</file>
     <file>rk3326-xifan-dc35v</file>
     <file>rk3326-xifan-dc40v</file>
@@ -64,9 +68,9 @@
     <file>rk3326-xifan-xf35h</file>
     <file>rk3326-xifan-xf40h</file>
     <file>rk3326-xifan-xf40v</file>
-    <file>rk3326-gameconsole-r36s-v2</file>
-    <file>rk3326-gameconsole-r36s-v3</file>
-    <file>rk3326-gameconsole-r36s-v4</file>
+    <file>rk3326-gameconsole-r36s-panel2</file>
+    <file>rk3326-gameconsole-r36s-panel3</file>
+    <file>rk3326-gameconsole-r36s-panel4</file>
     <file>rk3326-gameconsole-r36splus</file>
     <file>rk3326-gameconsole-r36xxpromax</file>
     <file>rk3326-gameconsole-r40xx</file>

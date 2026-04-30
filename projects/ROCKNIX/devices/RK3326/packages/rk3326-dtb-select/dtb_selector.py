@@ -83,12 +83,15 @@ ALL_DEVICES: Dict[str, DtbEntry] = {
     "R36S克隆 种类1不带功放并反转右摇杆": DtbEntry("rk3326-gameconsole-k36.dtb", 101),
     "R36S克隆 种类2带功放": DtbEntry("rk3326-r36s-type2-with-amplifier.dtb", 101),
     "R36S克隆 种类2不带功放": DtbEntry("rk3326-r36s-type2-without-amplifier.dtb", 101),
-    "R36S克隆 种类3": DtbEntry("rk3326-r36s-type3.dtb", 101),
+    "R36S克隆 种类3屏幕1": DtbEntry("rk3326-r36s-type3-panel1.dtb", 101),
+    "R36S克隆 种类3屏幕2": DtbEntry("rk3326-r36s-type3-panel2.dtb", 101),
     "R36S克隆 种类4": DtbEntry("rk3326-r36s-type4.dtb", 101),
 
     # R36s酱油
-    "R36S酱油 V03": DtbEntry("rk3326-r36s-sauce-v03.dtb", 202),
-    "R36S酱油 V04": DtbEntry("rk3326-r36s-sauce-v04.dtb", 202),
+    "R36S酱油 屏幕1": DtbEntry("rk3326-r36s-sauce-panel1.dtb", 202),
+    "R36S酱油 屏幕2": DtbEntry("rk3326-r36s-sauce-panel2.dtb", 202),
+    "R36S酱油 屏幕3": DtbEntry("rk3326-r36s-sauce-panel3.dtb", 202),
+    "R36S酱油 屏幕4": DtbEntry("rk3326-r36s-sauce-panel4.dtb", 202),
 
     # K36系列
     "K36 原始版本": DtbEntry("rk3326-gameconsole-k36.dtb", 202),
@@ -96,33 +99,36 @@ ALL_DEVICES: Dict[str, DtbEntry] = {
     # BatleXP
     "BatleXP G350": DtbEntry("rk3326-batlexp-g350.dtb", 101),
 
+    # AISLPC
+    "AISLPC K36s": DtbEntry("rk3326-aislpc-k36s.dtb", 101),
+    "AISLPC R36T": DtbEntry("rk3326-aislpc-r36t.dtb", 101),
+    "AISLPC R36TMax": DtbEntry("rk3326-aislpc-r36tmax.dtb", 101),
+
     # 其他
-    "AISLPC K36s": DtbEntry("rk3326-gameconsole-k36s.dtb", 101),
-    "AISLPC R36T": DtbEntry("rk3326-gameconsole-r36t.dtb", 101),
-    "AISLPC R36TMax": DtbEntry("rk3326-gameconsole-r36tmax.dtb", 101),
     "T16Max": DtbEntry("rk3326-gameconsole-t16max.dtb", 101),
     "U8": DtbEntry("rk3326-gameconsole-u8.dtb", 101),
     "U8 P2屏幕": DtbEntry("rk3326-gameconsole-u8-v2.dtb", 101),
+    "RX6H": DtbEntry("rk3326-gameconsole-rx6h.dtb", 101),
     "HG36/HG3506": DtbEntry("rk3326-gameconsole-hg36.dtb", 202),
     "R36 Ultra": DtbEntry("rk3326-gameconsole-r36ultra.dtb", 101),
     "XGB36": DtbEntry("rk3326-gameconsole-xgb36.dtb", 202),
 
     # GameConsole
-    "GameConsole R33s": DtbEntry("rk3326-gameconsole-r33s.dtb", 202),
-    "GameConsole R36s P1屏幕": DtbEntry("rk3326-gameconsole-r36s.dtb", 202),
-    "GameConsole R36s P2屏幕": DtbEntry("rk3326-gameconsole-r36s-v2.dtb", 202),
-    "GameConsole R36s P3屏幕": DtbEntry("rk3326-gameconsole-r36s-v3.dtb", 202),
-    "GameConsole R36s P4屏幕": DtbEntry("rk3326-gameconsole-r36s-v4.dtb", 202),
-    "GameConsole R36xx": DtbEntry("rk3326-gameconsole-r36s-v4.dtb", 202),
-    "GameConsole R36H": DtbEntry("rk3326-gameconsole-r36s-v4.dtb", 202),
-    "GameConsole O30S": DtbEntry("rk3326-gameconsole-r36s-v4.dtb", 202),
-    "GameConsole R50S": DtbEntry("rk3326-gameconsole-r50s.dtb", 202,),
-    "GameConsole R36sPlus": DtbEntry("rk3326-gameconsole-r36splus.dtb", 202),
-    "GameConsole R36H ProMax": DtbEntry("rk3326-gameconsole-r45h.dtb", 202,),
-    "GameConsole R40XX": DtbEntry("rk3326-gameconsole-r40xx.dtb", 202,),
-    "GameConsole R40XX ProMax": DtbEntry("rk3326-gameconsole-r40xxpromax.dtb", 202,),
-    "GameConsole R45H": DtbEntry("rk3326-gameconsole-r45h.dtb", 202,),
-    "GameConsole R46H": DtbEntry("rk3326-gameconsole-r46h.dtb", 202,),
+    "Game Console R33s": DtbEntry("rk3326-gameconsole-r33s.dtb", 202),
+    "Game Console R36s P1屏幕": DtbEntry("rk3326-gameconsole-r36s.dtb", 202),
+    "Game Console R36s P2屏幕": DtbEntry("rk3326-gameconsole-r36s-panel2.dtb", 202),
+    "Game Console R36s P3屏幕": DtbEntry("rk3326-gameconsole-r36s-panel3.dtb", 202),
+    "Game Console R36s P4屏幕": DtbEntry("rk3326-gameconsole-r36s-panel4.dtb", 202),
+    "Game Console R36xx": DtbEntry("rk3326-gameconsole-r36s-panel4.dtb", 202),
+    "Game Console R36H": DtbEntry("rk3326-gameconsole-r36s-panel4.dtb", 202),
+    "Game Console O30S": DtbEntry("rk3326-gameconsole-r36s-panel4.dtb", 202),
+    "Game Console R50S": DtbEntry("rk3326-gameconsole-r50s.dtb", 202,),
+    "Game Console R36sPlus": DtbEntry("rk3326-gameconsole-r36splus.dtb", 202),
+    "Game Console R36H ProMax": DtbEntry("rk3326-gameconsole-r45h.dtb", 202,),
+    "Game Console R40XX": DtbEntry("rk3326-gameconsole-r40xx.dtb", 202,),
+    "Game Console R40XX ProMax": DtbEntry("rk3326-gameconsole-r40xxpromax.dtb", 202,),
+    "Game Console R45H": DtbEntry("rk3326-gameconsole-r45h.dtb", 202,),
+    "Game Console R46H": DtbEntry("rk3326-gameconsole-r46h.dtb", 202,),
 
     # 稀范科技
     "稀范科技 MyMini": DtbEntry("rk3326-xifan-mymini.dtb", 101),
@@ -145,7 +151,7 @@ ALL_DEVICES: Dict[str, DtbEntry] = {
 
     # 亿米创
     "YMC A10mini": DtbEntry("rk3326-portablegame-a10mini.dtb", 202),
-    "YMC A10mini V2": DtbEntry("rk3326-portablegame-a10mini-v2.dtb", 202),
+    "YMC A10mini V4": DtbEntry("rk3326-portablegame-a10mini-v4.dtb", 202),
 
     # 迪优米
     "Diium D-R28S": DtbEntry("rk3326-diium-dr28s.dtb", 101),
@@ -183,7 +189,7 @@ CATEGORIES: Dict[str, Dict[str, DtbEntry]] = {
     "泡机堂": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("PowKiddy ")},
     "漫特科技": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("GAMEMT ")},
     "Odroid": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("Odroid ")},
-    "GameConsole": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("GameConsole ")},
+    "Game Console": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("Game Console ")},
     "R36S克隆": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("R36S克隆 ")},
     "R36S酱油": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("R36S酱油 ")},
     "K36系列": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("K36 ")},

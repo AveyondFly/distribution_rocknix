@@ -1,12 +1,51 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 /*
- * # Copyright (C) 2022-24 JELOS (https://github.com/JustEnoughLinuxOS)
- */
+* # Copyright (C) 2022-26 AURKNIX (https://github.com/AveyondFly)
+*/
 
 /dts-v1/;
 #include "rk3326-gameconsole-r36s.dts"
 
+/ {
+	model = "Game Console R36sPlus";
+	compatible = "gameconsole,r36splus", "rockchip,rk3326";
+};
+
 &internal_display {
 	compatible = "rocknix,generic-dsi";
-	panel_description = "G size=153,85 delays=20,20,20,120,20 format=rgb888 lanes=4 flags=0xe03\0M clock=36500 horizontal=720,45,4,45 vertical=720,15,3,11 default=1\0M clock=36600 horizontal=720,45,44,45 vertical=720,15,112,11\0M clock=36520 horizontal=720,45,20,45 vertical=720,15,134,11\0M clock=37190 horizontal=720,45,38,45 vertical=720,15,131,11\0M clock=36570 horizontal=720,45,38,45 vertical=720,15,4,11\0M clock=44560 horizontal=720,45,33,45 vertical=720,15,139,11\0M clock=37260 horizontal=720,45,9,45 vertical=720,15,13,11\0M clock=36630 horizontal=720,45,4,45 vertical=720,15,4,11\0M clock=40950 horizontal=720,45,7,45 vertical=720,15,88,11\0M clock=50300 horizontal=720,45,20,45 vertical=720,15,57,11\0M clock=55080 horizontal=720,45,6,45 vertical=720,15,4,11\0M clock=73260 horizontal=720,45,4,45 vertical=720,15,4,11\0I seq=11 wait=250\0I seq=b9f11283\0I seq=ba338105f90e0e2000000000000000442500900a0000014f01000037\0I seq=b82522f063\0I seq=bf021100\0I seq=b31010282803ff00000000\0I seq=c0737350500000127000\0I seq=bc46\0I seq=cc0b\0I seq=b480\0I seq=b23c1230\0I seq=e307070b0b030b00000000ff00c010\0I seq=c13600323277f1cccc77773333\0I seq=b50a0a\0I seq=b68888\0I seq=e9c8100a100fa1801231234786a180470800000d00000000000d00000048028baf4602888888888848138baf5713888888888800000000000000000000000000\0I seq=ea9612010101780200000000004f318ba8317588888888884f208ba820648888888888230000010200000000000000000000000000000040a18000000000\0I seq=e0000a0f293b3f4239060d10131514151017000a0f293b3f4239060d10131514151017\0I seq=29 wait=50";
+	panel_description = 
+	"G size=153,85 delays=20,20,20,120,20 format=rgb888 lanes=4 flags=0xe03",
+	
+	"M clock=36500 horizontal=720,45,4,45 vertical=720,15,3,11 default=1",
+	"M clock=36600 horizontal=720,45,44,45 vertical=720,15,112,11",
+	"M clock=36520 horizontal=720,45,20,45 vertical=720,15,134,11",
+	"M clock=37190 horizontal=720,45,38,45 vertical=720,15,131,11",
+	"M clock=36570 horizontal=720,45,38,45 vertical=720,15,4,11",
+	"M clock=44560 horizontal=720,45,33,45 vertical=720,15,139,11",
+	"M clock=37260 horizontal=720,45,9,45 vertical=720,15,13,11",
+	"M clock=36630 horizontal=720,45,4,45 vertical=720,15,4,11",
+	"M clock=40950 horizontal=720,45,7,45 vertical=720,15,88,11",
+	"M clock=50300 horizontal=720,45,20,45 vertical=720,15,57,11",
+	"M clock=55080 horizontal=720,45,6,45 vertical=720,15,4,11",
+	"M clock=73260 horizontal=720,45,4,45 vertical=720,15,4,11",
+
+	"I seq=11 wait=250",
+	"I seq=b9f11283",
+	"I seq=ba338105f90e0e2000000000000000442500900a0000014f01000037",
+	"I seq=b82522f063",
+	"I seq=bf021100",
+	"I seq=b31010282803ff00000000",
+	"I seq=c0737350500000127000",
+	"I seq=bc46",
+	"I seq=cc0b",
+	"I seq=b480",
+	"I seq=b23c1230",
+	"I seq=e307070b0b030b00000000ff00c010",
+	"I seq=c13600323277f1cccc77773333",
+	"I seq=b50a0a",
+	"I seq=b68888",
+	"I seq=e9c8100a100fa1801231234786a180470800000d00000000000d00000048028baf4602888888888848138baf5713888888888800000000000000000000000000",
+	"I seq=ea9612010101780200000000004f318ba8317588888888884f208ba820648888888888230000010200000000000000000000000000000040a18000000000",
+	"I seq=e0000a0f293b3f4239060d10131514151017000a0f293b3f4239060d10131514151017",
+	"I seq=29 wait=50";
 };

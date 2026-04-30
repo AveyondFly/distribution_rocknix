@@ -88,7 +88,7 @@
     ZRAM_COMPRESSION_ALGO="lzo-rle"
 
   # ZRAM Size
-    ZRAM_SWAP_SIZE="0"
+    ZRAM_SWAP_SIZE="Auto"
 
-  # Disk Swap
-    SWAP_FILE_SIZE="0"
+  # Disk Swap (MiB; pairs with ZRAM on low-memory devices)
+    SWAP_FILE_SIZE="512"

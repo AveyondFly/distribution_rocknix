@@ -7,7 +7,6 @@
 MACHINEIDFILE=/storage/.cache/systemd-machine-id
 USERID=$(cat ${MACHINEIDFILE})
 
-ENDPOINT_URL="https://stats.rocknix.org"
 ENDPOINT_URL_MOD="https://rocknix.dpdns.org"
 MAX_RETRIES=5
 RETRY_DELAY=60
@@ -19,17 +18,8 @@ send_stats() {
         -F "ROCKNIX_BUILD=${OS_BUILD}" \
         -F "ROCKNIX_SOC=${HW_DEVICE}" \
         -F "ROCKNIX_DEV=${QUIRK_DEVICE}" \
-        $ENDPOINT_URL
+        $ENDPOINT_URL_MOD
     rc1=$?
-
-    # Best-effort: also send to mirror (do not change main logic)
-    curl -s -S -X POST \
-        -F "ROCKNIX_UID=${USERID:(-12)}" \
-        -F "ROCKNIX_VERSION=${OS_VERSION}" \
-        -F "ROCKNIX_BUILD=${OS_BUILD}" \
-        -F "ROCKNIX_SOC=${HW_DEVICE}" \
-        -F "ROCKNIX_DEV=${QUIRK_DEVICE}" \
-        $ENDPOINT_URL_MOD >/dev/null 2>&1
 
     return $rc1
 }

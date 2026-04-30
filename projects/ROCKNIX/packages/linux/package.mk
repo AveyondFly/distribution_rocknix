@@ -6,7 +6,10 @@ PKG_NAME="linux"
 PKG_LICENSE="GPL"
 PKG_SITE="http://www.kernel.org"
 PKG_DEPENDS_HOST="ccache:host openssl:host"
-PKG_DEPENDS_TARGET="linux:host kmod:host xz:host keyutils ncurses openssl:host ${KERNEL_EXTRA_DEPENDS_TARGET}"
+# initramfs must finish before linux:target pre_make_target runs (it rm -rf ${BUILD}/initramfs
+# then reinstalls initramfs). Without this edge, parallel image builds can interleave
+# initramfs:init tar with that rm and fail with "Cannot open .../initramfs".
+PKG_DEPENDS_TARGET="linux:host kmod:host xz:host keyutils ncurses openssl:host initramfs ${KERNEL_EXTRA_DEPENDS_TARGET}"
 PKG_NEED_UNPACK="${LINUX_DEPENDS} $(get_pkg_directory initramfs) $(get_pkg_variable initramfs PKG_NEED_UNPACK)"
 PKG_NEED_UNPACK+=" ${PROJECT_DIR}/${PROJECT}/bootloader ${PROJECT_DIR}/${PROJECT}/devices/${DEVICE}/bootloader"
 PKG_LONGDESC="This package contains a precompiled kernel image and the modules."

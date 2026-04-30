@@ -1,6 +1,0 @@
-#!/bin/sh
-# SPDX-License-Identifier: GPL-2.0
-# Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
-# On the boot FAT, runs the copy next to this script (e.g. /flash/dtb-select/…)
-HERE=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
-exec sh "${HERE}/dtb-select/dtbselect" "$@"

@@ -136,14 +136,17 @@ mkimage_aml_boot() {
   fi
 }
 
-# RK3326: put rk3326-dtb-select on the boot FAT (same tree as on /flash after first boot)
+# RK3326: rk3326-dtb-select on boot FAT at partition root (/flash)
 mkimage_rk3326_dtb_select() {
   if [ ! "${DEVICE}" = "RK3326" ]; then
     return 0
   fi
-  if [ -d "${RELEASE_DIR}/3rdparty/bootloader/dtb-select" ]; then
-    echo "image: copying dtb-select to boot partition (RK3326)..."
-    mcopy -s -o "${RELEASE_DIR}/3rdparty/bootloader/dtb-select" ::
+  if [ -f "${RELEASE_DIR}/3rdparty/bootloader/dtb_selector.py" ]; then
+    echo "image: copying rk3326-dtb-select to boot partition root (RK3326)..."
+    mcopy -o "${RELEASE_DIR}/3rdparty/bootloader/dtb_selector.py" ::/dtb_selector.py
+  fi
+  if [ -d "${RELEASE_DIR}/3rdparty/bootloader/config" ]; then
+    mcopy -s "${RELEASE_DIR}/3rdparty/bootloader/config" ::/config
   fi
   if [ -f "${RELEASE_DIR}/3rdparty/bootloader/dtbselect" ]; then
     mcopy -o "${RELEASE_DIR}/3rdparty/bootloader/dtbselect" ::/dtbselect

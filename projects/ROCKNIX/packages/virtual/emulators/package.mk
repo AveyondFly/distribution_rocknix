@@ -1478,4 +1478,5 @@ makeinstall_target() {
   install_script "MOD_TOOLS/Bezels Installer.sh"
   install_script "MOD_TOOLS/Reset Drastic Cfg.sh"
   install_script "MOD_TOOLS/rocknix2emmc.sh"
+  install_script "MOD_TOOLS/Toggle Power Button.sh"
 }

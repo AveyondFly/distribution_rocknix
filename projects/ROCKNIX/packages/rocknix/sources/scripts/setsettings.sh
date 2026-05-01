@@ -720,6 +720,7 @@ function set_overlay() {
       ;;
     esac
     add_setting "rotation" "video_rotation"
+    add_setting "none" "aspect_ratio_index" "$STD_AR_INDEX"
 
     local BEZEL="$(game_setting bezel)"
     case ${BEZEL} in
@@ -731,7 +732,6 @@ function set_overlay() {
         ;;
     esac
 
-    add_setting "none" "aspect_ratio_index" "$STD_AR_INDEX"
 
     local OVERLAY="$(game_setting overlayset)"
     case ${OVERLAY} in
@@ -1139,8 +1139,6 @@ write_bezel_config() {
                 add_setting "none" "input_overlay" "${bezel_info}"
 
                 local grh_parameter=""
-                local grh_ratio=""
-                local grh_integerscale=""
                 local grh_custom_viewport_width=""
                 local grh_custom_viewport_height=""
                 local grh_custom_viewport_x=""
@@ -1151,38 +1149,21 @@ write_bezel_config() {
                 eval $(grep -E '^grh_[a-zA-Z0-9_]+=' "$bezel_info" | tr -d '\r')
                 
                 if [ "$grh_parameter" = "1" ]; then
-                    if [ "$grh_integerscale" = "1" ]; then
-                        add_setting "none" "video_scale_integer" "true"
-                    else
-                        add_setting "none" "video_scale_integer" "false"
-                    fi
-                    
                     if [ -n "$grh_video_viewport_bias_x" ]; then
                         add_setting "none" "video_viewport_bias_x" "$grh_video_viewport_bias_x"
+                    elif [ -n "$grh_custom_viewport_x" ] && [ "$grh_custom_viewport_x" != "0" ]; then
+                        add_setting "none" "video_viewport_bias_x" "0"
                     else
                         add_setting "none" "video_viewport_bias_x" "0.500000"
                     fi
                     
                     if [ -n "$grh_video_viewport_bias_y" ]; then
                         add_setting "none" "video_viewport_bias_y" "$grh_video_viewport_bias_y"
+                    elif [ -n "$grh_custom_viewport_y" ] && [ "$grh_custom_viewport_y" != "0" ]; then
+                        add_setting "none" "video_viewport_bias_y" "0"
                     else
                         add_setting "none" "video_viewport_bias_y" "0.500000"
                     fi
-                    
-                    case ${grh_ratio} in
-                      0|false|none)
-                      ;;
-                      *)
-                        for AR in ${!CORE_RATIOS[@]}
-                        do
-                            if [ "${CORE_RATIOS[${AR}]}" = "${grh_ratio}" ]
-                            then
-                                final_ar_index="${AR}"
-                                break
-                            fi
-                        done
-                      ;;
-                    esac
                     
                     if [ -n "$grh_custom_viewport_width" ]; then
                         add_setting "none" "custom_viewport_width" "$grh_custom_viewport_width"
@@ -1210,8 +1191,6 @@ EOF
             fi
         fi
     fi
-
-    add_setting "none" "aspect_ratio_index" "$final_ar_index"
 }
 
 # Function to check bezel file existence

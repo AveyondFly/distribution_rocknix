@@ -387,6 +387,8 @@ case "$detected_res" in
         Set_system_cfg_entry "psp.integerscale" "0"
         Set_system_cfg_entry "virtualboy.ratio" "custom"
         Set_system_cfg_entry "virtualboy.integerscale" "0"
+        Set_system_cfg_entry "gbc.integerscale" "1"
+        Set_system_cfg_entry "gb.integerscale" "1"
         ;;
     "480x320")
         echo "480x320"

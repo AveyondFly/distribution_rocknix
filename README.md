@@ -75,6 +75,10 @@ This is an **unofficial** fork of ROCKNIX that provides support for additional d
 * VPN support with Wireguard, Tailscale, and ZeroTier.
 * Includes built-in support for scraping and retroachievements.
 
+## User manuals
+
+Guides for this fork live in [`documentation/user_man/`](documentation/user_man/) as paired Chinese and English Markdown files (`*_cn.md` / `*_en.md`): general fork usage, drastic_adv `layout.json`, and J2ME controls. PDFs shipped in release images are built in CI from those sources.
+
 ## Screenshots
 
 <table>

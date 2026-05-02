@@ -80,6 +80,21 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Get user manual PDFs bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: rocknix-user-manuals-pdfs
+          path: /tmp/user-manuals-art
+
+      - name: Stage user manual PDFs for rocknix-user-docs
+        run: |
+          set -e
+          PRE=documentation/user_man/prebuilt-pdf
+          rm -rf "${PRE}"
+          mkdir -p "${PRE}"
+          tar -xzf /tmp/user-manuals-art/rocknix-user-manuals-pdfs.tar.gz -C "${PRE}"
+          ls -la "${PRE}"
+
       - name: Get DtbselectWin64 (PyInstaller) for /flash
         if: inputs.DEVICE == 'RK3326'
         continue-on-error: true

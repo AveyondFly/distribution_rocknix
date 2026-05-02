@@ -41,6 +41,9 @@ tools/mkpkg/*.git
 # ignore old linux configs
 projects/**/*.old
 
+# CI-staged manuals (consume rocknix-user-manuals-pdfs artifact)
+documentation/user_man/prebuilt-pdf/
+
 # ROCKNIX
 /.rocknix
 /.cache

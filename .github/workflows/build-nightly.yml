@@ -154,6 +154,14 @@ jobs:
       include_rk3326: "${{ contains(needs.set-envs.outputs.matrix, 'RK3326') }}"
     secrets: inherit
 
+  user-manual-pdfs:
+    if: (github.event_name != 'schedule') || (github.repository == 'AveyondFly/distribution_rocknix' && github.ref_name == 'next')
+    needs:
+      - set-envs
+      - build-docker
+    uses: ./.github/workflows/build-user-manual-pdfs.yml
+    secrets: inherit
+
   build-devices:
     if: (github.event_name != 'schedule') || (github.repository == 'AveyondFly/distribution_rocknix' && github.ref_name == 'next')
     name: Build Devices
@@ -161,6 +169,7 @@ jobs:
       - set-envs
       - build-docker
       - rk3326-dtbselect-windows
+      - user-manual-pdfs
     strategy:
       fail-fast: false
       matrix:

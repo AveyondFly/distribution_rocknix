@@ -1,0 +1,43 @@
+# Pandoc/XeLaTeX PDF bundle for documentation/user_man, consumed by build-aarch64-image → rocknix-user-docs (like dtbselect artifacts).
+name: Build user manual PDFs
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  push:
+    paths:
+      - "documentation/user_man/**"
+      - ".github/workflows/build-user-manual-pdfs.yml"
+
+jobs:
+  pandoc-manuals:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pandoc and XeLaTeX (CJK)
+        run: |
+          # With --no-install-recommends: lmodern (pandoc defaults) + texlive-fonts-recommended (pzdr/Zapf Dingbats for hyperref).
+          sudo apt-get update
+          DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends \
+            pandoc \
+            fonts-noto-cjk \
+            texlive-xetex \
+            texlive-lang-chinese \
+            lmodern \
+            texlive-fonts-recommended
+
+      - name: Generate PDF tarball
+        env:
+          SKIP_MANUAL_VENDOR_TOOLCHAIN: "1"
+        run: |
+          chmod +x documentation/user_man/build-pdfs.sh
+          mkdir -p /tmp/manual-pdf-out
+          documentation/user_man/build-pdfs.sh /tmp/manual-pdf-out
+          tar -czf rocknix-user-manuals-pdfs.tar.gz -C /tmp/manual-pdf-out .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rocknix-user-manuals-pdfs
+          path: rocknix-user-manuals-pdfs.tar.gz
+          if-no-files-found: error

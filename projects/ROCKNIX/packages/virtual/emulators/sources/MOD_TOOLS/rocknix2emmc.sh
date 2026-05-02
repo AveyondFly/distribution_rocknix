@@ -46,6 +46,10 @@ show_image "installing.png"
 SRC_DISK="/dev/mmcblk1" # TF Card
 DST_DISK="/dev/mmcblk0" # eMMC
 
+if [ -z "${HW_DEVICE}" ] && [ -f /etc/profile ]; then
+    . /etc/profile
+fi
+
 # 1. 检查磁盘是否存在
 if [ ! -b "$SRC_DISK" ] || [ ! -b "$DST_DISK" ]; then
     echo "Error: Could not find source ($SRC_DISK) or destination ($DST_DISK) disks."
@@ -70,6 +74,21 @@ echo "Step 1: Cloning Bootloader and ROCKNIX partition (${DD_COUNT} MB)..."
 # 克隆 MBR 分区表, U-boot 和 整个 FAT32 启动分区
 dd if=$SRC_DISK of=$DST_DISK bs=1M count=$DD_COUNT
 sync
+
+case "${HW_DEVICE}" in
+    RK3326*)
+        UART5_UBOOT="/usr/share/bootloader/b_uboot.bin.uart5"
+
+        echo "Writing RK3326 UART5 U-Boot to eMMC..."
+        if [ ! -f "$UART5_UBOOT" ]; then
+            echo "Error: Could not find $UART5_UBOOT."
+            exit 1
+        fi
+
+        dd if="$UART5_UBOOT" of="$DST_DISK" bs=512 seek=64 conv=notrunc
+        sync
+        ;;
+esac
 
 # 重新加载 eMMC 的分区表
 set +e

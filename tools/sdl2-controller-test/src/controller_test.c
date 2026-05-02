@@ -2,6 +2,7 @@
 #include <SDL.h>
 
 #include <ctype.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdarg.h>
@@ -103,6 +104,26 @@ static const SDL_Color COLOR_DARK = { 58, 36, 135, 255 };
 static void set_color(SDL_Renderer *renderer, SDL_Color color)
 {
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+}
+
+static int scale_value(int value, float scale)
+{
+    int scaled = (int)lroundf((float)value * scale);
+
+    if (scaled < 1) {
+        return 1;
+    }
+    return scaled;
+}
+
+static int scale_font(int value, float scale)
+{
+    int scaled = (int)lroundf((float)value * scale);
+
+    if (scaled < 1) {
+        return 1;
+    }
+    return scaled;
 }
 
 static void fill_rect(SDL_Renderer *renderer, int x, int y, int w, int h, SDL_Color color)
@@ -280,9 +301,26 @@ static float normalized_trigger(Sint16 value)
     return (float)value / 32767.0f;
 }
 
-static int axis_offset(Sint16 value, int radius)
+static void compute_stick_dot_position(
+    int center_x,
+    int center_y,
+    Sint16 axis_x,
+    Sint16 axis_y,
+    int travel_radius,
+    int *dot_x,
+    int *dot_y)
 {
-    return (int)(normalized_axis(value) * (float)radius);
+    float nx = normalized_axis(axis_x);
+    float ny = normalized_axis(axis_y);
+    float magnitude = sqrtf((nx * nx) + (ny * ny));
+
+    if (magnitude > 1.0f) {
+        nx /= magnitude;
+        ny /= magnitude;
+    }
+
+    *dot_x = center_x + (int)lroundf(nx * (float)travel_radius);
+    *dot_y = center_y + (int)lroundf(ny * (float)travel_radius);
 }
 
 static void set_status(AppState *app, const char *fmt, ...)
@@ -431,13 +469,20 @@ static void draw_labeled_button(
     int w,
     int h,
     const char *label,
-    bool pressed)
+    bool pressed,
+    int text_scale)
 {
     if (pressed) {
         fill_rect(renderer, x + 2, y + 2, w - 3, h - 3, COLOR_FILL);
     }
     draw_rect(renderer, x, y, w, h, COLOR_LINE);
-    draw_text_centered(renderer, x + (w / 2), y + ((h - 14) / 2), 2, pressed ? COLOR_DARK : COLOR_TEXT, label);
+    draw_text_centered(
+        renderer,
+        x + (w / 2),
+        y + ((h - (7 * text_scale)) / 2),
+        text_scale,
+        pressed ? COLOR_DARK : COLOR_TEXT,
+        label);
 }
 
 static void draw_trigger_box(
@@ -447,7 +492,8 @@ static void draw_trigger_box(
     int w,
     int h,
     const char *label,
-    Sint16 value)
+    Sint16 value,
+    int text_scale)
 {
     int inner_w = (int)((float)(w - 4) * normalized_trigger(value));
 
@@ -455,16 +501,29 @@ static void draw_trigger_box(
         fill_rect(renderer, x + 2, y + 2, inner_w, h - 3, COLOR_FILL);
     }
     draw_rect(renderer, x, y, w, h, COLOR_LINE);
-    draw_text_centered(renderer, x + (w / 2), y + ((h - 14) / 2), 2, COLOR_TEXT, label);
+    draw_text_centered(renderer, x + (w / 2), y + ((h - (7 * text_scale)) / 2), text_scale, COLOR_TEXT, label);
 }
 
-static void draw_labeled_circle(SDL_Renderer *renderer, int center_x, int center_y, int radius, const char *label, bool pressed)
+static void draw_labeled_circle(
+    SDL_Renderer *renderer,
+    int center_x,
+    int center_y,
+    int radius,
+    const char *label,
+    bool pressed,
+    int text_scale)
 {
     if (pressed) {
         fill_circle(renderer, center_x, center_y, radius - 2, COLOR_FILL);
     }
     draw_circle_outline(renderer, center_x, center_y, radius, 2, COLOR_LINE);
-    draw_text_centered(renderer, center_x, center_y - 7, 2, pressed ? COLOR_DARK : COLOR_TEXT, label);
+    draw_text_centered(
+        renderer,
+        center_x,
+        center_y - ((7 * text_scale) / 2),
+        text_scale,
+        pressed ? COLOR_DARK : COLOR_TEXT,
+        label);
 }
 
 static void draw_large_stick(
@@ -474,29 +533,41 @@ static void draw_large_stick(
     const char *label,
     Sint16 axis_x,
     Sint16 axis_y,
-    bool pressed)
+    bool pressed,
+    int outer_radius,
+    int inner_radius,
+    int fill_radius,
+    int motion_radius,
+    int dot_radius,
+    int label_scale)
 {
-    int dot_x = center_x + axis_offset(axis_x, 28);
-    int dot_y = center_y + axis_offset(axis_y, 28);
+    int dot_x;
+    int dot_y;
 
-    draw_circle_outline(renderer, center_x, center_y, 72, 2, COLOR_LINE);
-    draw_circle_outline(renderer, center_x, center_y, 40, 1, COLOR_FAINT);
-    draw_hline(renderer, center_x - 72, center_x + 72, center_y, COLOR_FAINT);
-    draw_vline(renderer, center_x, center_y - 72, center_y + 72, COLOR_FAINT);
+    compute_stick_dot_position(center_x, center_y, axis_x, axis_y, motion_radius, &dot_x, &dot_y);
+
+    draw_circle_outline(renderer, center_x, center_y, outer_radius, 2, COLOR_LINE);
+    draw_circle_outline(renderer, center_x, center_y, inner_radius, 1, COLOR_FAINT);
+    draw_hline(renderer, center_x - outer_radius, center_x + outer_radius, center_y, COLOR_FAINT);
+    draw_vline(renderer, center_x, center_y - outer_radius, center_y + outer_radius, COLOR_FAINT);
 
     if (pressed) {
-        fill_circle(renderer, center_x, center_y, 28, COLOR_FILL);
+        fill_circle(renderer, center_x, center_y, fill_radius, COLOR_FILL);
     }
-    draw_text_centered(renderer, center_x, center_y - 18, 5, pressed ? COLOR_DARK : COLOR_TEXT, label);
-    fill_circle(renderer, dot_x, dot_y, 9, COLOR_LINE);
+    draw_text_centered(renderer, center_x, center_y - ((7 * label_scale) / 2), label_scale, pressed ? COLOR_DARK : COLOR_TEXT, label);
+    fill_circle(renderer, dot_x, dot_y, dot_radius, COLOR_LINE);
 }
 
-static void draw_dpad(SDL_Renderer *renderer, int center_x, int center_y, const AppState *app)
+static void draw_dpad(
+    SDL_Renderer *renderer,
+    int center_x,
+    int center_y,
+    const AppState *app,
+    int center_size,
+    int arm_length,
+    int arm_thickness,
+    int gap)
 {
-    int center_size = 34;
-    int arm_length = 34;
-    int arm_thickness = 34;
-    int gap = 4;
     int center_left = center_x - (center_size / 2);
     int center_top = center_y - (center_size / 2);
     bool up = app->buttons[SDL_CONTROLLER_BUTTON_DPAD_UP] != 0 || (app->hat_state & SDL_HAT_UP) != 0;
@@ -547,7 +618,16 @@ static void draw_dpad(SDL_Renderer *renderer, int center_x, int center_y, const 
     draw_rect(renderer, center_left + center_size + gap, center_y - (arm_thickness / 2), arm_length, arm_thickness, COLOR_LINE);
 }
 
-static void draw_details_panel(SDL_Renderer *renderer, const AppState *app, int x, int y, int w, int h)
+static void draw_details_panel(
+    SDL_Renderer *renderer,
+    const AppState *app,
+    int x,
+    int y,
+    int w,
+    int h,
+    float scale_y,
+    int title_scale,
+    int body_scale)
 {
     char name_line[96];
     char detail_line[96];
@@ -555,41 +635,105 @@ static void draw_details_panel(SDL_Renderer *renderer, const AppState *app, int 
     char trigger_line[96];
 
     (void)h;
-
     sanitize_label(app->controller_name, name_line, sizeof(name_line));
     sanitize_label(app->last_input, detail_line, sizeof(detail_line));
     SDL_snprintf(rumble_line, sizeof(rumble_line), "RUMBLE = %s", app->rumble_supported ? "YES" : "NO");
     SDL_snprintf(trigger_line, sizeof(trigger_line), "TRIGGER RUMBLE = %s", app->trigger_rumble_supported ? "YES" : "NO");
 
-    draw_text_centered(renderer, x + (w / 2), y + 20, 3, COLOR_TEXT, "KEY DETAILS");
+    draw_text_centered(renderer, x + (w / 2), y + scale_value(20, scale_y), title_scale, COLOR_TEXT, "KEY DETAILS");
     if (app->controller == NULL) {
-        draw_text_centered(renderer, x + (w / 2), y + 82, 2, COLOR_TEXT, "NO CONTROLLER");
-        draw_text_centered(renderer, x + (w / 2), y + 120, 2, COLOR_TEXT, "WAITING FOR INPUT");
-        draw_text_centered(renderer, x + (w / 2), y + 168, 2, COLOR_TEXT, "RUMBLE = NO");
-        draw_text_centered(renderer, x + (w / 2), y + 206, 2, COLOR_TEXT, "TRIGGER RUMBLE = NO");
+        draw_text_centered(renderer, x + (w / 2), y + scale_value(82, scale_y), body_scale, COLOR_TEXT, "NO CONTROLLER");
+        draw_text_centered(renderer, x + (w / 2), y + scale_value(120, scale_y), body_scale, COLOR_TEXT, "WAITING FOR INPUT");
+        draw_text_centered(renderer, x + (w / 2), y + scale_value(168, scale_y), body_scale, COLOR_TEXT, "RUMBLE = NO");
+        draw_text_centered(renderer, x + (w / 2), y + scale_value(206, scale_y), body_scale, COLOR_TEXT, "TRIGGER RUMBLE = NO");
         return;
     }
 
-    draw_text_centered(renderer, x + (w / 2), y + 74, 2, COLOR_TEXT, name_line[0] != '\0' ? name_line : "UNKNOWN CONTROLLER");
-    draw_text_centered(renderer, x + (w / 2), y + 118, 2, COLOR_TEXT, detail_line[0] != '\0' ? detail_line : "WAITING FOR INPUT");
-    draw_text_centered(renderer, x + (w / 2), y + 168, 2, COLOR_TEXT, rumble_line);
-    draw_text_centered(renderer, x + (w / 2), y + 206, 2, COLOR_TEXT, trigger_line);
+    draw_text_centered(
+        renderer,
+        x + (w / 2),
+        y + scale_value(74, scale_y),
+        body_scale,
+        COLOR_TEXT,
+        name_line[0] != '\0' ? name_line : "UNKNOWN CONTROLLER");
+    draw_text_centered(
+        renderer,
+        x + (w / 2),
+        y + scale_value(118, scale_y),
+        body_scale,
+        COLOR_TEXT,
+        detail_line[0] != '\0' ? detail_line : "WAITING FOR INPUT");
+    draw_text_centered(renderer, x + (w / 2), y + scale_value(168, scale_y), body_scale, COLOR_TEXT, rumble_line);
+    draw_text_centered(renderer, x + (w / 2), y + scale_value(206, scale_y), body_scale, COLOR_TEXT, trigger_line);
 }
 
 static void draw_scene(const AppState *app)
 {
     SDL_Renderer *renderer = app->renderer;
     char banner[160];
-    const int controls_y_offset = 18;
-    const int title_h = 44;
-    const int status_h = 44;
-    const int footer_h = 34;
-    const int footer2_h = 32;
-    const int upper_top = title_h + status_h;
-    const int upper_bottom = 328;
-    const int footer_y = WINDOW_HEIGHT - footer_h - footer2_h;
-    const int left_panel_right = 430;
-    const int right_panel_left = 850;
+    int width;
+    int height;
+    float scale_x;
+    float scale_y;
+    float unit_scale;
+    int text_small;
+    int text_medium;
+    int text_stick;
+    int controls_y_offset;
+    int title_h;
+    int status_h;
+    int footer_h;
+    int footer2_h;
+    int upper_top;
+    int upper_bottom;
+    int footer_y;
+    int left_panel_right;
+    int right_panel_left;
+    int trigger_w;
+    int trigger_h;
+    int small_button_w;
+    int small_button_h;
+    int top_circle_r;
+    int stick_outer_r;
+    int stick_inner_r;
+    int stick_fill_r;
+    int stick_motion_r;
+    int stick_dot_r;
+    int dpad_center;
+    int dpad_arm;
+    int dpad_gap;
+
+    SDL_GetRendererOutputSize(renderer, &width, &height);
+    scale_x = (float)width / (float)WINDOW_WIDTH;
+    scale_y = (float)height / (float)WINDOW_HEIGHT;
+    unit_scale = scale_x < scale_y ? scale_x : scale_y;
+
+    text_small = scale_font(2, unit_scale);
+    text_medium = scale_font(3, unit_scale);
+    text_stick = scale_font(5, unit_scale);
+    controls_y_offset = scale_value(18, scale_y);
+    title_h = scale_value(44, scale_y);
+    status_h = scale_value(44, scale_y);
+    footer_h = scale_value(34, scale_y);
+    footer2_h = scale_value(32, scale_y);
+    upper_top = title_h + status_h;
+    upper_bottom = scale_value(328, scale_y);
+    footer_y = height - footer_h - footer2_h;
+    left_panel_right = scale_value(430, scale_x);
+    right_panel_left = scale_value(850, scale_x);
+    trigger_w = scale_value(84, scale_x);
+    trigger_h = scale_value(34, scale_y);
+    small_button_w = scale_value(80, scale_x);
+    small_button_h = scale_value(34, scale_y);
+    top_circle_r = scale_value(34, unit_scale);
+    stick_outer_r = scale_value(72, unit_scale);
+    stick_inner_r = scale_value(40, unit_scale);
+    stick_fill_r = scale_value(28, unit_scale);
+    stick_dot_r = scale_value(9, unit_scale);
+    stick_motion_r = stick_outer_r - stick_dot_r - scale_value(6, unit_scale);
+    dpad_center = scale_value(34, unit_scale);
+    dpad_arm = scale_value(34, unit_scale);
+    dpad_gap = scale_value(4, unit_scale);
 
     if (app->controller != NULL) {
         char clean_name[96];
@@ -603,82 +747,208 @@ static void draw_scene(const AppState *app)
     set_color(renderer, COLOR_BACKGROUND);
     SDL_RenderClear(renderer);
 
-    fill_rect(renderer, 0, 0, WINDOW_WIDTH, title_h, COLOR_BAR);
-    fill_rect(renderer, 0, title_h, WINDOW_WIDTH, status_h, COLOR_BAR_ALT);
-    fill_rect(renderer, 0, footer_y, WINDOW_WIDTH, footer_h, COLOR_BAR);
-    fill_rect(renderer, 0, footer_y + footer_h, WINDOW_WIDTH, footer2_h, COLOR_BAR_ALT);
+    fill_rect(renderer, 0, 0, width, title_h, COLOR_BAR);
+    fill_rect(renderer, 0, title_h, width, status_h, COLOR_BAR_ALT);
+    fill_rect(renderer, 0, footer_y, width, footer_h, COLOR_BAR);
+    fill_rect(renderer, 0, footer_y + footer_h, width, footer2_h, COLOR_BAR_ALT);
 
-    draw_hline(renderer, 0, WINDOW_WIDTH, upper_top, COLOR_LINE);
-    draw_hline(renderer, 0, WINDOW_WIDTH, upper_bottom, COLOR_LINE);
+    draw_hline(renderer, 0, width, upper_top, COLOR_LINE);
+    draw_hline(renderer, 0, width, upper_bottom, COLOR_LINE);
     draw_vline(renderer, left_panel_right, upper_bottom, footer_y, COLOR_FAINT);
     draw_vline(renderer, right_panel_left, upper_bottom, footer_y, COLOR_FAINT);
 
-    draw_text_centered(renderer, WINDOW_WIDTH / 2, 12, 2, COLOR_TEXT_INVERSE, "SDL2 CONTROLLER TEST");
-    draw_text_centered(renderer, WINDOW_WIDTH / 2, title_h + 12, 2, COLOR_TEXT_INVERSE, banner);
+    draw_text_centered(renderer, width / 2, scale_value(12, scale_y), text_small, COLOR_TEXT_INVERSE, "SDL2 CONTROLLER TEST");
+    draw_text_centered(renderer, width / 2, title_h + scale_value(12, scale_y), text_small, COLOR_TEXT_INVERSE, banner);
 
-    fill_rect(renderer, 24, 116 + controls_y_offset, 82, 8, COLOR_FAINT);
-    fill_rect(renderer, WINDOW_WIDTH - 106, 116 + controls_y_offset, 82, 8, COLOR_FAINT);
+    fill_rect(renderer, scale_value(24, scale_x), scale_value(116, scale_y) + controls_y_offset, scale_value(82, scale_x), scale_value(8, scale_y), COLOR_FAINT);
+    fill_rect(renderer, width - scale_value(106, scale_x), scale_value(116, scale_y) + controls_y_offset, scale_value(82, scale_x), scale_value(8, scale_y), COLOR_FAINT);
 
-    draw_trigger_box(renderer, 24, 150 + controls_y_offset, 84, 34, "L2", app->axes[SDL_CONTROLLER_AXIS_TRIGGERLEFT]);
-    draw_labeled_button(renderer, 24, 206 + controls_y_offset, 84, 34, "L1", app->buttons[SDL_CONTROLLER_BUTTON_LEFTSHOULDER] != 0);
-    draw_dpad(renderer, 265, 174 + controls_y_offset, app);
-    draw_labeled_circle(renderer, 470, 194 + controls_y_offset, 34, "L3", app->buttons[SDL_CONTROLLER_BUTTON_LEFTSTICK] != 0);
+    draw_trigger_box(
+        renderer,
+        scale_value(24, scale_x),
+        scale_value(150, scale_y) + controls_y_offset,
+        trigger_w,
+        trigger_h,
+        "L2",
+        app->axes[SDL_CONTROLLER_AXIS_TRIGGERLEFT],
+        text_small);
+    draw_labeled_button(
+        renderer,
+        scale_value(24, scale_x),
+        scale_value(206, scale_y) + controls_y_offset,
+        trigger_w,
+        trigger_h,
+        "L1",
+        app->buttons[SDL_CONTROLLER_BUTTON_LEFTSHOULDER] != 0,
+        text_small);
+    draw_dpad(
+        renderer,
+        scale_value(265, scale_x),
+        scale_value(174, scale_y) + controls_y_offset,
+        app,
+        dpad_center,
+        dpad_arm,
+        dpad_center,
+        dpad_gap);
+    draw_labeled_circle(
+        renderer,
+        scale_value(470, scale_x),
+        scale_value(194, scale_y) + controls_y_offset,
+        top_circle_r,
+        "L3",
+        app->buttons[SDL_CONTROLLER_BUTTON_LEFTSTICK] != 0,
+        text_small);
 
-    draw_labeled_button(renderer, 540, 142 + controls_y_offset, 80, 34, "SELECT", app->buttons[SDL_CONTROLLER_BUTTON_BACK] != 0);
-    draw_labeled_button(renderer, 660, 142 + controls_y_offset, 80, 34, "START", app->buttons[SDL_CONTROLLER_BUTTON_START] != 0);
-    draw_labeled_circle(renderer, 640, 238 + controls_y_offset, 34, "MODE", app->buttons[SDL_CONTROLLER_BUTTON_GUIDE] != 0);
+    draw_labeled_button(
+        renderer,
+        scale_value(540, scale_x),
+        scale_value(142, scale_y) + controls_y_offset,
+        small_button_w,
+        small_button_h,
+        "SELECT",
+        app->buttons[SDL_CONTROLLER_BUTTON_BACK] != 0,
+        text_small);
+    draw_labeled_button(
+        renderer,
+        scale_value(660, scale_x),
+        scale_value(142, scale_y) + controls_y_offset,
+        small_button_w,
+        small_button_h,
+        "START",
+        app->buttons[SDL_CONTROLLER_BUTTON_START] != 0,
+        text_small);
+    draw_labeled_circle(
+        renderer,
+        scale_value(640, scale_x),
+        scale_value(238, scale_y) + controls_y_offset,
+        top_circle_r,
+        "MODE",
+        app->buttons[SDL_CONTROLLER_BUTTON_GUIDE] != 0,
+        text_small);
 
-    draw_labeled_circle(renderer, 810, 194 + controls_y_offset, 34, "R3", app->buttons[SDL_CONTROLLER_BUTTON_RIGHTSTICK] != 0);
-    draw_labeled_circle(renderer, 986, 146 + controls_y_offset, 34, "Y", app->buttons[SDL_CONTROLLER_BUTTON_Y] != 0);
-    draw_labeled_circle(renderer, 1070, 146 + controls_y_offset, 34, "B", app->buttons[SDL_CONTROLLER_BUTTON_B] != 0);
-    draw_labeled_circle(renderer, 944, 234 + controls_y_offset, 34, "X", app->buttons[SDL_CONTROLLER_BUTTON_X] != 0);
-    draw_labeled_circle(renderer, 1028, 234 + controls_y_offset, 34, "A", app->buttons[SDL_CONTROLLER_BUTTON_A] != 0);
+    draw_labeled_circle(
+        renderer,
+        scale_value(810, scale_x),
+        scale_value(194, scale_y) + controls_y_offset,
+        top_circle_r,
+        "R3",
+        app->buttons[SDL_CONTROLLER_BUTTON_RIGHTSTICK] != 0,
+        text_small);
+    draw_labeled_circle(
+        renderer,
+        scale_value(986, scale_x),
+        scale_value(146, scale_y) + controls_y_offset,
+        top_circle_r,
+        "Y",
+        app->buttons[SDL_CONTROLLER_BUTTON_Y] != 0,
+        text_small);
+    draw_labeled_circle(
+        renderer,
+        scale_value(1070, scale_x),
+        scale_value(146, scale_y) + controls_y_offset,
+        top_circle_r,
+        "B",
+        app->buttons[SDL_CONTROLLER_BUTTON_B] != 0,
+        text_small);
+    draw_labeled_circle(
+        renderer,
+        scale_value(944, scale_x),
+        scale_value(234, scale_y) + controls_y_offset,
+        top_circle_r,
+        "X",
+        app->buttons[SDL_CONTROLLER_BUTTON_X] != 0,
+        text_small);
+    draw_labeled_circle(
+        renderer,
+        scale_value(1028, scale_x),
+        scale_value(234, scale_y) + controls_y_offset,
+        top_circle_r,
+        "A",
+        app->buttons[SDL_CONTROLLER_BUTTON_A] != 0,
+        text_small);
 
-    draw_trigger_box(renderer, WINDOW_WIDTH - 108, 150 + controls_y_offset, 84, 34, "R2", app->axes[SDL_CONTROLLER_AXIS_TRIGGERRIGHT]);
-    draw_labeled_button(renderer, WINDOW_WIDTH - 108, 206 + controls_y_offset, 84, 34, "R1", app->buttons[SDL_CONTROLLER_BUTTON_RIGHTSHOULDER] != 0);
+    draw_trigger_box(
+        renderer,
+        width - scale_value(108, scale_x),
+        scale_value(150, scale_y) + controls_y_offset,
+        trigger_w,
+        trigger_h,
+        "R2",
+        app->axes[SDL_CONTROLLER_AXIS_TRIGGERRIGHT],
+        text_small);
+    draw_labeled_button(
+        renderer,
+        width - scale_value(108, scale_x),
+        scale_value(206, scale_y) + controls_y_offset,
+        trigger_w,
+        trigger_h,
+        "R1",
+        app->buttons[SDL_CONTROLLER_BUTTON_RIGHTSHOULDER] != 0,
+        text_small);
 
     draw_large_stick(
         renderer,
         left_panel_right / 2,
-        482,
+        scale_value(482, scale_y),
         "L",
         app->axes[SDL_CONTROLLER_AXIS_LEFTX],
         app->axes[SDL_CONTROLLER_AXIS_LEFTY],
-        app->buttons[SDL_CONTROLLER_BUTTON_LEFTSTICK] != 0);
+        app->buttons[SDL_CONTROLLER_BUTTON_LEFTSTICK] != 0,
+        stick_outer_r,
+        stick_inner_r,
+        stick_fill_r,
+        stick_motion_r,
+        stick_dot_r,
+        text_stick);
 
     draw_large_stick(
         renderer,
-        (right_panel_left + WINDOW_WIDTH) / 2,
-        482,
+        (right_panel_left + width) / 2,
+        scale_value(482, scale_y),
         "R",
         app->axes[SDL_CONTROLLER_AXIS_RIGHTX],
         app->axes[SDL_CONTROLLER_AXIS_RIGHTY],
-        app->buttons[SDL_CONTROLLER_BUTTON_RIGHTSTICK] != 0);
+        app->buttons[SDL_CONTROLLER_BUTTON_RIGHTSTICK] != 0,
+        stick_outer_r,
+        stick_inner_r,
+        stick_fill_r,
+        stick_motion_r,
+        stick_dot_r,
+        text_stick);
 
-    draw_details_panel(renderer, app, left_panel_right, upper_bottom, right_panel_left - left_panel_right, footer_y - upper_bottom);
+    draw_details_panel(
+        renderer,
+        app,
+        left_panel_right,
+        upper_bottom,
+        right_panel_left - left_panel_right,
+        footer_y - upper_bottom,
+        scale_y,
+        text_medium,
+        text_small);
 
     draw_text_centered(
         renderer,
-        WINDOW_WIDTH / 2,
-        footer_y + 10,
-        2,
+        width / 2,
+        footer_y + scale_value(10, scale_y),
+        text_small,
         COLOR_TEXT_INVERSE,
         "A WEAK   B STRONG   X DUAL   Y TRIGGER");
 
     if (app->rumble_demo_enabled) {
         draw_text_centered(
             renderer,
-            WINDOW_WIDTH / 2,
-            footer_y + footer_h + 8,
-            2,
+            width / 2,
+            footer_y + footer_h + scale_value(8, scale_y),
+            text_small,
             COLOR_TEXT_INVERSE,
             "RUMBLE DEMO ACTIVE   BACK STOP   START+SELECT X2 QUIT");
     } else {
         draw_text_centered(
             renderer,
-            WINDOW_WIDTH / 2,
-            footer_y + footer_h + 8,
-            2,
+            width / 2,
+            footer_y + footer_h + scale_value(8, scale_y),
+            text_small,
             COLOR_TEXT_INVERSE,
             "START DEMO   BACK STOP   START+SELECT X2 QUIT");
     }
@@ -921,8 +1191,6 @@ int main(int argc, char **argv)
             return 1;
         }
     }
-    SDL_RenderSetLogicalSize(app.renderer, WINDOW_WIDTH, WINDOW_HEIGHT);
-
     print_help();
     open_first_controller(&app);
 

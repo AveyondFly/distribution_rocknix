@@ -150,17 +150,17 @@
 		p = positive direction, n = negative direction
 		report value = (real_adc_data * tuning_value) / 100
 		*/
-		abs_x-p-tuning = <200>;
-		abs_x-n-tuning = <200>;
+		abs_x-p-tuning = <300>;
+		abs_x-n-tuning = <300>;
 		
-		abs_y-p-tuning = <200>;
-		abs_y-n-tuning = <200>;
+		abs_y-p-tuning = <300>;
+		abs_y-n-tuning = <300>;
 		
-		abs_rx-p-tuning = <200>;
-		abs_rx-n-tuning = <200>;
+		abs_rx-p-tuning = <300>;
+		abs_rx-n-tuning = <300>;
 		
-		abs_ry-p-tuning = <200>;
-		abs_ry-n-tuning = <200>;
+		abs_ry-p-tuning = <350>;
+		abs_ry-n-tuning = <300>;
 		
 		/* poll device interval (ms), adc read interval */
 		poll-interval = <10>;
@@ -298,7 +298,7 @@
 		pinctrl-0 = <&hp_det>;
 		simple-audio-card,name = "rk817_int";
 		simple-audio-card,format = "i2s";
-		simple-audio-card,hp-det-gpio = <&gpio2 RK_PC6 GPIO_ACTIVE_LOW>;
+		simple-audio-card,hp-det-gpio = <&gpio2 RK_PC6 GPIO_ACTIVE_HIGH>;
 		simple-audio-card,mclk-fs = <256>;
 		simple-audio-card,widgets =
 		"Microphone", "Mic Jack",

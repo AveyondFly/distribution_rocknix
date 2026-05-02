@@ -261,6 +261,6 @@ RK3326 等平台上**山寨／克隆机型批次多**，即便名称与 §3 列�
 | [J2ME_USER_MANUAL_en.md](J2ME_USER_MANUAL_en.md) | J2ME 玩家说明（英文） |
 | [DRASTIC_USER_MANUAL_cn.md](DRASTIC_USER_MANUAL_cn.md) | drastic_adv 布局 JSON（中文） |
 | [DRASTIC_USER_MANUAL_en.md](DRASTIC_USER_MANUAL_en.md) | drastic_adv layouts（English） |
-| **`/roms/ebook/*.pdf`** | （若构建镜像时打包）`/usr/share/doc/rocknix-user-man/` 下 PDF 可于首次开机复制到 **`/roms/ebook/`**便于 **EBOOK／kebook**；当前 Markdown 以 `*_cn.md`／`*_en.md` 成对维护（亦可通过独立手册仓库 Releases 分发 PDF）。 |
+| **`/roms/ebook/*.pdf`** | （若构建镜像时打包）`/usr/share/misc/doc/rocknix-user-man/` 下 PDF 可于首次开机复制到 **`/roms/ebook/`**便于 **EBOOK／kebook**；当前 Markdown 以 `*_cn.md`／`*_en.md` 成对维护（亦可通过独立手册仓库 Releases 分发 PDF）。 |
 
 如对本文有增补建议（某一机型的实测 `resize_storage_XXG` 数值、GAMES 挂载路径、eMMC 刷写兼容性等），欢迎在 [**distribution_rocknix**](https://github.com/AveyondFly/distribution_rocknix) 开出 [**Issue**](https://github.com/AveyondFly/distribution_rocknix/issues) 或直接提交 [**Pull Request**](https://github.com/AveyondFly/distribution_rocknix/pulls)。

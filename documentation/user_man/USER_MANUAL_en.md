@@ -224,6 +224,6 @@ Other MOD entries (bezels unzip, SDL DB generator…) remain—read prompts befo
 | **`USER_MANUAL_cn.md`** / **`USER_MANUAL_en.md`** | This handbook (Zh / EN) |
 | **`J2ME_USER_MANUAL_*.md`** | J2ME hotkeys/bindings |
 | **`DRASTIC_USER_MANUAL_*.md`** | `layout.json` geometry guide |
-| **`/roms/ebook/*.pdf`** | Bundled **`/usr/share/doc/rocknix-user-man`** PDF snapshots may be copied here on first-boot (`documentation/user_man/` Markdown remains canonical for developers) |
+| **`/roms/ebook/*.pdf`** | Bundled **`/usr/share/misc/doc/rocknix-user-man`** PDF snapshots may be copied here on first-boot (`documentation/user_man/` Markdown remains canonical for developers) |
 
 Contribution welcome via Issues/PR against **distribution_rocknix**.

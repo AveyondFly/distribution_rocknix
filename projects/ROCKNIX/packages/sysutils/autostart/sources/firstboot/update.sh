@@ -143,7 +143,7 @@ fi
 ln -sf /roms/bios/jdk /storage/jdk
 
 # User manuals (PDF shipped in squashfs) -> persistent roms path for ebook reader
-DOC_PDF_SRC="/usr/share/doc/rocknix-user-man"
+DOC_PDF_SRC="/usr/share/misc/doc/rocknix-user-man"
 if [ -d "${DOC_PDF_SRC}" ] && compgen -G "${DOC_PDF_SRC}"/*.pdf >/dev/null 2>&1; then
   echo "Installing user manual PDFs to /roms/ebook." >/dev/tty0
   mkdir -p /roms/ebook

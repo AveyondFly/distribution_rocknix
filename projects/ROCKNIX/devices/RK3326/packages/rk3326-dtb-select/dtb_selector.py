@@ -122,6 +122,7 @@ ALL_DEVICES: Dict[str, DtbEntry] = {
     "Game Console R36xx": DtbEntry("rk3326-gameconsole-r36s-panel4.dtb", 202),
     "Game Console R36H": DtbEntry("rk3326-gameconsole-r36s-panel4.dtb", 202),
     "Game Console O30S": DtbEntry("rk3326-gameconsole-r36s-panel4.dtb", 202),
+    "Game Console R40S": DtbEntry("rk3326-gameconsole-r40s.dtb", 202,),
     "Game Console R50S": DtbEntry("rk3326-gameconsole-r50s.dtb", 202,),
     "Game Console R36sPlus": DtbEntry("rk3326-gameconsole-r36splus.dtb", 202),
     "Game Console R36H ProMax": DtbEntry("rk3326-gameconsole-r45h.dtb", 202,),

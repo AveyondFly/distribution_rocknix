@@ -702,6 +702,13 @@ function set_filter() {
 }
 
 function set_overlay() {
+    clear_setting "video_viewport_bias_x"
+    clear_setting "video_viewport_bias_y"
+    clear_setting "custom_viewport_width"
+    clear_setting "custom_viewport_height"
+    clear_setting "custom_viewport_x"
+    clear_setting "custom_viewport_y"
+
     local ASPECT_RATIO="$(game_setting ratio)"
     local STD_AR_INDEX=""
     case ${ASPECT_RATIO} in

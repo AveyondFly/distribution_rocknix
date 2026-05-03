@@ -1,0 +1,223 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+* # Copyright (C) 2022-26 AURKNIX (https://github.com/AveyondFly)
+*/
+
+/dts-v1/;
+#include "rk3326-gameconsole-r36s.dts"
+
+/ {
+	model = "Game Console RG36";
+	compatible = "gameconsole,rg36", "rockchip,rk3326";
+};
+
+&internal_display {
+	compatible = "rocknix,generic-dsi";
+	panel_description =
+	"G size=52,70 delays=2,1,20,120,20 format=rgb888 lanes=4 flags=0xe03",
+	
+	"M clock=50000 horizontal=640,450,70,450 vertical=480,17,5,13 default=1",
+	"M clock=50000 horizontal=640,450,85,450 vertical=480,17,106,13",
+	"M clock=50010 horizontal=640,450,127,450 vertical=480,17,90,13",
+	"M clock=50010 horizontal=640,450,73,450 vertical=480,17,110,13",
+	"M clock=50830 horizontal=640,450,85,450 vertical=480,17,34,13",
+	"M clock=53200 horizontal=640,450,128,450 vertical=480,17,24,13",
+	"M clock=50400 horizontal=640,450,77,450 vertical=480,17,10,13",
+	"M clock=50310 horizontal=640,450,85,450 vertical=480,17,6,13",
+	"M clock=54600 horizontal=640,450,94,450 vertical=480,17,46,13",
+	"M clock=65370 horizontal=640,450,113,450 vertical=480,17,14,13",
+	"M clock=76050 horizontal=640,450,85,450 vertical=480,17,10,13",
+	"M clock=100620 horizontal=640,450,85,450 vertical=480,17,6,13",
+	
+	"I seq=b9f11283",
+	"I seq=b1000000da80",
+	"I seq=b2001370",
+	"I seq=b31010282803ff00000000",
+	"I seq=b480",
+	"I seq=b50a0a",
+	"I seq=b68282",
+	"I seq=b82662f063",
+	"I seq=ba338105f90e0e2000000000000000442500900a0000014f01000037",
+	"I seq=bc47",
+	"I seq=bf021100",
+	"I seq=c0737350500000125000",
+	"I seq=c15300323277d1cccc77773333",
+	"I seq=c68200bfff00ff",
+	"I seq=c7b8000a000000",
+	"I seq=c810401e02",
+	"I seq=cc0b",
+	"I seq=e000070d37353f4144060c0d0f111012141a00070d37353f4144060c0d0f111012141a",
+	"I seq=e307070b0b0b0b00000000ff00c010",
+	"I seq=e9c810020000b0b11131232880b0b127080004020000000004020000008888ba60240888888888888888ba713518888888888800000001000000000000000000",
+	"I seq=ea970a820203070000000000008188ba17538888888888888088ba0642888888888888230000028000000000000000000000000000000000000000000000",
+	"I seq=efffff01",
+	"I seq=11 wait=200",
+	"I seq=29 wait=20";
+};
+
+&joypad {
+	compatible = "rocknix-singleadc-joypad";
+	pwms = <&pwm0 0 200000000 0>;
+	pwm-names = "enable";
+	rumble-boost-weak = <0x0000>;
+	rumble-boost-strong = <0x0000>;
+	
+	joypad-name = "retrogame_joypad";
+	joypad-product = <0x1101>;
+	joypad-revision = <0x0100>;
+	joypad-vendor = <0x484B>;
+	
+	status = "okay";
+	
+	/* gpio pincontrol setup */
+	pinctrl-names = "default";
+	pinctrl-0 = <&btn_pins>;
+	pinctrl-1 = <&pwm0_pin>;
+	
+	/* Analog mux define */
+	io-channel-names = "amux_adc";
+	io-channels = <&saradc 1>;
+	
+	/* adc mux channel count */
+	amux-count = <4>;
+	/* non-default wiring */
+	amux-channel-mapping = <1 0 2 3>;
+	/* adc mux select(a,b) gpio */
+	amux-a-gpios = <&gpio3 RK_PB3 GPIO_ACTIVE_LOW>;
+	amux-b-gpios = <&gpio3 RK_PB0 GPIO_ACTIVE_LOW>;
+	/* adc mux enable gpio */
+	amux-en-gpios = <&gpio3 RK_PB5 GPIO_ACTIVE_LOW>;
+	
+	/* adc calculate scale */
+	button-adc-scale = <2>;
+	
+	/* adc deadzone range  */
+	button-adc-deadzone = <64>;
+	
+	/*
+	specifies fuzz value that is used to filter noise from
+	the event stream.
+	*/
+	button-adc-fuzz = <32>;
+	button-adc-flat = <32>;
+	
+	/*
+	Analog Stick data tuning value(precent)
+	p = positive direction, n = negative direction
+	report value = (real_adc_data * tuning_value) / 100
+	*/
+	abs_x-p-tuning = <300>;
+	abs_x-n-tuning = <300>;
+	
+	abs_y-p-tuning = <300>;
+	abs_y-n-tuning = <300>;
+	
+	abs_rx-p-tuning = <300>;
+	abs_rx-n-tuning = <300>;
+	
+	abs_ry-p-tuning = <300>;
+	abs_ry-n-tuning = <300>;
+	
+	/* poll device interval (ms), adc read interval */
+	poll-interval = <10>;
+	
+	/* required for RG36S */
+	invert-absx;
+	invert-absy;
+	invert-absry;
+	
+	/* gpio button auto repeat set value : default disable */
+	/*
+	autorepeat;
+	*/
+	
+	/*
+	joypad driver is poll-device driver.
+	poll-device is does not support wakeup-source.
+	*/
+	sw1 {
+		gpios = <&gpio1 RK_PB4 GPIO_ACTIVE_LOW>;
+		label = "GPIO DPAD-UP";
+		linux,code = <BTN_DPAD_UP>;// 0x220
+	};
+	sw2 {
+		gpios = <&gpio1 RK_PB5 GPIO_ACTIVE_LOW>;
+		label = "GPIO DPAD-DOWN";
+		linux,code = <BTN_DPAD_DOWN>;// 0x221
+	};
+	sw3 {
+		gpios = <&gpio1 RK_PB6 GPIO_ACTIVE_LOW>;
+		label = "GPIO DPAD-LEFT";
+		linux,code = <BTN_DPAD_LEFT>;// 0x222
+	};
+	sw4 {
+		gpios = <&gpio1 RK_PB7 GPIO_ACTIVE_LOW>;
+		label = "GPIO DPAD-RIGHT";
+		linux,code = <BTN_DPAD_RIGHT>;// 0x223
+	};
+	sw5 {
+		gpios = <&gpio1 RK_PA2 GPIO_ACTIVE_LOW>;
+		label = "GPIO KEY BTN-A";
+		linux,code = <BTN_EAST>;// 0x131
+	};
+	sw6 {
+		gpios = <&gpio1 RK_PA5 GPIO_ACTIVE_LOW>;
+		label = "GPIO BTN-B";
+		linux,code = <BTN_SOUTH>;// 0x130
+	};
+	sw7 {
+		gpios = <&gpio1 RK_PA6 GPIO_ACTIVE_LOW>;
+		label = "GPIO BTN-Y";
+		linux,code = <BTN_WEST>;// 0x134
+	};
+	sw8 {
+		gpios = <&gpio1 RK_PA7 GPIO_ACTIVE_LOW>;
+		label = "GPIO BTN-X";
+		linux,code = <BTN_NORTH>;// 0x133
+	};
+	sw11 {
+		gpios = <&gpio2 RK_PA2 GPIO_ACTIVE_LOW>;
+		label = "GPIO BTN_THUMBL";
+		linux,code = <BTN_THUMBL>;// 0x2c2
+	};
+	sw12 {
+		gpios = <&gpio2 RK_PA3 GPIO_ACTIVE_LOW>;
+		label = "GPIO BTN_THUMBR";
+		linux,code = <BTN_THUMBR>;// 0x2c3
+	};
+	sw13 {
+		gpios = <&gpio2 RK_PA4 GPIO_ACTIVE_LOW>;
+		label = "GPIO BTN_FN";
+		linux,code = <BTN_MODE>;// 0x2c4
+	};
+	sw15 {
+		gpios = <&gpio2 RK_PA6 GPIO_ACTIVE_LOW>;
+		label = "GPIO TOP-LEFT";
+		linux,code = <BTN_TL>;// 0x02
+	};
+	sw16 {
+		gpios = <&gpio2 RK_PA7 GPIO_ACTIVE_LOW>;
+		label = "GPIO TOP-RIGHT";
+		linux,code = <BTN_TR>;// 0x05
+	};
+	sw19 {
+		gpios = <&gpio3 RK_PB1 GPIO_ACTIVE_LOW>;
+		label = "GPIO BTN_SELECT";
+		linux,code = <BTN_SELECT>;
+	};
+	sw20 {
+		gpios = <&gpio3 RK_PB7 GPIO_ACTIVE_LOW>;
+		label = "GPIO TOP-RIGHT2";
+		linux,code = <BTN_TR2>;
+	};
+	sw21 {
+		gpios = <&gpio3 RK_PB2 GPIO_ACTIVE_LOW>;
+		label = "GPIO TOP-LEFT2";
+		linux,code = <BTN_TL2>;
+	};
+	sw22 {
+		gpios = <&gpio3 RK_PB4 GPIO_ACTIVE_LOW>;
+		label = "GPIO BTN_START";
+		linux,code = <BTN_START>;
+	};
+};

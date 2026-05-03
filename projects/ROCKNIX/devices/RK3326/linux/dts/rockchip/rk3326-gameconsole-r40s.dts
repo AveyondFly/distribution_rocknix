@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 /*
-* # Copyright (C) 2022-24 JELOS (https://github.com/JustEnoughLinuxOS)
+* # Copyright (C) 2022-26 AURKNIX (https://github.com/AveyondFly)
 */
 
 /dts-v1/;
 #include "rk3326-gameconsole-r3xs.dtsi"
-#include "rk3326-device-group-r36.dtsi"
 
 / {
 	model = "Game Console R40S";
-	compatible = "gameconsole,r35s", "gameconsole,r36s", "rockchip,rk3326";
+	compatible = "gameconsole,r40s", "rockchip,rk3326";
 	
 	joypad: rocknix-singleadc-joypad {
 		compatible = "rocknix-singleadc-joypad";
@@ -182,36 +181,36 @@
 	compatible = "rocknix,generic-dsi";
 	rotation = <270>;
 	panel_description =
-		"G size=42,82 delays=2,1,20,120,20 format=rgb888 lanes=2 flags=0xa03",
-
-		"M clock=28000 horizontal=480,30,10,30 vertical=800,20,11,30 default=1",
-		"M clock=23650 horizontal=480,30,10,30 vertical=800,20,10,30",
-
-		"I seq=20",
-		"I seq=29",
-		"I seq=3600",
-		"I seq=3a70",
-		"I seq=b106050a",
-		"I seq=b220c8",
-		"I seq=b302", "I seq=b540",
-		"I seq=b6070f024010e8",
-		"I seq=c30704030302",
-		"I seq=c4122418180249",
-		"I seq=c569",
-		"I seq=c6416303",
-		"I seq=d0002467020000200002",
-		"I seq=d1002467020000200002",
-		"I seq=d2002467020000200002",
-		"I seq=d3002467020000200002",
-		"I seq=d4002467020000200002",
-		"I seq=d5002467020000200002",
-		"I seq=11 wait=200";
+	"G size=42,82 delays=2,1,20,120,20 format=rgb888 lanes=2 flags=0xa03",
+	
+	"M clock=28000 horizontal=480,30,10,30 vertical=800,20,11,30 default=1",
+	"M clock=23650 horizontal=480,30,10,30 vertical=800,20,10,30",
+	
+	"I seq=20",
+	"I seq=29",
+	"I seq=3600",
+	"I seq=3a70",
+	"I seq=b106050a",
+	"I seq=b220c8",
+	"I seq=b302", "I seq=b540",
+	"I seq=b6070f024010e8",
+	"I seq=c30704030302",
+	"I seq=c4122418180249",
+	"I seq=c569",
+	"I seq=c6416303",
+	"I seq=d0002467020000200002",
+	"I seq=d1002467020000200002",
+	"I seq=d2002467020000200002",
+	"I seq=d3002467020000200002",
+	"I seq=d4002467020000200002",
+	"I seq=d5002467020000200002",
+	"I seq=11 wait=200";
 };
 
 &pinctrl {
 	btns {
 		btn_pins: btn-pins {
-			rockchip,pins = 
+			rockchip,pins =
 			<1 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>,
 			<1 RK_PB5 RK_FUNC_GPIO &pcfg_pull_up>,
 			<1 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>,

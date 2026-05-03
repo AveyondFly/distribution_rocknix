@@ -491,6 +491,11 @@ case "${QUIRK_DEVICE}" in
         echo "${QUIRK_DEVICE}"
         Set_system "RGBMAX4"
     ;;
+    "MINILOONG Pocket1")
+        echo "${QUIRK_DEVICE}"
+        Set_system "MINILOONG"
+	set_setting key.hotkey.b=BTN_MODE
+    ;;
 #----------------------------------------以下已验证-------------------------------------#
 # H700设备
     "Anbernic RG34XX")
@@ -586,12 +591,6 @@ case "${QUIRK_DEVICE}" in
         echo "${QUIRK_DEVICE}"
         Set_system "R36Max2"
     ;;
-# BatleXP
-    "BatleXP G350")
-        echo "${QUIRK_DEVICE}"
-        Set_system "G350"
-        amixer -c 0 -M cset name="Playback Mux" SPK
-    ;;
 # 安伯尼克
     "Anbernic RG351M")
         echo "${QUIRK_DEVICE}"
@@ -606,7 +605,7 @@ case "${QUIRK_DEVICE}" in
         echo "${QUIRK_DEVICE}"
         Set_system "A10mini"
     ;;
-    "YMC A10Mini V2")
+    "YMC A10Mini V4")
         echo "${QUIRK_DEVICE}"
         Set_system "A10miniv2"
     ;;
@@ -622,10 +621,13 @@ case "${QUIRK_DEVICE}" in
         amixer -c 0 -M cset name="Playback Mux" HP
     ;;
 # Magicx
-    "MINILOONG Pocket1")
+    "MagicX XU10")
         echo "${QUIRK_DEVICE}"
-        Set_system "MINILOONG"
-	set_setting key.hotkey.b=BTN_MODE
+        Set_system "XU10"
+    ;;
+    "MagicX XU Mini M")
+        echo "${QUIRK_DEVICE}"
+        Set_system "XUMiniM"
     ;;
 # 泡机堂
     "Powkiddy RGB10")
@@ -663,8 +665,24 @@ case "${QUIRK_DEVICE}" in
         echo "${QUIRK_DEVICE}"
         Set_system "OGS"
     ;;
-# GameConsole
+# Game Console
     "Game Console R36S")
+        echo "${QUIRK_DEVICE}"
+        Set_system "R36S"
+    ;;
+    "Game Console R36S Panel1")
+        echo "${QUIRK_DEVICE}"
+        Set_system "R36S"
+    ;;
+    "Game Console R36S Panel2")
+        echo "${QUIRK_DEVICE}"
+        Set_system "R36S"
+    ;;
+    "Game Console R36S Panel3")
+        echo "${QUIRK_DEVICE}"
+        Set_system "R36S"
+    ;;
+    "Game Console R36S Panel4")
         echo "${QUIRK_DEVICE}"
         Set_system "R36S"
     ;;
@@ -676,7 +694,7 @@ case "${QUIRK_DEVICE}" in
         echo "${QUIRK_DEVICE}"
         Set_system "R33S"
     ;;
-    "GameConsole R36sPlus")
+    "Game Console R36sPlus")
         echo "${QUIRK_DEVICE}"
         Set_system "R36sPlus"
     ;;
@@ -707,7 +725,12 @@ case "${QUIRK_DEVICE}" in
         Set_system "R36S"
         amixer -c 0 -M cset name="Playback Mux" SPK
     ;;
-    "Clone R36s Type 3")
+    "Clone R36s Type 3 Panel1")
+        echo "${QUIRK_DEVICE}"
+        Set_system "R36S"
+        amixer -c 0 -M cset name="Playback Mux" SPK
+    ;;
+    "Clone R36s Type 3 Panel2")
         echo "${QUIRK_DEVICE}"
         Set_system "R36S"
         amixer -c 0 -M cset name="Playback Mux" SPK
@@ -718,58 +741,94 @@ case "${QUIRK_DEVICE}" in
         amixer -c 0 -M cset name="Playback Mux" SPK
     ;;
 # R36s酱油机
-    "Sauce R36s V04")
+    "Sauce R36s Panel1")
         echo "${QUIRK_DEVICE}"
         Set_system "R36S"
         amixer -c 0 -M cset name="Playback Mux" HP
     ;;
-    "Sauce R36s V03")
+    "Sauce R36s Panel2")
+        echo "${QUIRK_DEVICE}"
+        Set_system "R36S"
+        amixer -c 0 -M cset name="Playback Mux" HP
+    ;;
+    "Sauce R36s Panel3")
+        echo "${QUIRK_DEVICE}"
+        Set_system "R36S"
+        amixer -c 0 -M cset name="Playback Mux" HP
+    ;;
+    "Sauce R36s Panel4")
         echo "${QUIRK_DEVICE}"
         Set_system "R36S"
         amixer -c 0 -M cset name="Playback Mux" HP
     ;;
 # K36
-    "GameConsole K36")
+    "Game Console K36")
         echo "${QUIRK_DEVICE}"
         Set_system "K36"
         amixer -c 0 -M cset name="Playback Mux" SPK
     ;;
 # AISLPC
-    "GameConsole K36S")
+    "AISLPC K36S")
         echo "${QUIRK_DEVICE}"
         Set_system "K36S"
         amixer -c 0 -M cset name="Playback Mux" SPK
     ;;
-    "GameConsole R36T")
+    "AISLPC R36T")
         echo "${QUIRK_DEVICE}"
         Set_system "R36T"
         amixer -c 0 -M cset name="Playback Mux" SPK
     ;;
-    "GameConsole R36TMax")
+    "AISLPC R36TMax")
         echo "${QUIRK_DEVICE}"
         Set_system "R36TMax"
         amixer -c 0 -M cset name="Playback Mux" SPK
     ;;
+# BatleXP
+    "BatleXP G350")
+        echo "${QUIRK_DEVICE}"
+        Set_system "G350"
+        amixer -c 0 -M cset name="Playback Mux" SPK
+    ;;
 # 其他无牌
-    "GameConsole XGB36")
+    "Game Console XGB36")
         echo "${QUIRK_DEVICE}"
         Set_system "XGB36"
         amixer -c 0 -M cset name="Playback Mux" HP
     ;;
-    "GameConsole R36Ultra")
+    "Game Console R36Ultra")
         echo "${QUIRK_DEVICE}"
         Set_system "R36Ultra"
         amixer -c 0 -M cset name="Playback Mux" SPK
     ;;
-    "GameConsole T16Max")
+    "Game Console T16Max")
         echo "${QUIRK_DEVICE}"
         Set_system "T16Max"
         amixer -c 0 -M cset name="Playback Mux" SPK
     ;;
-    "GameConsole HG36")
+    "Game Console HG36")
         echo "${QUIRK_DEVICE}"
         Set_system "HG36"
         amixer -c 0 -M cset name="Playback Mux" SPK
+    ;;
+    "Game Console U8")
+        echo "${QUIRK_DEVICE}"
+        Set_system "U8"
+    ;;
+    "Game Console RX6H")
+        echo "${QUIRK_DEVICE}"
+        Set_system "RX6H"
+    ;;
+    "Game Console R40S")
+        echo "${QUIRK_DEVICE}"
+        Set_system "R40S"
+    ;;
+    "Game Console RG36")
+        echo "${QUIRK_DEVICE}"
+        Set_system "RG36"
+    ;;
+    "Game Console RG36PRO")
+        echo "${QUIRK_DEVICE}"
+        Set_system "RG36PRO"
     ;;
 # 兜底
     *)

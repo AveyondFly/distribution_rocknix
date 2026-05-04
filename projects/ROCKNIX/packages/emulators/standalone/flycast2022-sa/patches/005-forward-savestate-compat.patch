@@ -1,0 +1,568 @@
+--- a/core/serialize.h
++++ b/core/serialize.h
+@@ -64,7 +64,38 @@
+ 		V26,
+ 		V27,
+ 		V28,
++		V29,
++		V30,
++		V31,
++		V32,
++		V33,
++		V34,
++		V35,
++		V36,
++		V37,
++		V38,
++		V39,
++		V40,
++		V41,
++		V42,
++		V43,
++		V44,
++		V45,
++		V46,
++		V47,
++		V48,
++		V49,
++		V50,
++		V51,
++		V52,
++		V53,
++		V54,
++		V55,
++		V56,
++		V57,
++		V58,
+ 		Current = V28,
++		MaxReadable = V58,
+ 
+ 		Next = Current + 1,
+ 	};
+@@ -96,8 +127,15 @@
+ 		deserialize(_version);
+ 		if (_version > V13_LIBRETRO && _version < V5)
+ 			throw Exception("Unsupported version");
+-		if (_version > Current)
++		if (_version > MaxReadable)
+ 			throw Exception("Version too recent");
++		if (_version >= V42 && settings.platform.isConsole())
++		{
++			u32 ramSize;
++			deserialize(ramSize);
++			if (ramSize != settings.platform.ram_size)
++				throw Exception("Selected RAM Size doesn't match Save State");
++		}
+ 	}
+ 
+ 	template<typename T>
+--- a/core/serialize.cpp
++++ b/core/serialize.cpp
+@@ -153,6 +153,29 @@
+ 		modem_sched };
+ }
+ 
++static void skipSchedulerEntry(Deserializer& deser)
++{
++	deser.skip<int>();	// tag
++	deser.skip<int>();	// start
++	deser.skip<int>();	// end
++}
++
++static void skipScifSerialPort(Deserializer& deser)
++{
++	if (deser.version() < Deserializer::V43)
++		return;
++
++	skipSchedulerEntry(deser);	// serial byte scheduler
++	skipSchedulerEntry(deser);	// break scheduler
++	deser.skip<int>();			// statusLastRead
++	int size;
++	deser >> size;
++	deser.skip(size);			// txFifo
++	deser >> size;
++	deser.skip(size);			// rxFifo
++	deser.skip<bool>();			// transmitting
++}
++
+ void dc_serialize(Serializer& ser)
+ {
+ 	ser << aica_interr;
+@@ -411,28 +434,31 @@
+ 	deser >> interrupt_vmask;
+ 	deser >> decoded_srimask;
+ 
+-	int i;
+-	deser >> i;
+-	switch (i)
+-	{
+-	case 0:
+-	case 1:
+-		if (_nvmem_enabled())
+-			do_sqw_nommu = &do_sqw_nommu_area_3;
+-		else
+-			do_sqw_nommu = &do_sqw_nommu_area_3_nonvmem;
+-		break;
+-	case 2:
+-		do_sqw_nommu = &TAWriteSQ;
+-		break;
+-	case 3:
+-		do_sqw_nommu = &do_sqw_nommu_full;
+-		break;
+-	default:
+-		throw Deserializer::Exception("Invalid SQ handler index");
+-	}
+-
+-	deser >> (*p_sh4rcb).sq_buffer;
++	if (deser.version() <= Deserializer::V31)
++	{
++		int i;
++		deser >> i;
++		switch (i)
++		{
++		case 0:
++		case 1:
++			if (_nvmem_enabled())
++				do_sqw_nommu = &do_sqw_nommu_area_3;
++			else
++				do_sqw_nommu = &do_sqw_nommu_area_3_nonvmem;
++			break;
++		case 2:
++			do_sqw_nommu = &TAWriteSQ;
++			break;
++		case 3:
++			do_sqw_nommu = &do_sqw_nommu_full;
++			break;
++		default:
++			throw Deserializer::Exception("Invalid SQ handler index");
++		}
++
++		deser >> (*p_sh4rcb).sq_buffer;
++	}
+ 
+ 	deser >> (*p_sh4rcb).cntx;
+ 	p_sh4rcb->cntx.cycle_counter = SH4_TIMESLICE;
+@@ -636,15 +662,21 @@
+ 	channel_deserialize(deser);
+ 
+ 	register_deserialize(sb_regs, deser);
+-	deser >> SB_ISTNRM;
++	if (deser.version() < Deserializer::V33)
++		deser >> SB_ISTNRM;
+ 	if (deser.version() >= Deserializer::V24)
+ 		deser >> SB_ISTNRM1;
+ 	else
+ 		SB_ISTNRM1 = 0;
+-	deser >> SB_FFST_rc;
+-	deser >> SB_FFST;
+-	if (deser.version() >= Deserializer::V15)
++	if (deser.version() < Deserializer::V33)
++	{
++		if (deser.version() < Deserializer::V30)
++		{
++			deser >> SB_FFST_rc;
++			deser >> SB_FFST;
++		}
+ 		deser >> SB_ADST;
++	}
+ 	else
+ 		SB_ADST = 0;
+ 
+@@ -674,6 +706,7 @@
+ 	register_deserialize(TMU, deser);
+ 	register_deserialize(SCI, deser);
+ 	register_deserialize(SCIF, deser);
++	skipScifSerialPort(deser);
+ 	if (deser.version() >= Deserializer::V9)
+ 		icache.Deserialize(deser);
+ 	else
+@@ -695,28 +728,31 @@
+ 	deser >> interrupt_vmask;
+ 	deser >> decoded_srimask;
+ 
+-	int i;
+-	deser >> i;
+-	switch (i)
+-	{
+-	case 0:
+-	case 1:
+-		if (_nvmem_enabled())
+-			do_sqw_nommu = &do_sqw_nommu_area_3;
+-		else
+-			do_sqw_nommu = &do_sqw_nommu_area_3_nonvmem;
+-		break;
+-	case 2:
+-		do_sqw_nommu = &TAWriteSQ;
+-		break;
+-	case 3:
+-		do_sqw_nommu = &do_sqw_nommu_full;
+-		break;
+-	default:
+-		throw Deserializer::Exception("Invalid SQ handler index");
+-	}
+-
+-	deser >> (*p_sh4rcb).sq_buffer;
++	if (deser.version() <= Deserializer::V31)
++	{
++		int i;
++		deser >> i;
++		switch (i)
++		{
++		case 0:
++		case 1:
++			if (_nvmem_enabled())
++				do_sqw_nommu = &do_sqw_nommu_area_3;
++			else
++				do_sqw_nommu = &do_sqw_nommu_area_3_nonvmem;
++			break;
++		case 2:
++			do_sqw_nommu = &TAWriteSQ;
++			break;
++		case 3:
++			do_sqw_nommu = &do_sqw_nommu_full;
++			break;
++		default:
++			throw Deserializer::Exception("Invalid SQ handler index");
++		}
++
++		deser >> (*p_sh4rcb).sq_buffer;
++	}
+ 
+ 	deser >> (*p_sh4rcb).cntx;
+ 	if (deser.version() < Deserializer::V5)
+@@ -732,7 +768,7 @@
+ 	deser >> sh4_sched_ffb;
+ 	std::array<int, 11> schedIds = getSchedulerIds();
+ 
+-	if (deser.version() >= Deserializer::V19)
++	if (deser.version() >= Deserializer::V19 && deser.version() <= Deserializer::V31)
+ 	{
+ 		deser >> sh4_sched_next_id;
+ 		if (sh4_sched_next_id != -1)
+@@ -741,12 +777,22 @@
+ 	if (deser.version() < Deserializer::V8)
+ 		deser.skip<u32>();		// sh4_sched_intr
+ 
+-	for (u32 i = 0; i < schedIds.size() - 1; i++)
++	u32 schedulerCount = deser.version() >= Deserializer::V58 ? 5 : schedIds.size() - 1;
++	for (u32 i = 0; i < schedulerCount; i++)
+ 	{
+ 		deser >> sch_list[schedIds[i]].tag;
+ 		deser >> sch_list[schedIds[i]].start;
+ 		deser >> sch_list[schedIds[i]].end;
+ 	}
++	if (deser.version() >= Deserializer::V58)
++	{
++		deser >> sch_list[render_end_schid].tag;
++		deser >> sch_list[render_end_schid].start;
++		deser >> sch_list[render_end_schid].end;
++		deser >> sch_list[vblank_schid].tag;
++		deser >> sch_list[vblank_schid].start;
++		deser >> sch_list[vblank_schid].end;
++	}
+ 
+ 	if (deser.version() < Deserializer::V8)
+ 	{
+@@ -763,7 +809,7 @@
+ 	{
+ 		bba_Deserialize(deser);
+ 	}
+-	else
++	else if (deser.version() <= Deserializer::V31)
+ 	{
+ 		deser >> sch_list[modem_sched].tag;
+ 		deser >> sch_list[modem_sched].start;
+@@ -773,24 +819,47 @@
+ 		sh4_sched_ffts();
+ 	ModemDeserialize(deser);
+ 
+-	deser >> SCIF_SCFSR2;
+-	if (deser.version() < Deserializer::V8)
+-	{
+-		deser.skip<bool>();	// SCIF_SCFRDR2
+-		deser.skip<u32>();	// SCIF_SCFDR2
+-	}
+-	else if (deser.version() >= Deserializer::V11)
+-		deser >> SCIF_SCSCR2;
+-	deser >> BSC_PDTRA;
++	if (deser.version() <= Deserializer::V32)
++	{
++		deser >> SCIF_SCFSR2;
++		if (deser.version() < Deserializer::V8)
++		{
++			deser.skip<bool>();	// SCIF_SCFRDR2
++			deser.skip<u32>();	// SCIF_SCFDR2
++		}
++		else if (deser.version() >= Deserializer::V11)
++			deser >> SCIF_SCSCR2;
++		deser >> BSC_PDTRA;
++	}
+ 
+ 	deser >> tmu_shift;
+-	deser >> tmu_mask;
+-	deser >> tmu_mask64;
+-	deser >> old_mode;
+-	deser >> tmu_ch_base;
+-	deser >> tmu_ch_base64;
+-
+-	deser >> CCN_QACR_TR;
++	if (deser.version() >= Deserializer::V58)
++	{
++		deser >> tmu_mask64;
++		for (int i = 0; i < 3; i++)
++			tmu_mask[i] = tmu_mask64[i] != 0 ? 0xffffffff : 0;
++		deser >> old_mode;
++		deser >> tmu_ch_base64;
++		for (int i = 0; i < 3; i++)
++			tmu_ch_base[i] = (u32)tmu_ch_base64[i];
++		for (int id : tmu_sched)
++		{
++			deser >> sch_list[id].tag;
++			deser >> sch_list[id].start;
++			deser >> sch_list[id].end;
++		}
++	}
++	else
++	{
++		deser >> tmu_mask;
++		deser >> tmu_mask64;
++		deser >> old_mode;
++		deser >> tmu_ch_base;
++		deser >> tmu_ch_base64;
++	}
++
++	if (deser.version() < Deserializer::V33)
++		deser >> CCN_QACR_TR;
+ 
+ 	deser >> UTLB;
+ 	deser >> ITLB;
+@@ -800,6 +869,8 @@
+ 
+ 	deser >> NullDriveDiscType;
+ 	deser >> q_subchannel;
++	if (deser.version() >= Deserializer::V46)
++		skipSchedulerEntry(deser);
+ 
+ 	naomi_Deserialize(deser);
+ 
+@@ -836,7 +907,17 @@
+ 	if (CurrentCartridge != NULL)
+ 		CurrentCartridge->Deserialize(deser);
+ 	if (deser.version() >= Deserializer::V6)
++	{
+ 		gd_hle_state.Deserialize(deser);
++		if (deser.version() >= Deserializer::V54)
++			skipSchedulerEntry(deser);
++	}
++	if (deser.version() >= Deserializer::V50)
++	{
++		u32 size;
++		deser >> size;
++		deser.skip(size);
++	}
+ 
+ 	DEBUG_LOG(SAVESTATE, "Loaded %d bytes", (u32)deser.size());
+ }
+--- a/core/hw/aica/sgc_if.cpp
++++ b/core/hw/aica/sgc_if.cpp
+@@ -1723,6 +1723,8 @@
+ 		{
+ 			deser >> channel.FEG.prev1;
+ 			deser >> channel.FEG.prev2;
++			if (deser.version() >= Deserializer::V56)
++				deser.skip<u32>(); // channel.FEG.fractSave
+ 		}
+ 		else
+ 		{
+@@ -1758,7 +1760,17 @@
+ 			deser.skip<u32>(); // channel.ChannelNumber
+ 		channel.quiet = false;
+ 	}
+-	if (deser.version() >= Deserializer::V22)
++	if (deser.version() >= Deserializer::V49)
++	{
++		deser.skip<bool>();	// beep.active
++		deser.skip<int>();	// beep.att
++		deser.skip<u32>();	// beep.waveIdx
++		deser.skip<int>();	// beep.waveStep
++		beepOn = 0;
++		beepPeriod = 0;
++		beepCounter = 0;
++	}
++	else if (deser.version() >= Deserializer::V22)
+ 	{
+ 		deser >> beepOn;
+ 		deser >> beepPeriod;
+--- a/core/hw/pvr/pvr.cpp
++++ b/core/hw/pvr/pvr.cpp
+@@ -106,6 +106,8 @@
+ 
+ 	deser >> ta_fsm[2048];
+ 	deser >> ta_fsm_cl;
++	if (deser.version() >= Deserializer::V29)
++		deser.skip<u32>();	// taRenderPass
+ 	if (deser.version() >= Deserializer::V5_LIBRETRO && deser.version() < Deserializer::V9_LIBRETRO)
+ 	{
+ 		deser.skip<bool>();		// pal_needs_update
+--- a/core/hw/pvr/spg.cpp
++++ b/core/hw/pvr/spg.cpp
+@@ -347,7 +347,8 @@
+ }
+ void spg_Deserialize(Deserializer& deser)
+ {
+-	deser >> in_vblank;
++	if (deser.version() < Deserializer::V30)
++		deser >> in_vblank;
+ 	deser >> clc_pvr_scanline;
+ 	if (deser.version() < Deserializer::V9_LIBRETRO)
+ 	{
+--- a/core/hw/maple/maple_cfg.cpp
++++ b/core/hw/maple/maple_cfg.cpp
+@@ -405,6 +405,8 @@
+ 		deser.skip<bool>(); // EEPROM_loaded
+ 	}
+ 	deser >> maple_ddt_pending_reset;
++	if (deser.version() >= Deserializer::V47)
++		deser.skip<bool>();	// SDCKBOccupied
+ 	mapleDmaOut.clear();
+ 	if (deser.version() >= Deserializer::V23)
+ 	{
+--- a/core/hw/sh4/sh4_cache.h
++++ b/core/hw/sh4/sh4_cache.h
+@@ -107,6 +107,10 @@
+ 	}
+ 	void Deserialize(Deserializer& deser) {
+ 		deser >> lines;
++		if (deser.version() >= Deserializer::V55) {
++			deser.skip<u32>();	// writeBackBufferCycles
++			deser.skip<u32>();	// writeThroughBufferCycles
++		}
+ 	}
+ 
+ 	u32 ReadAddressArray(u32 addr)
+@@ -372,6 +376,10 @@
+ 	}
+ 	void Deserialize(Deserializer& deser) {
+ 		deser >> lines;
++		if (deser.version() >= Deserializer::V55) {
++			deser.skip<u32>();	// writeBackBufferCycles
++			deser.skip<u32>();	// writeThroughBufferCycles
++		}
+ 	}
+ 
+ 	u32 ReadAddressArray(u32 addr)
+--- a/core/hw/modem/modem.cpp
++++ b/core/hw/modem/modem.cpp
+@@ -28,6 +28,7 @@
+ #include "oslib/oslib.h"
+ #include "network/picoppp.h"
+ #include "serialize.h"
++#include "cfg/option.h"
+ 
+ #define MODEM_COUNTRY_RES 0
+ #define MODEM_COUNTRY_JAP 1
+@@ -760,6 +761,12 @@
+ }
+ void ModemDeserialize(Deserializer& deser)
+ {
++	if (!config::EmulateBBA && deser.version() > Deserializer::V31)
++	{
++		deser.skip<int>();	// scheduler tag
++		deser.skip<int>();	// scheduler start
++		deser.skip<int>();	// scheduler end
++	}
+ 	if (deser.version() >= Deserializer::V20)
+ 	{
+ 		deser >> modem_regs;
+@@ -767,6 +774,9 @@
+ 		deser >> state;
+ 		deser >> connect_state;
+ 		deser >> last_dial_time;
+-		deser >> data_sent;
+-	}
+-}
++		if (deser.version() < Deserializer::V58)
++			deser >> data_sent;
++		else
++			data_sent = false;
++	}
++}
+--- a/core/hw/gdrom/gdromv3.cpp
++++ b/core/hw/gdrom/gdromv3.cpp
+@@ -1386,7 +1386,17 @@
+ 	deser >> packet_cmd;
+ 	deser >> set_mode_offset;
+ 	deser >> read_params;
+-	if (deser.version() >= Deserializer::V17)
++	if (deser.version() >= Deserializer::V54)
++	{
++		read_buff.cache_index = 0;
++		deser >> read_buff.cache_size;
++		u32 size = std::min<u32>(read_buff.cache_size, sizeof(read_buff.cache));
++		deser.deserialize(read_buff.cache, size);
++		if (read_buff.cache_size > size)
++			deser.skip(read_buff.cache_size - size);
++		read_buff.cache_size = size;
++	}
++	else if (deser.version() >= Deserializer::V17)
+ 		deser >> read_buff;
+ 	else
+ 	{
+@@ -1397,8 +1407,21 @@
+ 				|| (deser.version() >= Deserializer::V5 && deser.version() < Deserializer::V8))
+ 			deser.skip(4 + 4 + 2352 * 8192);
+ 	}
+-	deser >> pio_buff;
+-	deser >> set_mode_offset;
++	if (deser.version() >= Deserializer::V54)
++	{
++		deser >> pio_buff.next_state;
++		deser >> pio_buff.index;
++		deser >> pio_buff.size;
++		u32 size = std::min<u32>(pio_buff.size, (u32)(sizeof(pio_buff.data) / sizeof(pio_buff.data[0])));
++		deser.deserialize(pio_buff.data, size);
++		if (pio_buff.size > size)
++			deser.skip((pio_buff.size - size) * sizeof(pio_buff.data[0]));
++		pio_buff.size = size;
++	}
++	else
++		deser >> pio_buff;
++	if (deser.version() < Deserializer::V44)
++		deser >> set_mode_offset;
+ 	deser >> ata_cmd;
+ 	deser >> cdda;
+ 	if (deser.version() < Deserializer::V10)
+--- a/core/hw/naomi/naomi.cpp
++++ b/core/hw/naomi/naomi.cpp
+@@ -700,6 +700,31 @@
+ }
+ void naomi_Deserialize(Deserializer& deser)
+ {
++	if (deser.version() >= Deserializer::V40)
++	{
++		// Newer Flycast stores Naomi board serial flash state even for DC.
++		for (int i = 0; i < 2; i++)
++		{
++			deser.skip(8);		// writeBuffer
++			deser.skip(6);		// bool state pins
++			deser.skip<int>();	// state
++			deser.skip<u8>();	// command
++			deser.skip<u8>();	// byteOffset
++			deser.skip<u8>();	// bit
++			deser.skip<u8>();	// shift
++		}
++		deser >> aw_maple_devs;
++		deser >> coin_chute_time;
++		deser >> aw_ram_test_skipped;
++		if (deser.version() >= Deserializer::V45)
++		{
++			deser.skip<int>();	// Naomi DMA scheduler tag
++			deser.skip<int>();	// Naomi DMA scheduler start
++			deser.skip<int>();	// Naomi DMA scheduler end
++		}
++		midiTxBufIndex = 0;
++		return;
++	}
+ 	if (deser.version() < Deserializer::V9_LIBRETRO)
+ 	{
+ 		deser.skip<u32>();		// naomi_updates

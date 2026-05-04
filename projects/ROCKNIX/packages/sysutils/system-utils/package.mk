@@ -21,6 +21,7 @@ makeinstall_target() {
   cp ${PKG_DIR}/sources/scripts/input_sense ${INSTALL}/usr/bin
   cp ${PKG_DIR}/sources/scripts/ledcontrol ${INSTALL}/usr/bin
   cp ${PKG_DIR}/sources/scripts/analog_sticks_ledcontrol ${INSTALL}/usr/bin
+  cp ${PKG_DIR}/sources/scripts/analog_sticks_ledcontrol_single ${INSTALL}/usr/bin
   cp ${PKG_DIR}/sources/scripts/battery_led_status ${INSTALL}/usr/bin
   cp ${PKG_DIR}/sources/scripts/turbomode ${INSTALL}/usr/bin
   if [ -d "${PKG_DIR}/sources/devices/${DEVICE}" ]

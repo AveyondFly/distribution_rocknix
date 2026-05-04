@@ -151,15 +151,6 @@ case "$mode" in
     check)
         update_url=$(check_update)
         case "$update_url" in
-            http://*|https://*)
-                # Extract the filename from the URL.
-                filename=$(basename "$update_url")
-                # Use shell parameter expansion to remove everything up to the last dash, then remove the .tar suffix.
-                version=${filename##*-}
-                version=${version%.tar}
-                echo "$version"
-                exit 0
-                ;;
             *)
                 echo "No update available."
                 exit 1

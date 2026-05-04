@@ -252,6 +252,10 @@ if [[ -n "$detected_res" ]]; then
     fi
 fi
 
+# Default scale factors
+MENU_SCALE_FACTOR="0.400000"
+MENU_WIDGET_SCALE_FACTOR="0.300000"
+
 case "$detected_res" in
     "1920x1080")
         echo "1920x1080"
@@ -283,6 +287,8 @@ case "$detected_res" in
         ;;
     "960x720")
         echo "960x720"
+        MENU_SCALE_FACTOR="0.550000"
+        MENU_WIDGET_SCALE_FACTOR="0.550000"
         Set_system_cfg_entry "famicom.ratio" "8/7"
         Set_system_cfg_entry "famicom.integerscale" "1"
         Set_system_cfg_entry "fds.ratio" "8/7"
@@ -837,7 +843,7 @@ case "${QUIRK_DEVICE}" in
     ;;
 esac
 
-Set_ra_ext "0.400000" "0.300000"
+Set_ra_ext "$MENU_SCALE_FACTOR" "$MENU_WIDGET_SCALE_FACTOR"
 
 if [ "$(systemctl is-active input)" = "active" ]
 then

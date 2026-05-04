@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ROCKNIX <noreply@rocknix.org>
+Date: Mon, 4 May 2026 20:09:00 +0800
+Subject: [PATCH] arm64: dts: rockchip: lower rk3566 high CPU OPP voltages
+
+Use the validated RK3566 high CPU OPP voltages that keep Powkiddy RGB20SX
+thermals under control during sustained game loads. Leave the low-frequency
+OPPs unchanged.
+
+---
+--- a/arch/arm64/boot/dts/rockchip/rk3566.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3566.dtsi
+@@ -34,19 +34,19 @@
+ 
+ 		opp-1416000000 {
+ 			opp-hz = /bits/ 64 <1416000000>;
+-			opp-microvolt = <1025000 1025000 1150000>;
++			opp-microvolt = <900000 900000 1150000>;
+ 			clock-latency-ns = <40000>;
+ 		};
+ 
+ 		opp-1608000000 {
+ 			opp-hz = /bits/ 64 <1608000000>;
+-			opp-microvolt = <1100000 1100000 1150000>;
++			opp-microvolt = <975000 975000 1150000>;
+ 			clock-latency-ns = <40000>;
+ 		};
+ 
+ 		opp-1800000000 {
+ 			opp-hz = /bits/ 64 <1800000000>;
+-			opp-microvolt = <1150000 1150000 1150000>;
++			opp-microvolt = <1050000 1050000 1150000>;
+ 			clock-latency-ns = <40000>;
+ 		};
+ 	};

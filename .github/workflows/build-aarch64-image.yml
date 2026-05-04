@@ -199,18 +199,18 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ROCKNIX-image-${{ inputs.DEVICE }}-${{ env.DATE }}
+          name: AURKNIX-image-${{ inputs.DEVICE }}-${{ env.DATE }}
           path: |
-            target/ROCKNIX-*.img.gz
-            target/ROCKNIX-*.img.gz.sha256
+            target/AURKNIX-*.img.gz
+            target/AURKNIX-*.img.gz.sha256
           compression-level: 0
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ROCKNIX-update-${{ inputs.DEVICE }}-${{ env.DATE }}
+          name: AURKNIX-update-${{ inputs.DEVICE }}-${{ env.DATE }}
           path: |
-            target/ROCKNIX-*.tar
-            target/ROCKNIX-*.tar.sha256
+            target/AURKNIX-*.tar
+            target/AURKNIX-*.tar.sha256
           compression-level: 0
           if-no-files-found: error

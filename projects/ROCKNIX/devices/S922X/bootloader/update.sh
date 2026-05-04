@@ -53,7 +53,7 @@ fi
 LABEL ROCKNIX
   LINUX /KERNEL
   FDTDIR /
-  APPEND boot=LABEL=ROCKNIX disk=LABEL=STORAGE rootwait quiet systemd.debug_shell=ttyAML0 console=ttyAML0,115200n8 console=tty0 no_console_suspend net.ifnames=0 consoleblank=0 video=HDMI-A-1:1920x1080@60
+  APPEND boot=LABEL=AURKNIX disk=LABEL=STORAGE rootwait quiet systemd.debug_shell=ttyAML0 console=ttyAML0,115200n8 console=tty0 no_console_suspend net.ifnames=0 consoleblank=0 video=HDMI-A-1:1920x1080@60
 EOF
   fi
   [ -e /flash/ODROIDBIOS.BIN ] && rm -f /flash/ODROIDBIOS.BIN

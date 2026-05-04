@@ -69,7 +69,7 @@ This list tracks **fork-specific** additions. Details may drift vs a download pa
 
 ### 3.1 RK3326 — single unified image
 
-**RK3326 currently ships one shared image family** (“image‑b”). **All rows below consume that image**; device quirks/auto selection happen after flash. PCB/screen swaps may break expectations even when marketing names match—ask maintainers before filing bugs.
+**RK3326 ships a single unified image.** **All rows below use that image**; device quirks/auto selection happen after flash. PCB/screen swaps may break expectations even when marketing names match—ask maintainers before filing bugs.
 
 | Brand | Models |
 |-------|--------|
@@ -184,9 +184,9 @@ These live under **`MOD_TOOLS`** in ES along with miscellaneous utilities.**They
 
 Source mirror: [`projects/ROCKNIX/packages/virtual/emulators/sources/MOD_TOOLS/`](projects/ROCKNIX/packages/virtual/emulators/sources/MOD_TOOLS/)
 
-### 8.1 `rocknix2emmc.sh` — clone TF ⇒ eMMC (often RK3326 clones)
+### 8.1 `Install AURKNIX to EMMC.sh` — clone TF ⇒ eMMC (often RK3326 clones)
 
-Copies ROCKNIX FAT/boot stack from presumed **`/dev/mmcblk1`** (microSD) to **`/dev/mmcblk0`** (eMMC) with UUID juggling so you may **remove µSD afterward**. Absolutely confirm block nodes on your SKU; unplugging mid-run bricks storage.
+Copies AURKNIX FAT/boot stack from presumed **`/dev/mmcblk1`** (microSD) to **`/dev/mmcblk0`** (eMMC) with UUID juggling so you may **remove µSD afterward**. Absolutely confirm block nodes on your SKU; unplugging mid-run bricks storage.
 
 ### 8.2 `Reset Drastic Cfg.sh`
 

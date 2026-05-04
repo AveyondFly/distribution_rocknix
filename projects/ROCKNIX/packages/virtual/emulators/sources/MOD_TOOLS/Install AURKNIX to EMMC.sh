@@ -1,8 +1,8 @@
 #!/usr/bin/bash
 
 # install_to_emmc.sh
-# ROCKNIX eMMC Installation Script (Clone from TF to eMMC)
-# This script copies U-boot and the ROCKNIX FAT32 partition to the eMMC,
+# AURKNIX eMMC Installation Script (Clone from TF to eMMC)
+# This script copies U-boot and the AURKNIX FAT32 partition to the eMMC,
 # regenerates the UUIDs to avoid conflicts, and creates a fresh STORAGE partition.
 
 set -e
@@ -40,7 +40,7 @@ cleanup_on_error() {
 
 trap cleanup_on_error ERR
 
-echo "=== ROCKNIX eMMC Installation Script ==="
+echo "=== AURKNIX eMMC Installation Script ==="
 show_image "installing.png"
 
 SRC_DISK="/dev/mmcblk1" # TF Card
@@ -59,18 +59,18 @@ fi
 echo "Source (TF Card): $SRC_DISK"
 echo "Destination (eMMC): $DST_DISK"
 
-# 2. 获取源盘 (TF卡) ROCKNIX 分区的结束扇区
+# 2. 获取源盘 (TF卡) AURKNIX 分区的结束扇区
 P1_START_SECTOR=$(cat /sys/block/$(basename $SRC_DISK)/$(basename $SRC_DISK)p1/start)
 P1_SIZE_SECTORS=$(cat /sys/block/$(basename $SRC_DISK)/$(basename $SRC_DISK)p1/size)
 P1_END=$((P1_START_SECTOR + P1_SIZE_SECTORS))
 
-echo "Partition 1 (ROCKNIX) ends at sector $P1_END on source disk."
+echo "Partition 1 (AURKNIX) ends at sector $P1_END on source disk."
 
 # 计算需要复制的总量 (包含 MB 为单位的大小)
 # 加上 1MB (2048个扇区) 作为安全余量
 DD_COUNT=$(( (P1_END * 512 / 1048576) + 1 ))
 
-echo "Step 1: Cloning Bootloader and ROCKNIX partition (${DD_COUNT} MB)..."
+echo "Step 1: Cloning Bootloader and AURKNIX partition (${DD_COUNT} MB)..."
 # 克隆 MBR 分区表, U-boot 和 整个 FAT32 启动分区
 dd if=$SRC_DISK of=$DST_DISK bs=1M count=$DD_COUNT
 sync
@@ -101,7 +101,7 @@ echo "Step 2: Modifying UUIDs and Disk Signature to prevent conflicts..."
 # 防止 TF 卡和 eMMC 的 MBR ID 完全一样导致 Linux 挂载冲突
 dd if=/dev/urandom of=$DST_DISK bs=1 seek=440 count=4 conv=notrunc
 
-# (2) 随机化 eMMC 上的 ROCKNIX 分区 (FAT32) 的 UUID / Volume ID
+# (2) 随机化 eMMC 上的 AURKNIX 分区 (FAT32) 的 UUID / Volume ID
 echo "Generating new UUID for ${DST_DISK}p1..."
 set +e
 fatlabel -r -i ${DST_DISK}p1
@@ -168,7 +168,7 @@ trap - ERR
 
 echo "============================================="
 echo "Installation complete!"
-echo "ROCKNIX and bootloader have been installed to eMMC."
+echo "AURKNIX and bootloader have been installed to eMMC."
 echo "The FAT32 and EXT4 partitions on eMMC now have unique UUIDs."
 echo "Please power off, remove the TF card, and turn on the device to boot from eMMC."
 echo "============================================="

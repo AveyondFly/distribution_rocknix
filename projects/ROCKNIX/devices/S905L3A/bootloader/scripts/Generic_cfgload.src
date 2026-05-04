@@ -4,8 +4,8 @@ setenv remotewakeupmask "0xffffffff"
 setenv vout "1080p60hz"
 setenv frac_rate_policy "0"
 
-setenv rootopt "BOOT_IMAGE=kernel.img boot=LABEL=ROCKNIX disk=LABEL=STORAGE"
-if test "${ce_on_emmc}" = "yes"; then setenv rootopt "BOOT_IMAGE=kernel.img boot=LABEL=ROCKNIX disk=LABEL=STORAGE"; fi
+setenv rootopt "BOOT_IMAGE=kernel.img boot=LABEL=AURKNIX disk=LABEL=STORAGE"
+if test "${ce_on_emmc}" = "yes"; then setenv rootopt "BOOT_IMAGE=kernel.img boot=LABEL=AURKNIX disk=LABEL=STORAGE"; fi
 
 if fatload ${device} ${devnr}:${partnr} ${loadaddr} config.ini; then env import -t ${loadaddr} ${filesize}; fi
 

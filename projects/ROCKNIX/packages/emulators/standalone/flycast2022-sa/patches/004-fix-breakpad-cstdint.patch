@@ -1,0 +1,10 @@
+--- a/core/deps/breakpad/src/client/linux/handler/minidump_descriptor.h
++++ b/core/deps/breakpad/src/client/linux/handler/minidump_descriptor.h
+@@ -33,6 +33,7 @@
+ #include <assert.h>
+ #include <sys/types.h>
+ 
++#include <cstdint>
+ #include <string>
+ 
+ #include "client/linux/handler/microdump_extra_info.h"

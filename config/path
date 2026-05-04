@@ -16,7 +16,10 @@ set -e
 [ -z "${HOST_NAME}" ] && export HOST_NAME="$($LOCAL_CC -dumpmachine)"
 TARGET_NAME=$TARGET_GCC_ARCH-rocknix-linux-gnu${TARGET_ABI}
 
-BUILD=${BUILD_ROOT}/${BUILD_BASE}.${DISTRONAME}-${DEVICE:-$PROJECT}.${TARGET_ARCH}
+# Use DISTRO (distributions directory key) for the build tree so it stays aligned with
+# scripts/build_distro, CI, and package paths that reference build.${DISTRO}-...
+# DISTRONAME is the product/image label (e.g. AURKNIX) and may differ.
+BUILD=${BUILD_ROOT}/${BUILD_BASE}.${DISTRO}-${DEVICE:-$PROJECT}.${TARGET_ARCH}
 
 if [ -n "$BUILD_SUFFIX" ]; then
   BUILD=$BUILD-$BUILD_SUFFIX

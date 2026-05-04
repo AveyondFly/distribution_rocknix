@@ -2,7 +2,7 @@
 
 英文版请参阅 [`USER_MANUAL_en.md`](USER_MANUAL_en.md)。
 
-本手册面向[**distribution_rocknix**](https://github.com/AveyondFly/distribution_rocknix) 用户撰写（[**Issues**](https://github.com/AveyondFly/distribution_rocknix/issues)、[**Pull requests**](https://github.com/AveyondFly/distribution_rocknix/pulls) 均在该仓库办理），说明其与 [ROCKNIX 主线](https://github.com/ROCKNIX/distribution) 的主要差异：**额外模拟器**、**额外机型支持**、**独立模拟器增强说明**，以及**首次启动时对存储分区的可调布局（为 exFAT 游戏分区留出空间）**。
+本手册面向[**distribution_rocknix**](https://github.com/AveyondFly/distribution_rocknix) 用户撰写（[**Issues**](https://github.com/AveyondFly/distribution_rocknix/issues)、[**Pull requests**](https://github.com/AveyondFly/distribution_rocknix/pulls) 均在该仓库办理），说明其与 **ROCKNIX 主线**的主要差异：**额外模拟器**、**额外机型支持**、**独立模拟器增强说明**，以及**首次启动时对存储分区的可调布局（为 exFAT 游戏分区留出空间）**。
 
 更通用的 ROCKNIX 使用方式（Wi‑Fi、蓝牙、更新、RetroArch、EmulationStation 等）仍以官方文档与社区为准；本文只补充本改版特有的内容。**刷写镜像请先对照 §3 机型表，并从 §1 所列地址获取最新构建（GitHub 或微信公众号分流）。**
 
@@ -27,7 +27,7 @@
 
 若你所在网络 **访问 GitHub 较慢或不稳定**，可关注微信公众号 **「k源机」**，按号内指引获取 **百度网盘等分流**下载地址（内容与发布节奏以公众号说明为准）。
 
-与 **ROCKNIX 主线**相关且非本改版特有的问题，仍可优先查阅 [**ROCKNIX 上游仓库**](https://github.com/ROCKNIX/distribution)。
+与 **ROCKNIX 主线**相关且非本改版特有的问题，请通过你通常使用的 ROCKNIX 支持渠道或社区寻求说明。
 
 ---
 
@@ -65,7 +65,7 @@ ROM、BIOS 与版权合规由用户自行负责；请将合法拥有的游戏文
 
 ## 3. 额外支持的设备（相对主线）
 
-以下为本改版相对 [ROCKNIX 主线](https://github.com/ROCKNIX/distribution) **额外适配**的设备清单（随版本迭代可能与发布页微调，请以你下载镜像时的说明文件名为准）。刷写前务必确认：**SoC／品牌／具体型号／屏幕与功放硬件版本（若有）** 与镜像文档一致。
+以下为本改版相对 **ROCKNIX 主线** **额外适配**的设备清单（随版本迭代可能与发布页微调，请以你下载镜像时的说明文件名为准）。刷写前务必确认：**SoC／品牌／具体型号／屏幕与功放硬件版本（若有）** 与镜像文档一致。
 
 ### 3.1 RK3326（统一镜像）
 

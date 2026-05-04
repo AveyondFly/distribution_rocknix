@@ -1,6 +1,6 @@
 # ROCKNIX fork — User manual (English)
 
-This manual is for users of [**distribution_rocknix**](https://github.com/AveyondFly/distribution_rocknix) ([**Issues**](https://github.com/AveyondFly/distribution_rocknix/issues), [**Pull requests**](https://github.com/AveyondFly/distribution_rocknix/pulls) are handled there). It explains how this fork differs from [upstream ROCKNIX](https://github.com/ROCKNIX/distribution): **additional emulators**, **extra supported devices**, **standalone emulator tweaks**, and the **optional first-boot storage layout that reserves space for a later exFAT “GAMES” partition**.
+This manual is for users of [**distribution_rocknix**](https://github.com/AveyondFly/distribution_rocknix) ([**Issues**](https://github.com/AveyondFly/distribution_rocknix/issues), [**Pull requests**](https://github.com/AveyondFly/distribution_rocknix/pulls) are handled there). It explains how this fork differs from upstream **ROCKNIX**: **additional emulators**, **extra supported devices**, **standalone emulator tweaks**, and the **optional first-boot storage layout that reserves space for a later exFAT “GAMES” partition**.
 
 General ROCKNIX usage (Wi‑Fi, Bluetooth, updates, RetroArch, EmulationStation, etc.) is still documented by the upstream project and community; this document only covers **fork-specific** topics.**Before flashing**, check the device list in **§3** and obtain the latest build from the sources listed in **§1** (GitHub Releases or mirror via WeChat).
 
@@ -27,7 +27,7 @@ Always verify **exact device model**, **image file name**, and whether you confi
 
 If GitHub is slow or unreliable, follow the official WeChat public account **「k源机」** for mirror links (**Baidu Pan**, etc.); wording and cadence follow that account.
 
-For bugs that obviously belong to **upstream ROCKNIX only**, consult [**upstream ROCKNIX**](https://github.com/ROCKNIX/distribution).
+For bugs that obviously belong to **upstream ROCKNIX only**, use the support channels you normally use for that project, or seek guidance from the broader ROCKNIX community.
 
 ---
 

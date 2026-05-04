@@ -1,3 +1,5 @@
+# Local build tree is build.${DISTRO}-${DEVICE}.${ARCH} (see config/path).
+# Keep DISTRO=ROCKNIX here — not DISTRONAME (AURKNIX); image/update filenames come from scripts/image.
 name: Build toolchain
 
 on:

@@ -23,7 +23,7 @@ Under the following terms:
 
 ### ROCKNIX Software
 
-Copyright 2024 ROCKNIX (https://github.com/ROCKNIX)
+Copyright 2024 ROCKNIX (upstream project)
 
 Original software and scripts developed by the ROCKNIX team are licensed under the terms of the [GNU GPL Version 2](https://choosealicense.com/licenses/gpl-2.0/).  The full license can be found in this project's licenses folder.
 

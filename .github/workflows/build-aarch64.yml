@@ -1,3 +1,4 @@
+# Build dir: build.ROCKNIX-* matches config/path (DISTRO key), not DISTRONAME (AURKNIX).
 name: Build aarch64
 
 on:

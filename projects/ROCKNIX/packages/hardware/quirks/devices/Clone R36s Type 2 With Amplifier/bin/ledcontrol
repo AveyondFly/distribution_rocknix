@@ -5,10 +5,14 @@
 # 获取脚本的第一个参数，即颜色名称
 COLOR=$1
 
-[ -d /sys/class/gpio/gpio0 ] || echo 0 > /sys/class/gpio/export
-[ -d /sys/class/gpio/gpio17 ] || echo 17 > /sys/class/gpio/export
-echo out > /sys/class/gpio/gpio0/direction
-echo out > /sys/class/gpio/gpio17/direction
+if [ ! -d /sys/class/gpio/gpio0 ]; then
+  echo 0 > /sys/class/gpio/export
+  echo out > /sys/class/gpio/gpio0/direction
+fi
+if [ ! -d /sys/class/gpio/gpio17 ]; then
+  echo 17 > /sys/class/gpio/export
+  echo out > /sys/class/gpio/gpio17/direction
+fi
 
 # 根据颜色名称设置 LED 状态
 case $COLOR in

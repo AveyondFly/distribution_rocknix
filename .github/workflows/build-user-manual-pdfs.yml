@@ -25,6 +25,7 @@ jobs:
             texlive-xetex \
             texlive-lang-chinese \
             lmodern \
+            texlive-latex-base \
             texlive-fonts-recommended
 
       - name: Generate PDF tarball

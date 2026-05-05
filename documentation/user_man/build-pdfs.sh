@@ -3,11 +3,16 @@
 #
 # Default: populate tools/manual-pdf/.cache with Pandoc/TinyTeX + fonts when tools/manual-pdf/ensure-toolchain.sh exists.
 # CI / apt builders: SKIP_MANUAL_VENDOR_TOOLCHAIN=1 uses system pandoc+xelatex+Noto (no vendored toolchain run).
+# Optional MANUAL_PDF_DOCUMENT_CLASS / MANUAL_PDF_FONT_SIZE (bundled latex-extsizes/ => extarticle 14pt defaults).
 set -euo pipefail
 
 DOC_DIR="$(cd "$(dirname "${0}")" && pwd)"
 DIST_ROOT="$(cd "${DOC_DIR}/../.." && pwd)"
 OUT_DIR="${1:?Usage: ${0} <output-directory-for-pdf-files>}"
+
+export TEXINPUTS="${DOC_DIR}/latex-extsizes//:${TEXINPUTS:-}"
+: "${MANUAL_PDF_DOCUMENT_CLASS:=extarticle}"
+: "${MANUAL_PDF_FONT_SIZE:=14pt}"
 
 TOOLS_SCRIPT="${DIST_ROOT}/tools/manual-pdf/ensure-toolchain.sh"
 CACHE_ENV="${DIST_ROOT}/tools/manual-pdf/.cache/env.sh"
@@ -22,6 +27,9 @@ die() {
   usage_system_hint
   exit 1
 }
+
+[[ -f "${DOC_DIR}/latex-extsizes/extarticle.cls" && -f "${DOC_DIR}/latex-extsizes/size14.clo" ]] ||
+  die "Missing bundled ${DOC_DIR}/latex-extsizes/extarticle.cls or size14.clo"
 
 if [[ -n "${SKIP_MANUAL_VENDOR_TOOLCHAIN:-}" ]]; then
   unset MANUAL_TOOLS_CACHE MANUAL_PDF_PANDOC MANUAL_PDF_XELATEX MANUAL_PDF_TEX_BINDIR MANUAL_PDF_FONTDIR 2>/dev/null || true
@@ -56,7 +64,8 @@ if [[ -z "${SKIP_MANUAL_VENDOR_TOOLCHAIN:-}" ]] &&
   Path=${FONTDIR_ESC}/,
   Extension=.otf,
   UprightFont=SourceHanSansSC-Regular,
-  BoldFont=SourceHanSansSC-Bold
+  BoldFont=SourceHanSansSC-Bold,
+  Scale=1.1
 ]
 EOS
 
@@ -92,6 +101,8 @@ while IFS= read -r -d '' mdpath; do
   "${PANDOC_BIN}" "${mdpath}" \
     -o "${outpdf}" \
     "${PDF_ENGINE_OPTS[@]}" \
+    -V documentclass:"${MANUAL_PDF_DOCUMENT_CLASS}" \
+    -V fontsize:"${MANUAL_PDF_FONT_SIZE}" \
     -V geometry:"margin=14mm" \
     -V colorlinks:true \
     -H "${PREAMBLE_FILE}" \

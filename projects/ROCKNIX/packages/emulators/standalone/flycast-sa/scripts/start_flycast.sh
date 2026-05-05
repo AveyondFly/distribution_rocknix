@@ -145,5 +145,5 @@ fi
 
 #Run flycast emulator
 $GPTOKEYB "flycast" -c "${CONF_DIR}/flycast.gptk" &
-${EMUPERF} /usr/bin/flycast "${1}"
+${EMUPERF} /usr/bin/"${3%-*}" "${1}"
 kill -9 "$(pidof gptokeyb)"

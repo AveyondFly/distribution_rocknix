@@ -342,12 +342,13 @@ jobs:
       - name: Generate release body
         run: |
           envsubst < .github/release-body.md > release-body.md
+      # download-artifact merge-multiple flattens tree — assets end up as ./AURKNIX-* not ./target/AURKNIX-*
       - name: release official
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ env.DATE }}
           commit: ${{ github.sha }}
-          artifacts: target/AURKNIX-*
+          artifacts: AURKNIX-*,target/AURKNIX-*
           allowUpdates: false
           makeLatest: true
           token: ${{ steps.app-token.outputs.token }}

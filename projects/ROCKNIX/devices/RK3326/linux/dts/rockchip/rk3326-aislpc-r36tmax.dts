@@ -302,7 +302,6 @@
 		pinctrl-names = "default";
 		sound-name-prefix = "Speaker Amp";
 	};
-	
 	rk817-sound {
 		compatible = "simple-audio-card";
 		pinctrl-names = "default";
@@ -310,17 +309,22 @@
 		simple-audio-card,name = "rk817_ext";
 		simple-audio-card,aux-devs = <&spk_amp>;
 		simple-audio-card,format = "i2s";
-		simple-audio-card,hp-det-gpio = <&gpio2 RK_PC6 GPIO_ACTIVE_LOW>;
+		simple-audio-card,hp-det-gpio = <&gpio2 RK_PC6 GPIO_ACTIVE_HIGH>;
 		simple-audio-card,mclk-fs = <256>;
 		simple-audio-card,widgets =
-		"Microphone", "Mic Jack",
 		"Headphone", "Headphones",
-		"Speaker", "Speaker";
+		"Speaker", "Internal Speakers";
+		/* despite it's just a mono speaker, we need to route both Speaker Amp channels
+		Otherwise, the second channel stays on and keeps amp enabled */
 		simple-audio-card,routing =
-		"MICL", "Mic Jack",
 		"Headphones", "HPOL",
 		"Headphones", "HPOR",
-		"Speaker", "SPKO";
+		"Internal Speakers", "Speaker Amp OUTL",
+		"Internal Speakers", "Speaker Amp OUTR",
+		"Speaker Amp INL", "HPOL",
+		"Speaker Amp INR", "HPOR";
+
+		simple-audio-card,pin-switches = "Internal Speakers";
 		
 		simple-audio-card,codec {
 			sound-dai = <&rk817>;
@@ -330,7 +334,7 @@
 			sound-dai = <&i2s1_2ch>;
 		};
 	};
-	
+
 	vccsys: vccsys {
 		compatible = "regulator-fixed";
 		regulator-name = "vcc3v8_sys";

@@ -11,4 +11,5 @@ DEVICE_BATTERY_LED_STATUS="false"
 DEVICE_LED_CONTROL="true"
 DEVICE_PWR_LED_GPIO="17"
 DEVICE_TEMP_SENSOR="/sys/devices/virtual/thermal/thermal_zone0/temp"
+DEVICE_ANALOG_STICKS_LED_SINGLE="true"
 EOF

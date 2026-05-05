@@ -141,6 +141,8 @@ makeinstall_target() {
     echo "Configure retroarch for ${DEVICE}"
     exit 1
   fi
+  mkdir -p ${INSTALL}/usr/config/retroarch/remappings
+  cp -rf ${PKG_DIR}/sources/remappings/* ${INSTALL}/usr/config/retroarch/remappings/
 
   # Make sure the shader directories exist for overlayfs.
   for dir in common-shaders glsl-shaders slang-shaders

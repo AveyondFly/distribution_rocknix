@@ -5,6 +5,7 @@
 . /etc/profile
 
 MACHINEIDFILE=/storage/.cache/systemd-machine-id
+STATS_SENT_MARKER=/storage/.cache/rocknix-stats-reported
 USERID=$(cat ${MACHINEIDFILE})
 
 ENDPOINT_URL_MOD="https://rocknix.dpdns.org"
@@ -33,6 +34,7 @@ while [ $retry_count -lt $MAX_RETRIES ]; do
         exit_code=$?
 
         if [ $exit_code -eq 0 ]; then
+            touch "${STATS_SENT_MARKER}" 2>/dev/null || true
             echo "Statistics reported successfully."
             exit 0
         else

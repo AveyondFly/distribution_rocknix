@@ -1,5 +1,6 @@
 [Unit]
 Description=Report anonymous ROCKNIX install statistics
+ConditionPathExists=!/storage/.cache/rocknix-stats-reported
 
 [Service]
 Type=oneshot

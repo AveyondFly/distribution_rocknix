@@ -279,10 +279,9 @@ jobs:
      - name: Upload files to Baidu Cloud
        if: env.new_commits == 'true'
        run: |
-         BaiduPCS-Go mkdir "/rocknix" 2>/dev/null || true
-         BaiduPCS-Go mkdir "/rocknix/aurknix" 2>/dev/null || true
-         BaiduPCS-Go mkdir "/rocknix/aurknix/nightly" 2>/dev/null || true
-         REMOTE_DIR="/rocknix/aurknix/nightly/${{ env.DATE }}"
+         BaiduPCS-Go mkdir "/aurknix" 2>/dev/null || true
+         BaiduPCS-Go mkdir "/aurknix/nightly" 2>/dev/null || true
+         REMOTE_DIR="/aurknix/nightly/${{ env.DATE }}"
          BaiduPCS-Go mkdir "$REMOTE_DIR" || echo "Directory may already exist"
          FILES=$(find . -type f -name "*.img.gz")
          for FILE in $FILES; do
@@ -355,3 +354,23 @@ jobs:
           draft: true
           bodyFile: "release-body.md"
 
+      - name: Install and login BaiduPCS-Go
+        run: |
+          curl -Lo pcs.zip https://github.com/qjfoidnh/BaiduPCS-Go/releases/download/v4.0.0/BaiduPCS-Go-v4.0.0-linux-amd64.zip
+          unzip pcs.zip
+          mv BaiduPCS-Go-v4.0.0-linux-amd64/BaiduPCS-Go .
+          chmod +x BaiduPCS-Go
+          sudo mv BaiduPCS-Go /usr/local/bin/
+          BaiduPCS-Go login -cookies="${{ secrets.BAIDU_COOKIE }}" > /dev/null 2>&1
+          BaiduPCS-Go who > /dev/null 2>&1
+      - name: Upload files to Baidu Cloud
+        run: |
+          BaiduPCS-Go mkdir "/aurknix" 2>/dev/null || true
+          BaiduPCS-Go mkdir "/aurknix/stable" 2>/dev/null || true
+          REMOTE_DIR="/aurknix/stable/${{ env.DATE }}"
+          BaiduPCS-Go mkdir "$REMOTE_DIR" || echo "Directory may already exist"
+          FILES=$(find . -type f -name "*.img.gz")
+          for FILE in $FILES; do
+            echo "Uploading: $FILE"
+            BaiduPCS-Go upload --norapid "$FILE" "$REMOTE_DIR"
+          done

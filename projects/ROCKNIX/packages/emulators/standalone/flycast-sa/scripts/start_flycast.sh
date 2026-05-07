@@ -143,7 +143,8 @@ fi
   echo "VSYNC set to: ${VSYNC}"
   echo "Launching /usr/bin/flycast ${1}"
 
+CORE=${3%-*}
 #Run flycast emulator
-$GPTOKEYB "flycast" -c "${CONF_DIR}/flycast.gptk" &
-${EMUPERF} /usr/bin/"${3%-*}" "${1}"
+$GPTOKEYB $CORE -c "${CONF_DIR}/flycast.gptk" &
+${EMUPERF} /usr/bin/$CORE "${1}"
 kill -9 "$(pidof gptokeyb)"

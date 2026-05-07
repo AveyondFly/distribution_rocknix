@@ -112,6 +112,8 @@ ALL_DEVICES: Dict[str, DtbEntry] = {
     "HG36/HG3506": DtbEntry("rk3326-gameconsole-hg36.dtb", 202),
     "R36 Ultra": DtbEntry("rk3326-gameconsole-r36ultra.dtb", 101),
     "XGB36": DtbEntry("rk3326-gameconsole-xgb36.dtb", 202),
+    "R40S": DtbEntry("rk3326-gameconsole-r40s.dtb", 202,),
+    "R39S": DtbEntry("rk3326-gameconsole-r40s.dtb", 202,),
 
     # GameConsole
     "Game Console R33s": DtbEntry("rk3326-gameconsole-r33s.dtb", 202),
@@ -122,7 +124,6 @@ ALL_DEVICES: Dict[str, DtbEntry] = {
     "Game Console R36xx": DtbEntry("rk3326-gameconsole-r36s-panel4.dtb", 202),
     "Game Console R36H": DtbEntry("rk3326-gameconsole-r36s-panel4.dtb", 202),
     "Game Console O30S": DtbEntry("rk3326-gameconsole-r36s-panel4.dtb", 202),
-    "Game Console R40S": DtbEntry("rk3326-gameconsole-r40s.dtb", 202,),
     "Game Console R50S": DtbEntry("rk3326-gameconsole-r50s.dtb", 202,),
     "Game Console R36sPlus": DtbEntry("rk3326-gameconsole-r36splus.dtb", 202),
     "Game Console R36H ProMax": DtbEntry("rk3326-gameconsole-r45h.dtb", 202,),
@@ -203,6 +204,8 @@ CATEGORIES: Dict[str, Dict[str, DtbEntry]] = {
         "GameConsole HG36|HG3506": ALL_DEVICES["HG36/HG3506"],
         "GameConsole R36Ultra": ALL_DEVICES["R36 Ultra"],
         "GameConsole G26|XGB36": ALL_DEVICES["XGB36"],
+        "GameConsole R40S": ALL_DEVICES["R40S"],
+        "GameConsole R39S": ALL_DEVICES["R39S"],
     },
 }
 

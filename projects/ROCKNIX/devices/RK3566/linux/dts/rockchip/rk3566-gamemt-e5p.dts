@@ -357,48 +357,43 @@
 		post-power-on-delay-ms = <200>;
 		reset-gpios = <&gpio0 RK_PC0 GPIO_ACTIVE_LOW>;
 	};
-
-	/* Channels reversed for both headphones and speakers. */
 	sound {
-		compatible = "simple-audio-card";
-		pinctrl-0 = <&hp_det>;
-		pinctrl-names = "default";
-		simple-audio-card,name = "rk817_ext";
-		simple-audio-card,aux-devs = <&spk_amp>;
-		simple-audio-card,format = "i2s";
-		simple-audio-card,hp-det-gpio = <&gpio4 RK_PC6 GPIO_ACTIVE_HIGH>;
-		simple-audio-card,mclk-fs = <256>;
-		simple-audio-card,widgets =
-			"Microphone", "Mic Jack",
-			"Headphone", "Headphones",
-			"Speaker", "Internal Speakers";
-		simple-audio-card,routing =
-			"MICL", "Mic Jack",
-			"Headphones", "HPOL",
-			"Headphones", "HPOR",
-			"Internal Speakers", "Speaker Amp OUTL",
-			"Internal Speakers", "Speaker Amp OUTR",
-			"Speaker Amp INL", "HPOL",
-			"Speaker Amp INR", "HPOR";
-		simple-audio-card,pin-switches = "Internal Speakers";
-
-		simple-audio-card,codec {
-			sound-dai = <&rk817>;
-		};
-
-		simple-audio-card,cpu {
-			sound-dai = <&i2s1_8ch>;
-		};
+	    compatible = "simple-audio-card";
+	    pinctrl-0 = <&hp_det>;
+	    pinctrl-names = "default";
+	    simple-audio-card,name = "rk817_int";
+	    simple-audio-card,aux-devs = <&spk_sw>;
+	    simple-audio-card,format = "i2s";
+	    simple-audio-card,hp-det-gpios = <&gpio4 RK_PC6 GPIO_ACTIVE_HIGH>;
+	    simple-audio-card,mclk-fs = <256>;
+	    simple-audio-card,widgets =
+	        "Microphone", "Mic Jack",
+	        "Headphone", "Headphones",
+	        "Speaker", "Internal Speakers";
+	    simple-audio-card,routing =
+	        "MICL", "Mic Jack",
+	        "Headphones", "HPOL",
+	        "Headphones", "HPOR",
+	        /* 把 speaker 路径也挂在 headphone 输出上，模拟原来 amp 的行为 */
+	        "Speaker Switch INL", "HPOL",
+	        "Speaker Switch INR", "HPOR",
+	        "Internal Speakers", "Speaker Switch OUTL",
+	        "Internal Speakers", "Speaker Switch OUTR";
+	    simple-audio-card,pin-switches = "Internal Speakers";
+	    simple-audio-card,codec {
+	        sound-dai = <&rk817>;
+	    };
+	    simple-audio-card,cpu {
+	        sound-dai = <&i2s1_8ch>;
+	    };
 	};
-
-	spk_amp: audio-amplifier {
-		compatible = "simple-audio-amplifier";
-		enable-gpios = <&gpio4 RK_PC2 GPIO_ACTIVE_HIGH>;
-		pinctrl-0 = <&spk_amp_enable_h>;
-		pinctrl-names = "default";
-		sound-name-prefix = "Speaker Amp";
+	spk_sw: speaker-switch {
+	    compatible = "simple-audio-amplifier";
+	    enable-gpios = <&gpio4 RK_PC2 GPIO_ACTIVE_HIGH>;
+	    pinctrl-0 = <&spk_amp_enable_h>;
+	    pinctrl-names = "default";
+	    sound-name-prefix = "Speaker Switch";
 	};
-
 	vcc_lcd: regulator-vcc-lcd {
 		compatible = "regulator-fixed";
 		enable-active-high;

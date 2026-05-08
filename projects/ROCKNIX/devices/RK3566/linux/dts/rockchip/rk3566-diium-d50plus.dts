@@ -10,9 +10,9 @@
 #include "rk3566.dtsi"
 
 / {
-	model = "GameMT E6Plus";
+	model = "Diium D50Plus";
 	chassis-type = "handset";
-	compatible = "gamemt,e6plus", "rockchip,rk3566";
+	compatible = "diium,d50p", "rockchip,rk3566";
 
 	aliases {
 		mmc0 = &sdhci;
@@ -101,7 +101,7 @@
          compatible = "gpio-leds";
          pinctrl-0 = <&btn_pins_led>;
          pinctrl-names = "default";
-
+/*
         led-0 {
             color = <LED_COLOR_ID_WHITE>;
             default-state = "off";
@@ -115,12 +115,14 @@
             function = "right_down";
             gpios = <&gpio4 RK_PC3 GPIO_ACTIVE_HIGH>;
         };
+ */
         led-2 {
             color = <LED_COLOR_ID_WHITE>;
             default-state = "off";
             function = "right_joy";
             gpios = <&gpio4 RK_PC5 GPIO_ACTIVE_HIGH>;
         };
+
         led-1 {
             color = <LED_COLOR_ID_WHITE>;
             default-state = "left_down";
@@ -139,13 +141,13 @@
 		vol-down-key {
 		           label = "VOLUMEDOWN";
 		           linux,code = <KEY_VOLUMEDOWN>;
-			press-threshold-microvolt = <280000>;
+			press-threshold-microvolt = <15000>;
 		};
 
 		vol-up-key {
 		           label = "VOLUMEUP";
 		           linux,code = <KEY_VOLUMEUP>;
-			press-threshold-microvolt = <15000>;
+			press-threshold-microvolt = <280000>;
 		};
 		select-key {
 		           label = "select";
@@ -173,6 +175,11 @@
 		joypad-product = <0x1101>;
 		joypad-revision = <0x0100>;
 		joypad-vendor = <0x484B>;
+
+		pwms = <&pwm14 0 200000000 0>;
+		pwm-names = "enable";
+		rumble-boost-weak = <0x0000>;
+		rumble-boost-strong = <0x0000>;
 
 		status = "okay";
 
@@ -212,23 +219,26 @@
 		  p = positive direction, n = negative direction
 		  report value = (real_adc_data * tuning_value) / 100
 		*/
-		abs_x-p-tuning = <245>;
+		abs_x-p-tuning = <545>;
 		abs_x-n-tuning = <545>;
 
-		abs_y-p-tuning = <245>;
+		abs_y-p-tuning = <545>;
 		abs_y-n-tuning = <545>;
 
 		abs_rx-p-tuning = <545>;
-		abs_rx-n-tuning = <245>;
+		abs_rx-n-tuning = <545>;
 
-		abs_ry-p-tuning = <345>;
+		abs_ry-p-tuning = <545>;
 		abs_ry-n-tuning = <545>;
 
 		/* poll device interval (ms), adc read interval */
 		poll-interval = <10>;
 
 		/* required to invert x/y */
-		//invert-absy;
+		invert-absy;
+		invert-absx;
+		invert-absrx;
+		invert-absry;
 
 		/* gpio button auto repeat set value : default disable */
 		/* autorepeat; */
@@ -292,12 +302,12 @@
 			linux,code = <BTN_NORTH>;
 		};
 		sw9 {
-			gpios = <&gpio3 RK_PB6 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio3 RK_PD5 GPIO_ACTIVE_LOW>;
 			label = "BTN_SELECT";
 			linux,code = <BTN_SELECT>;
 		};
 		sw10 {
-			gpios = <&gpio3 RK_PB5 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio3 RK_PD4 GPIO_ACTIVE_LOW>;
 			label = "BTN_START";
 			linux,code = <BTN_START>;
 		};
@@ -307,7 +317,7 @@
 		   allow existing userspace programs to work without doing any
 		   new remapping thus saving lots of headaches and extra work */
 		sw11 {
-			gpios = <&gpio3 RK_PB7 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio3 RK_PD3 GPIO_ACTIVE_LOW>;
 			label = "GPIO BTN_F";
 			linux,code = <BTN_MODE>;
 		};
@@ -352,7 +362,6 @@
 		post-power-on-delay-ms = <200>;
 		reset-gpios = <&gpio0 RK_PC0 GPIO_ACTIVE_LOW>;
 	};
-
 	sound {
 	    compatible = "simple-audio-card";
 	    pinctrl-0 = <&hp_det>;
@@ -390,7 +399,6 @@
 	    pinctrl-names = "default";
 	    sound-name-prefix = "Speaker Switch";
 	};
-
 	vcc_lcd: regulator-vcc-lcd {
 		compatible = "regulator-fixed";
 		enable-active-high;
@@ -484,63 +492,189 @@
 		reset-gpios = <&gpio0 RK_PA6 GPIO_ACTIVE_LOW>;
 		rotation = <90>;
 		vcc-supply = <&vcc_lcd>;
+
             panel_description =
-                "G size=68,122 delays=60,60,60,120,20 format=rgb888 lanes=4 flags=0xa03",
+                "G size=72,128 delays=120,200,20,20,20 format=rgb888 lanes=4 flags=0xa03",
 
-                "M clock=66000 horizontal=720,70,20,30 vertical=1280,10,4,10 default=1",
-                "M clock=66000 horizontal=720,50,38,50 vertical=1280,10,240,10",
-                "M clock=66000 horizontal=720,50,60,50 vertical=1280,10,200,10",
-                "M clock=66430 horizontal=720,50,58,50 vertical=1280,10,213,10",
-                "M clock=66010 horizontal=720,50,55,50 vertical=1280,10,12,10",
-                "M clock=68280 horizontal=720,50,52,50 vertical=1280,10,11,10",
-                "M clock=66300 horizontal=720,50,25,50 vertical=1280,10,9,10",
-                "M clock=66780 horizontal=720,50,20,50 vertical=1280,10,25,10",
-                "M clock=69040 horizontal=720,50,47,50 vertical=1280,10,25,10",
-                "M clock=97240 horizontal=720,50,43,50 vertical=1280,10,193,10",
-                "M clock=100170 horizontal=720,50,20,50 vertical=1280,10,25,10",
-                "M clock=133110 horizontal=720,50,30,50 vertical=1280,10,5,10",
+                "M clock=95500 horizontal=720,432,6,18 vertical=1280,20,10,34 default=1",
 
-                "I seq=ff988107",
-                "I seq=0320", "I seq=0406", "I seq=0500", "I seq=0601", "I seq=0700",
-                "I seq=0800", "I seq=0900", "I seq=0a00", "I seq=0b2f", "I seq=0c00", "I seq=0d00", "I seq=0e00", "I seq=0f00",
-                "I seq=1040", "I seq=1102", "I seq=1205", "I seq=1300", "I seq=1400", "I seq=1500", "I seq=162f", "I seq=172f",
-                "I seq=1800", "I seq=1900", "I seq=1a00", "I seq=1b50", "I seq=1cbc", "I seq=1d0c", "I seq=1e00", "I seq=1f00",
-                "I seq=2000", "I seq=2100", "I seq=2200", "I seq=23c0", "I seq=2430", "I seq=2500", "I seq=2600", "I seq=2703",
-                "I seq=3001", "I seq=3123", "I seq=3245", "I seq=3367", "I seq=3489", "I seq=35ab", "I seq=3601", "I seq=3723",
-                "I seq=3845", "I seq=3967", "I seq=3a89", "I seq=3bab", "I seq=3ccd", "I seq=3def",
-                "I seq=5011", "I seq=5106", "I seq=520c", "I seq=530d", "I seq=540e", "I seq=550f", "I seq=5602", "I seq=5702",
-                "I seq=5802", "I seq=5902", "I seq=5a02", "I seq=5b02", "I seq=5c02", "I seq=5d02", "I seq=5e02", "I seq=5f02",
-                "I seq=6005", "I seq=6105", "I seq=6205", "I seq=6302", "I seq=6401", "I seq=6500", "I seq=6608", "I seq=6708",
-                "I seq=680c", "I seq=690d", "I seq=6a0e", "I seq=6b0f", "I seq=6c02", "I seq=6d02", "I seq=6e02", "I seq=6f02",
-                "I seq=7002", "I seq=7102", "I seq=7202", "I seq=7302", "I seq=7402", "I seq=7502", "I seq=7605", "I seq=7705",
-                "I seq=7805", "I seq=7902", "I seq=7a01", "I seq=7b00", "I seq=7c06",
-                "I seq=ff988108",
-                "I seq=76b4",
-                "I seq=7802",
-                "I seq=742b",
-                "I seq=8e15",
-                "I seq=4001",
-                "I seq=8481",
-                "I seq=7225",
-                "I seq=e375",
-                "I seq=7dcb", "I seq=7e49",
-                "I seq=4910",
-                "I seq=3205",
-                "I seq=3c05",
-                "I seq=ff988101",
-                "I seq=220a",
-                "I seq=4301",
-                "I seq=5382", "I seq=5585", "I seq=50b9", "I seq=51ba",
-                "I seq=3100",
-                "I seq=a000", "I seq=a114", "I seq=a22b", "I seq=a316", "I seq=a41c", "I seq=a52e", "I seq=a618", "I seq=a720",
-                "I seq=a878", "I seq=a920", "I seq=aa2a", "I seq=ab83", "I seq=ac25", "I seq=ad1b", "I seq=ae54", "I seq=af2b",
-                "I seq=b02b", "I seq=b14f", "I seq=b267", "I seq=b339",
-                "I seq=c000", "I seq=c114", "I seq=c22b", "I seq=c316", "I seq=c41c", "I seq=c52e", "I seq=c618", "I seq=c720",
-                "I seq=c878", "I seq=c920", "I seq=ca2a", "I seq=cb83", "I seq=cc25", "I seq=cd1b", "I seq=ce54", "I seq=cf2b",
-                "I seq=d02b", "I seq=d14f", "I seq=d267", "I seq=d339",
-                "I seq=ff988100",
+                "I seq=0000",
+                "I seq=ff875601",
+                "I seq=0080",
+                "I seq=ff8756",
+                "I seq=00a1",
+                "I seq=b302d0050020fc",
+                "I seq=0080",
+                "I seq=c000f600100024",
+                "I seq=0090",
+                "I seq=c000f600100024",
+                "I seq=00a0",
+                "I seq=c0021400100024",
+                "I seq=00b0",
+                "I seq=c000f6001024",
+                "I seq=00c1",
+                "I seq=c0012700ea00c5015f",
+                "I seq=00d7",
+                "I seq=c000c500100024",
+                "I seq=00a3",
+                "I seq=c1002000200002",
+                "I seq=0080",
+                "I seq=ce01810913007800780050005000780078",
+                "I seq=0090",
+                "I seq=ce008e0eb6008e8009130004001c1f16",
+                "I seq=00a0",
+                "I seq=ce200000",
+                "I seq=00b0",
+                "I seq=ce220000",
+                "I seq=00d1",
+                "I seq=ce00000100000000",
+                "I seq=00e1",
+                "I seq=ce08024d024d024d00000000",
+                "I seq=00f1",
+                "I seq=ce0c060a00e900e900f8",
+                "I seq=00b0",
+                "I seq=cf00006e72",
+                "I seq=00b5",
+                "I seq=cf02029498",
+                "I seq=00c0",
+                "I seq=cf0404d8dc",
+                "I seq=00c5",
+                "I seq=cf0000080c",
+                "I seq=00e8",
+                "I seq=c010",
+                "I seq=0080",
+                "I seq=c28400058983000589",
+                "I seq=00a0",
+                "I seq=c2820400058981040005890004000589",
+                "I seq=00b0",
+                "I seq=c2010400058902040005890304000589",
+                "I seq=00c0",
+                "I seq=c204040005890504000589",
+                "I seq=00e0",
+                "I seq=c277777777",
+                "I seq=00c0",
+                "I seq=c399999999",
+                "I seq=0080",
+                "I seq=cb00c50000050500050a05c500050500c0",
+                "I seq=0090",
+                "I seq=cb00000000000000000000000000000000",
+                "I seq=00a0",
+                "I seq=cb00000000",
+                "I seq=00b0",
+                "I seq=cb10519450",
+                "I seq=00c0",
+                "I seq=cb10519450",
+                "I seq=0080",
+                "I seq=cc2d2d2d2d07090b0d2525032d222d242d",
+                "I seq=0090",
+                "I seq=cc29161718191a1b26",
+                "I seq=0080",
+                "I seq=cd2d2d2d2d06080a0c2500022d222d242d",
+                "I seq=0090",
+                "I seq=cd29161718191a1b26",
+                "I seq=00a0",
+                "I seq=cc2d2d2d2d08060c0a2525022d242d232d",
+                "I seq=00b0",
+                "I seq=cc29161718191a1b26",
+                "I seq=00a0",
+                "I seq=cd2d2d2d2d09070d0b2500032d242d232d",
+                "I seq=00b0",
+                "I seq=cd29161718191a1b26",
+                "I seq=0080",
+                "I seq=a713",
+                "I seq=0082",
+                "I seq=a72202",
+                "I seq=0085",
+                "I seq=c41c",
+                "I seq=00a0",
+                "I seq=c48dd88d",
+                "I seq=0093",
+                "I seq=c537",
+                "I seq=0097",
+                "I seq=c537",
+                "I seq=00b6",
+                "I seq=c52d2d",
+                "I seq=009a",
+                "I seq=c519",
+                "I seq=009c",
+                "I seq=c519",
+                "I seq=0097",
+                "I seq=c401",
+                "I seq=009b",
+                "I seq=f54b",
+                "I seq=0093",
+                "I seq=f50000",
+                "I seq=009d",
+                "I seq=f549",
+                "I seq=0082",
+                "I seq=f50000",
+                "I seq=008c",
+                "I seq=c3000000",
+                "I seq=0084",
+                "I seq=c52828",
+                "I seq=00a4",
+                "I seq=d700",
+                "I seq=0080",
+                "I seq=f55959",
+                "I seq=0084",
+                "I seq=f5595959",
+                "I seq=0096",
+                "I seq=f559",
+                "I seq=00a6",
+                "I seq=f559",
+                "I seq=00ca",
+                "I seq=c080",
+                "I seq=00b1",
+                "I seq=f51f",
+                "I seq=0000",
+                "I seq=d8292d",
+                "I seq=0000",
+                "I seq=d92020",
+                "I seq=0086",
+                "I seq=c0010401012203",
+                "I seq=0096",
+                "I seq=c0010401011b03",
+                "I seq=00a6",
+                "I seq=c0010401013e03",
+                "I seq=00e9",
+                "I seq=c0010401011b03",
+                "I seq=00a3",
+                "I seq=ce010401011b03",
+                "I seq=00b3",
+                "I seq=ce010401011b03",
+                "I seq=0000",
+                "I seq=e105060910691a222833983a41474ce551596067056e757c85088f949ba222abb6c4ce9edaeaf7ff7b",
+                "I seq=0000",
+                "I seq=e205060910691a222833983a41474ce551596067056e757c85088f949ba222abb6c4ce9edaeaf7ff7b",
+                "I seq=0000",
+                "I seq=e305060910691a222833983a41474ce551596067056e757c85088f949ba222abb6c4ce9edaeaf7ff7b",
+                "I seq=0000",
+                "I seq=e405060910691a222833983a41474ce551596067056e757c85088f949ba222abb6c4ce9edaeaf7ff7b",
+                "I seq=0000",
+                "I seq=e505060910691a222833983a41474ce551596067056e757c85088f949ba222abb6c4ce9edaeaf7ff7b",
+                "I seq=0000",
+                "I seq=e605060910691a222833983a41474ce551596067056e757c85088f949ba222abb6c4ce9edaeaf7ff7b",
+                "I seq=00cc",
+                "I seq=c013",
+                "I seq=0082",
+                "I seq=c535",
+                "I seq=0094",
+                "I seq=c5020101",
+                "I seq=0098",
+                "I seq=c52501",
+                "I seq=009b",
+                "I seq=c521",
+                "I seq=009d",
+                "I seq=c525",
+                "I seq=0000",
+                "I seq=d056",
+                "I seq=00e8",
+                "I seq=c040",
                 "I seq=11 wait=120",
-                "I seq=29 wait=20";
+                "I seq=29 wait=120",
+                "I seq=3500 wait=180",
+                "I seq=b75902",
+                "I seq=ff0000";
 
 		port {
 			mipi_in_panel: endpoint {
@@ -843,9 +977,9 @@
 				<4 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,
 				<4 RK_PB0 RK_FUNC_GPIO &pcfg_pull_up>,
 				<4 RK_PA5 RK_FUNC_GPIO &pcfg_pull_up>,
-				<3 RK_PD5 RK_FUNC_GPIO &pcfg_pull_up>,
-				<3 RK_PD4 RK_FUNC_GPIO &pcfg_pull_up>,
-				<3 RK_PD3 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PB5 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>,
 				<4 RK_PC0 RK_FUNC_GPIO &pcfg_pull_up>,
 				<4 RK_PC1 RK_FUNC_GPIO &pcfg_pull_up>,
 				<4 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>,
@@ -926,6 +1060,10 @@
 	status = "okay";
 };
 
+&pwm14 {
+	status = "okay";
+};
+
 &saradc {
 	vref-supply = <&vcc_1v8>;
 	status = "okay";
@@ -950,7 +1088,7 @@
 		    <&sdmmc0_det>;
 	pinctrl-names = "default";
 	sd-uhs-sdr104;
-	vqmmc-supply = <&vccio_sd>;
+	/*vqmmc-supply = <&vccio_sd>;*/
 	status = "okay";
 };
 

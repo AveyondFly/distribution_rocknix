@@ -11,7 +11,9 @@ PKG_LONGDESC="Quirks is a simple package that provides device quirks."
 PKG_TOOLCHAIN="manual"
 
 makeinstall_target() {
-  mkdir -p ${INSTALL}/usr/lib/autostart/quirks/{platforms,devices}
+  mkdir -p ${INSTALL}/usr/lib/autostart/quirks/{bin,platforms,devices}
+
+  cp ${PKG_DIR}/bin/* ${INSTALL}/usr/lib/autostart/quirks/bin
 
   # Copy all device quirks (QUIRK_DEVICE is determined at runtime from device tree)
   cp -r ${PKG_DIR}/devices/* ${INSTALL}/usr/lib/autostart/quirks/devices
@@ -28,7 +30,7 @@ makeinstall_target() {
 
 post_install() {
   enable_service led-poweroff.service
-  if [ "${DEVICE}" = "RK3566" ]; then
+  if [ "${DEVICE}" = "RK3326" -o "${DEVICE}" = "RK3566" ]; then
     enable_service volume-fixup.service
   fi
   if [ "${DEVICE}" = "S905L3A" ]; then

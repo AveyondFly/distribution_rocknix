@@ -75,7 +75,7 @@
     FIRMWARE=""
 
   # Additional packages to install
-    ADDITIONAL_PACKAGES="libmali libmali-vulkan rtl8733bs"
+    ADDITIONAL_PACKAGES="libmali libmali-vulkan rtl8733bs rk3566-dtb-select"
     ADDITIONAL_PACKAGES_32BIT="libmali"
 
   # Debug tty path

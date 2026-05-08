@@ -1,0 +1,72 @@
+# Windows PyInstaller DtbselectWin64.exe (RK3566-Specific dtb-select), consumed by the image build for /flash.
+name: Build RK3566 DtbselectWin64 (Windows)
+
+on:
+  workflow_call:
+    inputs:
+      include_rk3566:
+        description: 'Set "false" when the nightly matrix does not include RK3566 (upload placeholder zip only).'
+        type: string
+        required: false
+        default: "true"
+  workflow_dispatch:
+  push:
+    paths:
+      - "projects/ROCKNIX/devices/RK3566/packages/rk3566-dtb-select/**"
+      - ".github/workflows/build-rk3566-dtbselect-windows.yml"
+      - ".github/workflows/build-nightly.yml"
+
+jobs:
+  pyinstaller:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Decide build vs skip
+        shell: bash
+        id: m
+        run: |
+          if [ "${{ github.event_name }}" != "workflow_call" ]; then
+            echo "WILL_BUILD=yes" >> $GITHUB_ENV
+            exit 0
+          fi
+          if [ "${{ inputs.include_rk3566 }}" = "false" ]; then
+            echo "WILL_BUILD=no" >> $GITHUB_ENV
+          else
+            echo "WILL_BUILD=yes" >> $GITHUB_ENV
+          fi
+
+      - uses: actions/setup-python@v5
+        if: env.WILL_BUILD == 'yes'
+        with:
+          python-version: "3.12"
+
+      - name: Install PyInstaller
+        if: env.WILL_BUILD == 'yes'
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyinstaller wcwidth
+
+      - name: Build DtbselectWin64.exe
+        if: env.WILL_BUILD == 'yes'
+        working-directory: projects/ROCKNIX/devices/RK3566/packages/rk3566-dtb-select
+        run: |
+          pyinstaller --onefile --noconfirm --name DtbselectWin64 --console dtb_selector.py
+
+      - name: Pack zip
+        if: env.WILL_BUILD == 'yes'
+        run: |
+          $d = "projects/ROCKNIX/devices/RK3566/packages/rk3566-dtb-select/dist"
+          Compress-Archive -Path "$d\DtbselectWin64.exe" -DestinationPath "dtbselect-rk3566-windows-x64.zip" -Force
+
+      - name: Placeholder zip (no RK3566 in matrix)
+        if: env.WILL_BUILD == 'no'
+        run: |
+          echo "RK3566 not in this matrix; no DtbselectWin64 in zip." > NO_WINDOWS_BUILD.txt
+          Compress-Archive -Path NO_WINDOWS_BUILD.txt -DestinationPath dtbselect-rk3566-windows-x64.zip -Force
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dtbselect-rk3566-windows
+          path: dtbselect-rk3566-windows-x64.zip
+          if-no-files-found: error

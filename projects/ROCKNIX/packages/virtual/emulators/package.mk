@@ -8,7 +8,7 @@ PKG_SECTION="emulation" # Do not change to virtual or makeinstall_target will no
 PKG_LONGDESC="Emulation metapackage."
 PKG_TOOLCHAIN="manual"
 
-PKG_EMUS="amiberry flycast-sa flycast2022-sa gzdoom-sa hatarisa hypseus-singe moonlight mupen64plus-sa openbor openbor-ff free-j2me pico-8 ppsspp-sa vice-sa wine cpymo mrp-sa"
+PKG_EMUS="amiberry flycast-sa flycast2022-sa gzdoom-sa hatarisa hypseus-singe moonlight mupen64plus-sa openbor openbor-ff free-j2me pico-8 ppsspp-sa vice-sa wine cpymo mrp-sa eka2l1-sa"
 EMUS_32BIT=""
 
 PKG_RETROARCH="core-info libretro-database retroarch retroarch-assets retroarch-joypads retroarch-overlays slang-shaders"
@@ -955,6 +955,10 @@ makeinstall_target() {
   ### MRP Games
   add_emu_core mrp mrp mrp true
   add_es_system mrp
+
+  ### EKA2L1 Games
+  add_emu_core eka2l1 eka2l1 eka2l1 true
+  add_es_system eka2l1
 
   ### RPG MKAER XP
   add_emu_core mkxp-z retroarch mkxp-z true

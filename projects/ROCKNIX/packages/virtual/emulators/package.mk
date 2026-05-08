@@ -956,6 +956,10 @@ makeinstall_target() {
   add_emu_core mrp mrp mrp true
   add_es_system mrp
 
+  ### RPG MKAER XP
+  add_emu_core mkxp-z retroarch mkxp-z true
+  add_es_system mkxp-z
+
   ### NEC PC-8800
   add_emu_core pc-8800 retroarch quasi88 true
   add_es_system pc-8800

@@ -20,6 +20,12 @@ case ${DEVICE} in
   ;;
 esac
 
+case ${DEVICE} in
+  RK3326|RK3566)
+    PKG_PATCH_DIRS+=" paneladj-${PKG_VERSION}"
+  ;;
+esac
+
 # to enable xwayland package: https://gitlab.freedesktop.org/xorg/lib/libxcb-wm/-/tree/master/icccm?ref_type=heads
 
 PKG_MESON_OPTS_TARGET="-Ddefault-wallpaper=false \

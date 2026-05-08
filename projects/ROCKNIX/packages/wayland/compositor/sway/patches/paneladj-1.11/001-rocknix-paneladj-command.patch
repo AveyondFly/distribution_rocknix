@@ -1,0 +1,117 @@
+--- a/include/sway/commands.h
++++ b/include/sway/commands.h
+@@ -162,6 +162,7 @@ sway_cmd cmd_nop;
+ sway_cmd cmd_opacity;
+ sway_cmd cmd_no_focus;
+ sway_cmd cmd_output;
++sway_cmd cmd_paneladj;
+ sway_cmd cmd_permit;
+ sway_cmd cmd_popup_during_fullscreen;
+ sway_cmd cmd_primary_selection;
+--- a/sway/commands.c
++++ b/sway/commands.c
+@@ -126,6 +126,7 @@ static const struct cmd_handler command_handlers[] = {
+ 	{ "move", cmd_move },
+ 	{ "nop", cmd_nop },
+ 	{ "opacity", cmd_opacity },
++	{ "paneladj", cmd_paneladj },
+ 	{ "reload", cmd_reload },
+ 	{ "rename", cmd_rename },
+ 	{ "resize", cmd_resize },
+--- a/sway/meson.build
++++ b/sway/meson.build
+@@ -86,6 +86,7 @@ sway_sources = files(
+ 	'commands/new_window.c',
+ 	'commands/no_focus.c',
+ 	'commands/nop.c',
++	'commands/paneladj.c',
+ 	'commands/output.c',
+ 	'commands/popup_during_fullscreen.c',
+ 	'commands/primary_selection.c',
+--- /dev/null
++++ b/sway/commands/paneladj.c
+@@ -0,0 +1,84 @@
++#include <errno.h>
++#include <stdbool.h>
++#include <stdint.h>
++#include <stdlib.h>
++#include <string.h>
++#include <wlr/backend/drm.h>
++#include "sway/commands.h"
++#include "sway/output.h"
++#include "sway/tree/root.h"
++
++static bool valid_paneladj_property(const char *property) {
++	return strcmp(property, "brightness") == 0 ||
++		strcmp(property, "contrast") == 0 ||
++		strcmp(property, "saturation") == 0 ||
++		strcmp(property, "hue") == 0;
++}
++
++static bool apply_paneladj_to_output(struct sway_output *output,
++		const char *property, uint64_t value) {
++	if (!output || output == root->fallback_output || !output->wlr_output ||
++			!output->enabled || !output->wlr_output->enabled) {
++		return false;
++	}
++
++	return wlr_drm_output_set_paneladj(output->wlr_output, property, value);
++}
++
++struct cmd_results *cmd_paneladj(int argc, char **argv) {
++	struct cmd_results *error = checkarg(argc, "paneladj", EXPECTED_EQUAL_TO, 3);
++	if (error != NULL) {
++		return error;
++	}
++
++	const char *output_name = argv[0];
++	const char *property = argv[1];
++	const char *value_str = argv[2];
++
++	if (!valid_paneladj_property(property)) {
++		return cmd_results_new(CMD_INVALID,
++			"Invalid paneladj property '%s'. Expected brightness, contrast, saturation, or hue.",
++			property);
++	}
++
++	errno = 0;
++	char *end = NULL;
++	unsigned long value = strtoul(value_str, &end, 10);
++	if (errno != 0 || end == value_str || *end != '\0' || value > 100) {
++		return cmd_results_new(CMD_INVALID,
++			"Invalid paneladj value '%s'. Expected 0-100.", value_str);
++	}
++
++	if (strcmp(output_name, "*") == 0) {
++		struct sway_output *output;
++		size_t applied = 0;
++
++		wl_list_for_each(output, &root->all_outputs, link) {
++			if (apply_paneladj_to_output(output, property, value)) {
++				applied++;
++			}
++		}
++
++		if (applied == 0) {
++			return cmd_results_new(CMD_FAILURE,
++				"No active DRM outputs accepted paneladj property '%s'.",
++				property);
++		}
++
++		return cmd_results_new(CMD_SUCCESS, NULL);
++	}
++
++	struct sway_output *output = all_output_by_name_or_id(output_name);
++	if (output == NULL) {
++		return cmd_results_new(CMD_FAILURE,
++			"Unknown output '%s'.", output_name);
++	}
++
++	if (!apply_paneladj_to_output(output, property, value)) {
++		return cmd_results_new(CMD_FAILURE,
++			"Failed to set paneladj property '%s' on output '%s'.",
++			property, output_name);
++	}
++
++	return cmd_results_new(CMD_SUCCESS, NULL);
++}

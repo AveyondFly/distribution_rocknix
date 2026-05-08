@@ -12,11 +12,8 @@
 PROPERTY=${1}
 NEWVAL=${2}
 
-# Command usage:
-# drm_tool set /dev/dri/card0 133 saturation value
-
 # Define the basics
-MIN=1
+MIN=0
 MAX=100
 STEP=1
 
@@ -34,25 +31,72 @@ getValue() {
   MYVAL=$(get_setting display.${1})
   if [ -n "${MYVAL}" ]
   then
-    if [ "${MYVAL}" > "${MAX}" ]
+    if ! [[ "${MYVAL}" =~ ^[0-9]+$ ]]
+    then
+      MYVAL=50
+    fi
+    if [ "${MYVAL}" -gt "${MAX}" ]
     then
       MYVAL=${MAX}
-    elif [ "${MYVAL}" < "${MIN}" ]
+    elif [ "${MYVAL}" -lt "${MIN}" ]
     then
       MYVAL=${MIN}
     fi
     echo ${MYVAL}
   else
-    echo $(drm_tool list 2>/dev/null | sed -n '/Connector: '${CONNECTOR}'/,$p' | awk '/'${1}'/ {print $5}')
+    MYVAL=$(modetest 2>/dev/null | awk -v prop="${1}" '
+      $2 == prop ":" { found = 1; next }
+      found && $1 == "value:" { print $2; exit }
+    ')
+    echo ${MYVAL:-50}
   fi
+}
+
+getActiveCrtc() {
+  modetest 2>/dev/null | awk '
+    /^CRTCs:/ { in_crtcs = 1; next }
+    /^Planes:/ { in_crtcs = 0 }
+    in_crtcs && $1 ~ /^[0-9]+$/ && $2 != "0" { print $1; exit }
+  '
+}
+
+setViaSway() {
+  if ! command -v swaymsg >/dev/null 2>&1
+  then
+    return 1
+  fi
+
+  if [ -z "${SWAYSOCK}" ]
+  then
+    RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/0-runtime-dir}"
+    SWAYSOCK_CANDIDATE="${RUNTIME_DIR}/sway-ipc.$(id -u).sock"
+    if [ -S "${SWAYSOCK_CANDIDATE}" ]
+    then
+      export SWAYSOCK="${SWAYSOCK_CANDIDATE}"
+    fi
+  fi
+
+  swaymsg "paneladj * ${1} ${2}" >/dev/null 2>&1
+}
+
+setViaModetest() {
+  CRTC=$(getActiveCrtc)
+  if [ -z "${CRTC}" ]
+  then
+    return 1
+  fi
+
+  modetest -w "${CRTC}:${1}:${2}" >/dev/null 2>&1
 }
 
 setValue() {
   log "Set (${1}: ${2})"
-  drm_tool set /dev/dri/card0 ${CONNECTOR} ${1} ${2} 2>/dev/null
-  if [ $? = 0 ]
+  if setViaSway "${1}" "${2}" || setViaModetest "${1}" "${2}"
   then
     set_setting display.${1} ${2}
+  else
+    echo "ERROR: Failed to set ${1} to ${2}."
+    exit 1
   fi
 }
 
@@ -78,8 +122,6 @@ restoreSettings() {
   done
 }
 
-CONNECTOR=$(drm_tool list | grep -B1 "mode.*:" | awk '/Connector/ {print $2}')
-
 case ${NEWVAL} in
   "up")
     stepUp
@@ -91,7 +133,7 @@ case ${NEWVAL} in
     restoreSettings
   ;;
   *)
-    if [[ "${NEWVAL}" =~ ^[0-9] ]] && \
+    if [[ "${NEWVAL}" =~ ^[0-9]+$ ]] && \
        [ "${NEWVAL}" -le "${MAX}" ] && \
        [ "${NEWVAL}" -ge "${MIN}" ]
     then

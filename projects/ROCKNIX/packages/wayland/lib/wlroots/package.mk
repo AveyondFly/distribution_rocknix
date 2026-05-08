@@ -27,6 +27,11 @@ case ${DEVICE} in
   ;;
 esac
 
+case ${DEVICE} in
+  RK3326|RK3566)
+    PKG_PATCH_DIRS+=" paneladj-${PKG_VERSION}"
+  ;;
+esac
 
 configure_package() {
   # OpenGLES Support

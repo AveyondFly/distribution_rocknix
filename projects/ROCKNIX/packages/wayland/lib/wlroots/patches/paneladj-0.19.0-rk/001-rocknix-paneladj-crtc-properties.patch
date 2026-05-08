@@ -1,0 +1,115 @@
+--- a/include/wlr/backend/drm.h
++++ b/include/wlr/backend/drm.h
+@@ -9,6 +9,7 @@
+ #ifndef WLR_BACKEND_DRM_H
+ #define WLR_BACKEND_DRM_H
+ 
++#include <stdint.h>
+ #include <wayland-server-core.h>
+ #include <wlr/backend.h>
+ #include <wlr/backend/session.h>
+@@ -61,6 +62,14 @@ int wlr_drm_backend_get_non_master_fd(struct wlr_backend *backend);
+  */
+ int wlr_drm_backend_get_non_master_fd(struct wlr_backend *backend);
+ 
++/**
++ * Set a Rockchip panel adjustment property on the output's active CRTC.
++ *
++ * The property must be one of: brightness, contrast, saturation, hue.
++ * Returns false when the output is not a DRM output or the CRTC lacks the property.
++ */
++bool wlr_drm_output_set_paneladj(struct wlr_output *output, const char *property, uint64_t value);
++
+ /**
+  * Leases the given outputs to the caller. The outputs must be from the
+  * associated DRM backend.
+--- a/include/backend/drm/properties.h
++++ b/include/backend/drm/properties.h
+@@ -39,6 +39,12 @@ struct wlr_drm_crtc_props {
+ 	uint32_t active;
+ 	uint32_t mode_id;
+ 	uint32_t out_fence_ptr;
++
++	// Rockchip panel adjustment controls; not guaranteed to exist
++	uint32_t brightness;
++	uint32_t contrast;
++	uint32_t hue;
++	uint32_t saturation;
+ };
+ 
+ struct wlr_drm_plane_props {
+--- a/backend/drm/properties.c
++++ b/backend/drm/properties.c
+@@ -43,6 +43,10 @@ static const struct prop_info crtc_info[] = {
+ 	{ "MODE_ID", INDEX(mode_id) },
+ 	{ "OUT_FENCE_PTR", INDEX(out_fence_ptr) },
+ 	{ "VRR_ENABLED", INDEX(vrr_enabled) },
++	{ "brightness", INDEX(brightness) },
++	{ "contrast", INDEX(contrast) },
++	{ "hue", INDEX(hue) },
++	{ "saturation", INDEX(saturation) },
+ #undef INDEX
+ };
+ 
+--- a/backend/drm/drm.c
++++ b/backend/drm/drm.c
+@@ -1293,6 +1293,59 @@ uint32_t wlr_drm_connector_get_id(struct wlr_output *output) {
+ 	return conn->id;
+ }
+ 
++bool wlr_drm_output_set_paneladj(struct wlr_output *output,
++		const char *property, uint64_t value) {
++	if (!wlr_output_is_drm(output)) {
++		wlr_log(WLR_ERROR, "Cannot set panel adjustment on non-DRM output");
++		return false;
++	}
++
++	if (value > 100) {
++		wlr_log(WLR_ERROR, "Panel adjustment value out of range: %"PRIu64,
++			value);
++		return false;
++	}
++
++	struct wlr_drm_connector *conn = get_drm_connector_from_output(output);
++	if (conn->crtc == NULL) {
++		wlr_drm_conn_log(conn, WLR_ERROR,
++			"Cannot set panel adjustment without an assigned CRTC");
++		return false;
++	}
++
++	uint32_t prop = 0;
++	if (strcmp(property, "brightness") == 0) {
++		prop = conn->crtc->props.brightness;
++	} else if (strcmp(property, "contrast") == 0) {
++		prop = conn->crtc->props.contrast;
++	} else if (strcmp(property, "saturation") == 0) {
++		prop = conn->crtc->props.saturation;
++	} else if (strcmp(property, "hue") == 0) {
++		prop = conn->crtc->props.hue;
++	} else {
++		wlr_drm_conn_log(conn, WLR_ERROR,
++			"Unknown panel adjustment property: %s", property);
++		return false;
++	}
++
++	if (prop == 0) {
++		wlr_drm_conn_log(conn, WLR_ERROR,
++			"CRTC %"PRIu32" lacks panel adjustment property: %s",
++			conn->crtc->id, property);
++		return false;
++	}
++
++	if (drmModeObjectSetProperty(conn->backend->fd, conn->crtc->id,
++			DRM_MODE_OBJECT_CRTC, prop, value) != 0) {
++		wlr_drm_conn_log_errno(conn, WLR_ERROR,
++			"Failed to set panel adjustment property %s to %"PRIu64,
++			property, value);
++		return false;
++	}
++
++	return true;
++}
++
+ enum wl_output_transform wlr_drm_connector_get_panel_orientation(
+ 		struct wlr_output *output) {
+ 	struct wlr_drm_connector *conn = get_drm_connector_from_output(output);

@@ -87,15 +87,24 @@ ROM、BIOS 与版权合规由用户自行负责；请将合法拥有的游戏文
 | Powkiddy | RGB10, RGB10X, RGB20S |
 | XiFan | DC35V, DC40V, Mini40, MyMini, R36Max, R36Max2, R36Pro, XF28, XF35H, XF40H, XF40V |
 
-### 3.2 RK3566（机型专用镜像，非与 3326 共用）
+### 3.2 RK3566（Generic / Specific 双线镜像）
 
-**RK3566 与 RK3326 镜像相互独立：** 表中每一类设备通常对应 **单独的镜像文件名／构建**，请在下发站点选择 **与你的具体型号完全一致** 的条目下载，不要用 RK3326 包刷 RK3566 机。
+**RK3566 与 RK3326 镜像相互独立：** 不要使用 RK3326 包刷 RK3566 机器。正式发布提供 **两套安装镜像后缀**，必须与硬件路线一致：
 
-| 品牌 | 型号 |
-|------|------|
-| GameMT | E5P, E6P |
+* **`*-Generic.img.gz`** — 运行时从 FAT 分区多 DTB 中选择（对应 `FDTDIR`）。
+* **`*-Specific.img.gz`** — 单一固定 DTB（对应 extlinux 中 `FDT` 一行）。
+
+| 品牌 | 型号（Generic 镜像） |
+|------|----------------------|
+| Anbernic | RG353P / RG353PS / RG353V / RG353VS，RG503，RG ARC-D / RG ARC-S |
+| Powkiddy | RGB10 Max 3，RGB20 Pro，RGB20 SX，RGB30，RK2023 |
+
+| 品牌 | 型号（Specific 镜像） |
+|------|----------------------|
+| Diium | D50 Plus |
+| GameMT | E5P、E6P |
 | MiniLoong | Pocket1 |
-| Powkiddy | x35H, x35S |
+| Powkiddy | X55、X35S、X35H |
 
 ### 3.3 S905L3A Android 电视盒
 

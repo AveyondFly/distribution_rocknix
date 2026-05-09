@@ -87,15 +87,24 @@ This list tracks **fork-specific** additions. Details may drift vs a download pa
 | Powkiddy | RGB10, RGB10X, RGB20S |
 | XiFan | DC35V, DC40V, Mini40, MyMini, R36Max, R36Max2, R36Pro, XF28, XF35H, XF40H, XF40V |
 
-### 3.2 RK3566 — per-device images only
+### 3.2 RK3566 — Generic vs Specific images
 
-RK3566 **does not reuse** RK3326 images. Download **the build whose filename matches your exact hardware**.
+RK3566 **does not reuse** RK3326 images. Published builds use two image lines; the **filename suffix must match your hardware**:
 
-| Brand | Models |
+* **`*-Generic.img.gz`** — handhelds that boot with DTB selection at runtime (`FDTDIR`, multiple DTBs on the FAT partition).
+* **`*-Specific.img.gz`** — devices that ship a single pinned DTB (`FDT` line in extlinux).
+
+| Brand | Models (Generic image) |
 |-------|--------|
+| Anbernic | RG353P / RG353PS / RG353V / RG353VS, RG503, RG ARC-D / RG ARC-S |
+| Powkiddy | RGB10 Max 3, RGB20 Pro, RGB20 SX, RGB30, RK2023 |
+
+| Brand | Models (Specific image) |
+|-------|--------|
+| Diium | D50 Plus |
 | GameMT | E5P, E6P |
 | MiniLoong | Pocket1 |
-| Powkiddy | x35H, x35S |
+| Powkiddy | X55, X35S, X35H |
 
 ### 3.3 S905L3A Android TV boxes
 

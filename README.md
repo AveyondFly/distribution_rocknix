@@ -38,12 +38,19 @@ This is an **unofficial** fork of ROCKNIX that provides support for additional d
 | Powkiddy | RGB10, RGB10X, RGB20S |
 | XiFan | DC35V, DC40V, Mini40, MyMini, R36Max, R36Max2, R36Pro, XF28, XF35H, XF40H, XF40V |
 
-#### RK3566 Devices (Specific image)
+#### RK3566 Devices — Generic image
 | Brand | Models |
 |-------|--------|
+| Anbernic | RG353P / RG353PS / RG353V / RG353VS, RG503, RG ARC-D / RG ARC-S |
+| Powkiddy | RGB10 Max 3, RGB20 Pro, RGB20 SX, RGB30, RK2023 |
+
+#### RK3566 Devices — Specific image
+| Brand | Models |
+|-------|--------|
+| Diium | D50 Plus |
 | GameMT | E5P, E6P |
 | MiniLoong | Pocket1 |
-| Powkiddy | x35H, x35S |
+| Powkiddy | X55, X35S, X35H |
 
 #### S905L3A Android TV Boxes
 | Brand | Models |

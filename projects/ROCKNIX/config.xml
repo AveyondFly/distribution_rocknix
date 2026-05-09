@@ -108,7 +108,7 @@
       <file>rk3566-gamemt-e5p</file>
       <file>rk3566-diium-d50plus</file>
       <file>rk3566-gamemt-e6p</file>
-      <file>rk3566-minilong</file>
+      <file>rk3566-miniloong</file>
     </Specific>
   </RK3566>
   <RK3562 dtb_prefix="rockchip">

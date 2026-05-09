@@ -94,7 +94,7 @@ ROM、BIOS 与版权合规由用户自行负责；请将合法拥有的游戏文
 | 品牌 | 型号 |
 |------|------|
 | GameMT | E5P, E6P |
-| MiniLong | Pocket1 |
+| MiniLoong | Pocket1 |
 | Powkiddy | x35H, x35S |
 
 ### 3.3 S905L3A Android 电视盒

@@ -94,7 +94,7 @@ RK3566 **does not reuse** RK3326 images. Download **the build whose filename mat
 | Brand | Models |
 |-------|--------|
 | GameMT | E5P, E6P |
-| MiniLong | Pocket1 |
+| MiniLoong | Pocket1 |
 | Powkiddy | x35H, x35S |
 
 ### 3.3 S905L3A Android TV boxes

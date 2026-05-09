@@ -42,7 +42,7 @@ This is an **unofficial** fork of ROCKNIX that provides support for additional d
 | Brand | Models |
 |-------|--------|
 | GameMT | E5P, E6P |
-| MiniLong | Pocket1 |
+| MiniLoong | Pocket1 |
 | Powkiddy | x35H, x35S |
 
 #### S905L3A Android TV Boxes

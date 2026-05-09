@@ -127,7 +127,7 @@ ALL_DEVICES: List[Tuple[str, str]] = [
     ("漫特科技 GameMT E5P", "device_trees/rk3566-gamemt-e5p.dtb"),
     ("迪优米 Diium D50 Plus", "device_trees/rk3566-diium-d50plus.dtb"),
     ("漫特科技 GameMT E6P", "device_trees/rk3566-gamemt-e6p.dtb"),
-    ("MiniLong", "device_trees/rk3566-minilong.dtb"),
+    ("MiniLoong", "device_trees/rk3566-miniloong.dtb"),
 ]
 
 

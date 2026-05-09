@@ -18,6 +18,9 @@ makeinstall_target() {
 
   mkdir -p ${INSTALL}/usr/config/PortMaster
     cp -a ${PKG_DIR}/sources/* ${INSTALL}/usr/config/PortMaster
+  # Ports invoke these as executable paths ($0-style); sourcing does not require +x but chmod is harmless.
+  chmod 0755 ${INSTALL}/usr/config/PortMaster/mapper.txt
+  chmod 0755 ${INSTALL}/usr/config/PortMaster/control.txt
 
   mkdir -p ${INSTALL}/usr/bin
     cp -a ${PKG_DIR}/scripts/* ${INSTALL}/usr/bin

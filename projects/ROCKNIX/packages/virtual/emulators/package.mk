@@ -1489,6 +1489,7 @@ makeinstall_target() {
   cp ${PKG_DIR}/autostart/* ${INSTALL}/usr/lib/autostart/common
   chmod 0755 ${INSTALL}/usr/lib/autostart/common/*
 
+  install_script "MOD_TOOLS/FIX PortMaster Controller.sh"
   install_script "MOD_TOOLS/Generate SDL GameControllerDB.sh"
   install_script "MOD_TOOLS/Bezels Installer.sh"
   install_script "MOD_TOOLS/Reset Drastic Cfg.sh"

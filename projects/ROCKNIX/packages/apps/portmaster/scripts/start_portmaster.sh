@@ -49,6 +49,8 @@ cp /storage/roms/ports/PortMaster/gptokeyb gptokeyb
 #Copy over required files for ports
 cp /storage/.config/PortMaster/control.txt /storage/roms/ports/PortMaster/control.txt
 cp /storage/.config/PortMaster/mapper.txt /storage/roms/ports/PortMaster/mapper.txt
+chmod +x /storage/roms/ports/PortMaster/control.txt \
+         /storage/roms/ports/PortMaster/mapper.txt
 cp /storage/.config/PortMaster/gamecontrollerdb.txt /storage/roms/ports/PortMaster/gamecontrollerdb.txt
 cp /usr/bin/oga_controls* /storage/roms/ports/PortMaster/
 

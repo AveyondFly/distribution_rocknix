@@ -702,22 +702,24 @@ static void draw_scene(const AppState *app)
     int dpad_center;
     int dpad_arm;
     int dpad_gap;
+    bool compact_layout;
 
     SDL_GetRendererOutputSize(renderer, &width, &height);
     scale_x = (float)width / (float)WINDOW_WIDTH;
     scale_y = (float)height / (float)WINDOW_HEIGHT;
     unit_scale = scale_x < scale_y ? scale_x : scale_y;
+    compact_layout = width <= 800 && height <= 600;
 
     text_small = scale_font(2, unit_scale);
     text_medium = scale_font(3, unit_scale);
     text_stick = scale_font(5, unit_scale);
-    controls_y_offset = scale_value(18, scale_y);
-    title_h = scale_value(44, scale_y);
-    status_h = scale_value(44, scale_y);
-    footer_h = scale_value(34, scale_y);
-    footer2_h = scale_value(32, scale_y);
+    controls_y_offset = compact_layout ? 0 : scale_value(18, scale_y);
+    title_h = scale_value(compact_layout ? 36 : 44, scale_y);
+    status_h = scale_value(compact_layout ? 36 : 44, scale_y);
+    footer_h = scale_value(compact_layout ? 30 : 34, scale_y);
+    footer2_h = scale_value(compact_layout ? 28 : 32, scale_y);
     upper_top = title_h + status_h;
-    upper_bottom = scale_value(328, scale_y);
+    upper_bottom = scale_value(compact_layout ? 294 : 328, scale_y);
     footer_y = height - footer_h - footer2_h;
     left_panel_right = scale_value(430, scale_x);
     right_panel_left = scale_value(850, scale_x);
@@ -1173,7 +1175,7 @@ int main(int argc, char **argv)
         SDL_WINDOWPOS_CENTERED,
         WINDOW_WIDTH,
         WINDOW_HEIGHT,
-        SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+        SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_FULLSCREEN_DESKTOP);
     if (app.window == NULL) {
         fprintf(stderr, "SDL_CreateWindow failed: %s\n", SDL_GetError());
         SDL_Quit();

@@ -115,7 +115,7 @@
 		
 		/* analog mux define */
 		io-channel-names = "key-RY", "key-RX", "key-LY", "key-LX";
-		io-channels = <&saradc 2>,<&saradc 1>,<&saradc 2>,<&saradc 1>;
+		io-channels = <&saradc 1>,<&saradc 2>,<&saradc 1>,<&saradc 2>;
 		
 		/* gpio pincontrol setup */
 		pinctrl-names = "default";
@@ -150,7 +150,7 @@
 		/* poll device interval (ms), adc read interval */
 		poll-interval = <10>;
 		skip-absr;
-		abs-left-first;
+		/*abs-left-first;*/
 		/* gpio button auto repeat set value : default disable */
 		/*
 		autorepeat;

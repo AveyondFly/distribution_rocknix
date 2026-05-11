@@ -139,6 +139,7 @@ fi
 if [ ! -e "/roms/bios/jdk" ]; then
   echo "Installing JDK." >/dev/tty0
   unzip -oq /usr/share/java/jdk.zip -d /roms/bios &>/dev/null
+  chmod +x /roms/bios/jdk/bin/*
 fi
 ln -sf /roms/bios/jdk /storage/jdk
 

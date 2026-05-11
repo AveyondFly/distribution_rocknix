@@ -204,7 +204,7 @@ execute_action() {
         ${DEBUG} && log $0 "FN_A (${FN_A_ACTION_UP})"
         ${FN_A_ACTION_UP}
         if [ "${FN_A_ACTION_UP}" == "brightness up" ]; then
-          CUR_BRIGHTNESS=$(get_setting "display.brightness")
+          CUR_BRIGHTNESS=$(get_setting "system.brightness")
           /usr/bin/mako-notify "Brightness: ${CUR_BRIGHTNESS}%" -no-es
         fi
         ;;
@@ -212,7 +212,7 @@ execute_action() {
         ${DEBUG} && log $0 "FN_A (${FN_A_ACTION_DOWN})"
         ${FN_A_ACTION_DOWN}
         if [ "${FN_A_ACTION_DOWN}" == "brightness down" ]; then
-          CUR_BRIGHTNESS=$(get_setting "display.brightness")
+          CUR_BRIGHTNESS=$(get_setting "system.brightness")
           /usr/bin/mako-notify "Brightness: ${CUR_BRIGHTNESS}%" -no-es
         fi
         ;;
@@ -450,7 +450,7 @@ set +e
         if [ "${FN_A_PRESSED}" = true ] && [ "${DPAD_EVENTS}" = true ]; then
           ${DEBUG} && log $0 "${FUNCTION_HOTKEY_DPAD_RIGHT_EVENT}${FUNCTION_HOTKEY_HAT_RIGHT_EVENT}: Brightness Up"
           brightness up
-          CUR_BRIGHTNESS=$(get_setting "display.brightness")
+          CUR_BRIGHTNESS=$(get_setting "system.brightness")
           /usr/bin/mako-notify "Brightness: ${CUR_BRIGHTNESS}%" -no-es
         fi
       ;;
@@ -458,7 +458,7 @@ set +e
         if [ "${FN_A_PRESSED}" = true ] && [ "${DPAD_EVENTS}" = true ]; then
           ${DEBUG} && log $0 "${FUNCTION_HOTKEY_DPAD_LEFT_EVENT}${FUNCTION_HOTKEY_HAT_LEFT_EVENT}: Brightness Down"
           brightness down
-          CUR_BRIGHTNESS=$(get_setting "display.brightness")
+          CUR_BRIGHTNESS=$(get_setting "system.brightness")
           /usr/bin/mako-notify "Brightness: ${CUR_BRIGHTNESS}%" -no-es
         fi
       ;;

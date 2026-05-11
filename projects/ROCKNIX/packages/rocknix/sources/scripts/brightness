@@ -60,9 +60,9 @@ _resolve_config() {
   CURRENT_MAX="${MAX_VALUES[dev_index]}"
 
   if [ "${SCREEN_INPUT}" -eq 1 ]; then
-    CURRENT_SETTING_KEY="display.brightness"
+    CURRENT_SETTING_KEY="system.brightness"
   else
-    CURRENT_SETTING_KEY="display.brightness${SCREEN_INPUT}"
+    CURRENT_SETTING_KEY="system.brightness${SCREEN_INPUT}"
   fi
 
   return 0

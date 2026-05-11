@@ -81,6 +81,45 @@ quirks() {
   done
 }
 
+get_paneladj_value() {
+    local value
+
+    value="$(get_setting "display.${1}")"
+
+    if ! [[ "${value}" =~ ^[0-9]+$ ]]; then
+      value=50
+    fi
+
+    if (( value < 5 )); then
+      value=5
+    elif (( value > 100 )); then
+      value=100
+    fi
+
+    value=$(( ((value + 2) / 5) * 5 ))
+
+    if (( value < 5 )); then
+      value=5
+    elif (( value > 100 )); then
+      value=100
+    fi
+
+    echo "${value}"
+}
+
+restore_panel_adjustments() {
+    command -v paneladj >/dev/null 2>&1 || return 0
+
+    local property
+    local value
+
+    for property in brightness contrast saturation hue; do
+      value="$(get_paneladj_value "${property}")"
+      log $0 "Restoring ${property} panel adjustment to ${value}%."
+      paneladj "${property}" "${value}" >${EVENTLOG} 2>&1
+    done
+}
+
 case $1 in
   pre)
     if [ "$(get_setting wifi.enabled)" == "1" ]; then
@@ -113,15 +152,17 @@ case $1 in
     log $0 "Restoring volume to ${DEVICE_VOLUME}%."
     amixer -c 0 -M set "${DEVICE_AUDIO_MIXER}" ${DEVICE_VOLUME}% >${EVENTLOG} 2>&1
 
-    BRIGHTNESS=$(get_setting display.brightness)
+    BRIGHTNESS=$(get_setting system.brightness)
     log $0 "Restoring brightness}."
     brightness set ${BRIGHTNESS} >${EVENTLOG} 2>&1
 
-    BRIGHTNESS_2=$(get_setting display.brightness2)
+    BRIGHTNESS_2=$(get_setting system.brightness2)
     if [ -n "${BRIGHTNESS_2}" ]; then
         log $0 "Restoring brightness for display 2 to ${BRIGHTNESS_2}."
         brightness set 2 ${BRIGHTNESS_2} >${EVENTLOG} 2>&1
     fi
+
+    restore_panel_adjustments
 
     quirks post
     ;;

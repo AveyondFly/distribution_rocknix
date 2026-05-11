@@ -8,7 +8,46 @@
 
 tocon "Configuring display..."
 
-BRIGHTNESS_1=$(get_setting display.brightness)
+PANELADJ_DEFAULT="50"
+PANELADJ_MIN="5"
+PANELADJ_MAX="100"
+PANELADJ_STEP="5"
+
+get_paneladj_value() {
+    VALUE=$(get_setting "display.${1}")
+
+    case "${VALUE}" in
+        ""|*[!0-9]*)
+            VALUE="${PANELADJ_DEFAULT}"
+            ;;
+    esac
+
+    if [ "${VALUE}" -lt "${PANELADJ_MIN}" ]; then
+        VALUE="${PANELADJ_MIN}"
+    elif [ "${VALUE}" -gt "${PANELADJ_MAX}" ]; then
+        VALUE="${PANELADJ_MAX}"
+    fi
+
+    VALUE=$(( ((VALUE + PANELADJ_STEP / 2) / PANELADJ_STEP) * PANELADJ_STEP ))
+
+    if [ "${VALUE}" -lt "${PANELADJ_MIN}" ]; then
+        VALUE="${PANELADJ_MIN}"
+    elif [ "${VALUE}" -gt "${PANELADJ_MAX}" ]; then
+        VALUE="${PANELADJ_MAX}"
+    fi
+
+    echo "${VALUE}"
+}
+
+apply_panel_adjustments() {
+    command -v paneladj >/dev/null 2>&1 || return 0
+
+    for PROPERTY in brightness contrast saturation hue; do
+        paneladj "${PROPERTY}" "$(get_paneladj_value "${PROPERTY}")"
+    done
+}
+
+BRIGHTNESS_1=$(get_setting system.brightness)
 DEFAULT_BRIGHTNESS="10"
 MIN_BRIGHTNESS="5"
 
@@ -18,7 +57,7 @@ fi
 
 brightness set "${BRIGHTNESS_1}"
 
-BRIGHTNESS_2=$(get_setting display.brightness2)
+BRIGHTNESS_2=$(get_setting system.brightness2)
 
 if [ -n "${BRIGHTNESS_2}" ]; then
     if [ "${BRIGHTNESS_2}" -lt "${MIN_BRIGHTNESS}" ]; then
@@ -27,3 +66,5 @@ if [ -n "${BRIGHTNESS_2}" ]; then
 
     brightness set 2 "${BRIGHTNESS_2}"
 fi
+
+apply_panel_adjustments

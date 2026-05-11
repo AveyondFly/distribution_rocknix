@@ -162,7 +162,8 @@
 		
 		/* poll device interval (ms), adc read interval */
 		poll-interval = <10>;
-		
+		skip-absr;
+	
 		/* required for RG351MP */
 		invert-absx;
 		invert-absy;
@@ -298,7 +299,6 @@
 		pinctrl-names = "default";
 		sound-name-prefix = "Speaker Amp";
 	};
-	
 	rk817-sound {
 		compatible = "simple-audio-card";
 		pinctrl-names = "default";
@@ -306,17 +306,22 @@
 		simple-audio-card,name = "rk817_ext";
 		simple-audio-card,aux-devs = <&spk_amp>;
 		simple-audio-card,format = "i2s";
-		simple-audio-card,hp-det-gpio = <&gpio2 RK_PC6 GPIO_ACTIVE_LOW>;
+		simple-audio-card,hp-det-gpio = <&gpio2 RK_PC6 GPIO_ACTIVE_HIGH>;
 		simple-audio-card,mclk-fs = <256>;
 		simple-audio-card,widgets =
-		"Microphone", "Mic Jack",
 		"Headphone", "Headphones",
-		"Speaker", "Speaker";
+		"Speaker", "Internal Speakers";
+		/* despite it's just a mono speaker, we need to route both Speaker Amp channels
+		Otherwise, the second channel stays on and keeps amp enabled */
 		simple-audio-card,routing =
-		"MICL", "Mic Jack",
 		"Headphones", "HPOL",
 		"Headphones", "HPOR",
-		"Speaker", "SPKO";
+		"Internal Speakers", "Speaker Amp OUTL",
+		"Internal Speakers", "Speaker Amp OUTR",
+		"Speaker Amp INL", "HPOL",
+		"Speaker Amp INR", "HPOR";
+
+		simple-audio-card,pin-switches = "Internal Speakers";
 		
 		simple-audio-card,codec {
 			sound-dai = <&rk817>;
@@ -571,7 +576,8 @@
 		vcc6-supply = <&vccsys>;
 		vcc7-supply = <&vcc_3v0>;
 		vcc8-supply = <&vccsys>;
-		
+		vcc9-supply = <&usb_midu>;
+	
 		regulators {
 			vdd_logic: DCDC_REG1 {
 				regulator-name = "vdd_logic";
@@ -745,7 +751,7 @@
 			
 			usb_midu: BOOST {
 				regulator-name = "usb_midu";
-				regulator-min-microvolt = <4700000>;
+				regulator-min-microvolt = <5000000>;
 				regulator-max-microvolt = <5400000>;
 				regulator-always-on;
 				regulator-boot-on;
@@ -922,7 +928,7 @@
 			<3 RK_PB2 RK_FUNC_GPIO &pcfg_pull_up>,
 			<2 RK_PB5 RK_FUNC_GPIO &pcfg_pull_up>,
 			<2 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>,
-			<2 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>,
+			/*<2 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>,*/
 			<2 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>,
 			<2 RK_PC0 RK_FUNC_GPIO &pcfg_pull_up>;
 		};

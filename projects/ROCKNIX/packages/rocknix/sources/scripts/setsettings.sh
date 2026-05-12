@@ -778,10 +778,10 @@ function set_savestates() {
     local MAXINCREMENTALSAVES="$(game_setting maxincrementalsaves)"
     case ${SAVESTATES} in
         0|false|none)
-            add_setting "none" "savestate_auto_index" "false"
+            add_setting "none" "savestate_auto_index" "true"
         ;;
         *)
-            add_setting "none" "savestate_auto_index" "true"
+            add_setting "none" "savestate_auto_index" "false"
         ;;
     esac
     add_setting "none" "savestate_max_keep" "${MAXINCREMENTALSAVES}"

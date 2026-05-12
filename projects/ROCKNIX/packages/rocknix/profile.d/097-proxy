@@ -1,0 +1,67 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+unset_proxy_environment() {
+  unset http_proxy https_proxy all_proxy no_proxy
+  unset HTTP_PROXY HTTPS_PROXY ALL_PROXY NO_PROXY
+}
+
+if ! command -v get_setting >/dev/null 2>&1; then
+  unset_proxy_environment
+  return 0 2>/dev/null || exit 0
+fi
+
+proxy_enabled="$(get_setting network.proxy.enabled)"
+proxy_host="$(get_setting network.proxy.host)"
+proxy_port="$(get_setting network.proxy.port)"
+proxy_type="$(get_setting network.proxy.type)"
+proxy_no_proxy="$(get_setting network.proxy.no_proxy)"
+
+if [ "${proxy_enabled}" != "1" ] || [ -z "${proxy_host}" ]; then
+  unset_proxy_environment
+  return 0 2>/dev/null || exit 0
+fi
+
+if [ -n "${proxy_port}" ]; then
+  case "${proxy_port}" in
+    *[!0-9]*)
+      unset_proxy_environment
+      return 0 2>/dev/null || exit 0
+      ;;
+  esac
+fi
+
+case "${proxy_type}" in
+  socks5|SOCKS5)
+    proxy_scheme="socks5"
+    ;;
+  *)
+    proxy_scheme="http"
+    ;;
+esac
+
+case "${proxy_host}" in
+  *://*)
+    proxy_url="${proxy_host}"
+    ;;
+  *)
+    proxy_url="${proxy_scheme}://${proxy_host}"
+    ;;
+esac
+
+if [ -n "${proxy_port}" ]; then
+  proxy_url="${proxy_url}:${proxy_port}"
+fi
+
+if [ -z "${proxy_no_proxy}" ]; then
+  proxy_no_proxy="localhost,127.0.0.1,::1"
+fi
+
+export http_proxy="${proxy_url}"
+export https_proxy="${proxy_url}"
+export all_proxy="${proxy_url}"
+export HTTP_PROXY="${proxy_url}"
+export HTTPS_PROXY="${proxy_url}"
+export ALL_PROXY="${proxy_url}"
+export no_proxy="${proxy_no_proxy}"
+export NO_PROXY="${proxy_no_proxy}"

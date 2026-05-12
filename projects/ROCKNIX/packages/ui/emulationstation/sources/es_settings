@@ -49,4 +49,7 @@ do
   systemctl import-environment ${VARIABLE}
 done
 
+### Import proxy variables for systemd-launched child services.
+systemctl import-environment http_proxy https_proxy all_proxy no_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY NO_PROXY 2>/dev/null || true
+
 set_kill set "emulationstation"

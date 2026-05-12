@@ -124,7 +124,7 @@ echo "Source (eMMC): $EMMC_DISK"
 echo "Backup Image: $BACKUP_FILE"
 echo "Starting backup... This may take a few minutes. Please do not power off."
 
-dd if="$EMMC_DISK" of="$BACKUP_FILE" bs=4M status=progress
+dd if="$EMMC_DISK" of="$BACKUP_FILE" bs=4M
 sync
 
 trap - ERR

@@ -1,0 +1,10 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,6 +1,7 @@
+ # vim:noexpandtab:
+ cmake_minimum_required(VERSION 3.6)
+ project(PPSSPP)
++add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-include;${CMAKE_SOURCE_DIR}/ppsspp_stdint_force.h>")
+ enable_testing()
+ 
+ #This is supposed to work but doesn't!

@@ -43,6 +43,7 @@ case "${DEVICE}" in
     PKG_EMUS+=" box64 drastic-sa drastic_adv-sa mednafen portmaster scummvmsa yabasanshiro-sa duckstation-sa"
     LIBRETRO_CORES+=" flycast2021-lr geolith-lr uae4arm"
     PKG_RETROARCH+=" retropie-shaders"
+    PKG_EMUS+=" ppsspp2021-sa"
     ;;
   RK3399)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr gpsp_ezode-lr pcsx_rearmed-lr"
@@ -57,6 +58,7 @@ case "${DEVICE}" in
     PKG_EMUS+=" box64 dolphin-sa drastic-sa drastic_adv-sa mednafen melonds-sa portmaster scummvmsa yabasanshiro-sa duckstation-sa"
     LIBRETRO_CORES+=" dolphin-lr flycast2021-lr geolith-lr uae4arm"
     PKG_RETROARCH+=" retropie-shaders"
+    PKG_EMUS+=" ppsspp2021-sa"
     ;;
   RK3562)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr gpsp_ezode-lr pcsx_rearmed-lr"
@@ -1090,13 +1092,32 @@ makeinstall_target() {
   esac
 
   ### Sony Playstation Portable
-  add_emu_core psp ppsspp ppsspp-sa true
+  case "${DEVICE}" in
+    RK3566|RK3326*)
+      add_emu_core psp ppsspp ppsspp2021-sa true
+      add_emu_core psp ppsspp ppsspp-sa false
+      ;;
+    *)
+      add_emu_core psp ppsspp ppsspp2021-sa false
+      add_emu_core psp ppsspp ppsspp-sa true
+    ;;
+  esac
   add_emu_core psp retroarch ppsspp false
   add_es_system psp
   install_script "Start PPSSPP.sh"
 
   ### Sony Playstation Portable Minis
   add_emu_core pspminis ppsspp ppsspp-sa true
+  case "${DEVICE}" in
+    RK3566|RK3326*)
+      add_emu_core psp ppsspp ppsspp2021-sa true
+      add_emu_core psp ppsspp ppsspp-sa false
+      ;;
+    *)
+      add_emu_core psp ppsspp ppsspp2021-sa false
+      add_emu_core psp ppsspp ppsspp-sa true
+    ;;
+  esac
   add_emu_core pspminis retroarch ppsspp false
   add_es_system pspminis
 

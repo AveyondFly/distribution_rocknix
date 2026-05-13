@@ -6,9 +6,8 @@ labels: ISSUE NEEDS REVIEW
 assignees: ''
 
 ---
-### Have you first reported the issue on the rocknix discord and checked rocknix.org for a solution?
-[ROCKNIX DISCORD](https://discord.gg/NG6wGmSe)
-<!-- Any issue created without first being discussed on our discord server will be closed automatically. -->
+### Before reporting
+Please search existing issues for duplicates and check the project README and device documentation for known solutions.
 
 ### Describe the bug
 <!-- A clear description of what the bug is. -->
@@ -20,7 +19,7 @@ Steps to reproduce the behavior:
 3. See error
 
 ### Information
- - ROCKNIX Version: [e.g. 20240517]
+ - AURKNIX Version: [e.g. 20240517]
  - Hardware Platform: [e.g. Powkiddy RGB20SX]
 
 ### Log file

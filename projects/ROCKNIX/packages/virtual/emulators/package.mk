@@ -8,7 +8,7 @@ PKG_SECTION="emulation" # Do not change to virtual or makeinstall_target will no
 PKG_LONGDESC="Emulation metapackage."
 PKG_TOOLCHAIN="manual"
 
-PKG_EMUS="amiberry flycast-sa flycast2022-sa gzdoom-sa hatarisa hypseus-singe moonlight mupen64plus-sa openbor openbor-ff free-j2me pico-8 ppsspp-sa vice-sa wine cpymo mrp-sa eka2l1-sa"
+PKG_EMUS="amiberry flycast-sa flycast2022-sa gzdoom-sa hatarisa hypseus-singe moonlight mupen64plus-sa openbor openbor-ff free-j2me pico-8 ppsspp-sa vice-sa wine cpymo mrp-sa eka2l1-sa onscripter-sa"
 EMUS_32BIT=""
 
 PKG_RETROARCH="core-info libretro-database retroarch retroarch-assets retroarch-joypads retroarch-overlays slang-shaders"
@@ -399,6 +399,7 @@ makeinstall_target() {
 
   ### ONScripter
   add_emu_core onscripter retroarch onsyuri true
+  add_emu_core onscripter onscripter onscripter false
   add_es_system onscripter
 
   ### Nintendo Famicom

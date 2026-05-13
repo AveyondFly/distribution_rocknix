@@ -4,7 +4,7 @@
 # Copyright (C) 2024-present AmberELEC (https://github.com/AmberELEC)
 
 MODEL=$(cat /sys/firmware/devicetree/base/model | tr '\0' '\n')
-if [[ "$MODEL" == *"GameMT E"* ]] || [[ "$MODEL" == *"Diium D50Plus"* ]]; then
+if [[ "$MODEL" == *"GameMT E"* ]] || [[ "$MODEL" == *"Diium D50Plus"* ]] || [[ "$MODEL" == *"Diium D007"* ]]; then
     DEVICE_FILE="/dev/input/by-path/platform-adc-keys-event"
     while true; do
         evtest --grab "$DEVICE_FILE" | while read -r line; do

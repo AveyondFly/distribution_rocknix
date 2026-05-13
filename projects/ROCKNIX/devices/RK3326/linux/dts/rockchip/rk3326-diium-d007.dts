@@ -15,8 +15,8 @@
 	compatible = "diium,d007", "rockchip,rk3326";
 	
 	aliases {
-		mmc0 = &sdmmc;
-		mmc1 = &emmc;
+		mmc0 = &emmc;
+		mmc1 = &sdmmc;
 		mmc2 = &sdio;
 	};
 	
@@ -292,39 +292,54 @@
 			default-state = "off";
 			gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
 		};
+		power_led  {
+			default-state = "off";
+			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+		};
 	};
-	
 	
 	rk817-sound {
-		compatible = "simple-audio-card";
-		pinctrl-names = "default";
-		pinctrl-0 = <&hp_det>;
-		simple-audio-card,name = "rk817_int";
-		simple-audio-card,format = "i2s";
-		simple-audio-card,hp-det-gpio = <&gpio2 RK_PB3 GPIO_ACTIVE_LOW>;
-		simple-audio-card,mclk-fs = <256>;
-		simple-audio-card,widgets =
-		"Microphone", "Mic Jack",
-		"Headphone", "Headphones",
-		"Speaker", "Speaker";
-		simple-audio-card,routing =
-		"MICL", "Mic Jack",
-		"Headphones", "HPOL",
-		"Headphones", "HPOR",
-		"Speaker", "SPKO";
-		
-		simple-audio-card,codec {
-			sound-dai = <&rk817>;
-		};
-		
-		simple-audio-card,cpu {
-			sound-dai = <&i2s1_2ch>;
-		};
+	    compatible = "simple-audio-card";
+	    pinctrl-0 = <&hp_det>;
+	    pinctrl-names = "default";
+	    simple-audio-card,name = "rk817_int";
+	    simple-audio-card,aux-devs = <&spk_sw>;
+	    simple-audio-card,format = "i2s";
+	    simple-audio-card,hp-det-gpios = <&gpio2 RK_PB3 GPIO_ACTIVE_LOW>;
+	    simple-audio-card,mclk-fs = <256>;
+	    simple-audio-card,widgets =
+	        "Microphone", "Mic Jack",
+	        "Headphone", "Headphones",
+	        "Speaker", "Internal Speakers";
+	    simple-audio-card,routing =
+	        "MICL", "Mic Jack",
+	        "Headphones", "HPOL",
+	        "Headphones", "HPOR",
+	        "Speaker Switch INL", "HPOL",
+	        "Speaker Switch INR", "HPOR",
+	        "Internal Speakers", "Speaker Switch OUTL",
+	        "Internal Speakers", "Speaker Switch OUTR";
+	    simple-audio-card,pin-switches = "Internal Speakers";
+	    simple-audio-card,codec {
+	        sound-dai = <&rk817>;
+	    };
+	    simple-audio-card,cpu {
+		    sound-dai = <&i2s1_2ch>;
+	    };
+
 	};
-	
+	spk_sw: speaker-switch {
+	    compatible = "simple-audio-amplifier";
+	    enable-gpios = <&gpio0 RK_PB3 GPIO_ACTIVE_HIGH>;
+	    pinctrl-0 = <&spk_amp_enable_h>;
+	    pinctrl-names = "default";
+	    sound-name-prefix = "Speaker Switch";
+	};
+
 	vccsys: vccsys {
 		compatible = "regulator-fixed";
 		regulator-name = "vcc3v8_sys";
+		regulator-boot-on;
 		regulator-always-on;
 		regulator-min-microvolt = <3800000>;
 		regulator-max-microvolt = <3800000>;
@@ -336,7 +351,21 @@
 		regulator-always-on;
 		regulator-boot-on;
 	};
-	
+
+	vcc18_lcd0: vcc18-lcd0 {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc18_lcd0_n";
+		gpio = <&gpio0 RK_PB5 GPIO_ACTIVE_LOW>;
+		enable-active-low;
+		pinctrl-0 = <&vcc18_lcd_n>;
+		pinctrl-names = "default";
+		regulator-boot-on;
+		
+		regulator-state-mem {
+			regulator-off-in-suspend;
+		};
+	};
+
 	
 	// vcc_host: vcc_host {
 	//     compatible = "regulator-fixed";
@@ -404,6 +433,8 @@
 	
 	internal_display: panel@0 {
 		compatible = "rocknix,generic-dsi";
+		iovcc-supply = <&vcc18_lcd0>;
+		vcc-supply = <&vcc18_lcd0>;
 		vdd-supply = <&vcc3v0_dvp>;
 		reg = <0>;
 		backlight = <&backlight>;
@@ -411,7 +442,7 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&lcd_rst>;
 		panel_description = 
-        "G size=64,48 delays=120,200,20,20,20 format=rgb888 lanes=4 flags=0xe03",
+        "G size=64,48 delays=120,200,20,20,20 format=rgb888 lanes=4 flags=0xa03",
 
 		"M clock=33000 horizontal=640,120,2,120 vertical=480,18,2,20 default=1",
 		"M clock=23800 horizontal=640,120,4,120 vertical=480,18,21,20",
@@ -744,14 +775,14 @@
 			
 			vcc_sd: LDO_REG6 {
 				regulator-name = "vcc_sd";
-				regulator-min-microvolt = <2800000>;
-				regulator-max-microvolt = <3000000>;
+				regulator-min-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
 				regulator-always-on;
 				regulator-boot-on;
 				
 				regulator-state-mem {
 					regulator-on-in-suspend;
-					regulator-suspend-microvolt = <3000000>;
+					regulator-suspend-microvolt = <3300000>;
 				};
 			};
 			
@@ -759,7 +790,9 @@
 				regulator-name = "vcc2v8_dvp";
 				regulator-min-microvolt = <2800000>;
 				regulator-max-microvolt = <2800000>;
-				
+				regulator-always-on;
+				regulator-boot-on;
+			
 				regulator-state-mem {
 					regulator-on-in-suspend;
 					regulator-suspend-microvolt = <2800000>;
@@ -783,9 +816,10 @@
 				regulator-min-microvolt = <1500000>;
 				regulator-max-microvolt = <1500000>;
 				regulator-name = "vdd1v5_dvp";
+				regulator-boot-on;
 				
 				regulator-state-mem {
-					regulator-on-in-suspend;
+					regulator-off-in-suspend;
 					regulator-suspend-microvolt = <1500000>;
 				};
 			};
@@ -820,12 +854,12 @@
 };
 
 &io_domains {
-	vccio1-supply = <&vcc_3v0>;
+	vccio1-supply = <&vcc1v8_soc>;
 	vccio2-supply = <&vccio_sd>;
 	vccio3-supply = <&vcc_3v0>;
 	vccio4-supply = <&vcc_3v0>;
 	vccio5-supply = <&vcc_3v0>;
-	vccio6-supply = <&vcc_3v0>;
+	/*vccio6-supply = <&vcc_3v0>;*/
 	status = "okay";
 };
 
@@ -858,19 +892,20 @@
 
 &sdmmc {
 	cap-sd-highspeed;
-	card-detect-delay = <200>;
-	cd-gpios = <&gpio0 RK_PA3 GPIO_ACTIVE_LOW>; /*[> ff370000 PD_SDCARD CD GPIO <]*/
+	card-detect-delay = <0x320>;
+	/*cd-gpios = <&gpio0 RK_PA3 GPIO_ACTIVE_LOW>; [> ff370000 PD_SDCARD CD GPIO <]*/
 	sd-uhs-sdr12;
 	sd-uhs-sdr25;
 	sd-uhs-sdr50;
 	sd-uhs-sdr104;
+	max-frequency = <0x8f0d180>;
 	vmmc-supply = <&vcc_sd>;
 	vqmmc-supply = <&vccio_sd>;
 	status = "okay";
 };
 
 &sdio {
-	status = "okay";
+	status = "disabled";
 };
 
 &emmc {
@@ -958,13 +993,25 @@
 			rockchip,pins = <2 RK_PB3 RK_FUNC_GPIO &pcfg_pull_up>;
 		};
 	};
-	
+
+	vcc18-lcd {
+		vcc18_lcd_n: vcc18-lcd-n {
+			rockchip,pins = <0 RK_PB5 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
 	gpio-lcd {
 		lcd_rst: lcd-rst {
 			rockchip,pins = <0 RK_PC1 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
-	
+	speaker {
+		spk_amp_enable_h: spk-amp-enable-h {
+			rockchip,pins =
+			<0 RK_PB3 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
 	
 	// vcc5-usb {
 	//     vcc5_usb: vcc5-usb {
@@ -974,7 +1021,9 @@
 	
 	gpio-led {
 		led_pins: led-pins {
-			rockchip,pins = <0 RK_PC1 RK_FUNC_GPIO &pcfg_pull_none>;
+			rockchip,pins = <2 RK_PA3 RK_FUNC_GPIO &pcfg_pull_none>,
+					<0 RK_PB7 RK_FUNC_GPIO &pcfg_pull_none>,
+					<2 RK_PA4 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 	

@@ -4,16 +4,23 @@
 COLOR=$1
 
 # 定义每个颜色对应的 LED 路径
-LED_POW="/sys/class/leds/power_led/brightness"
+LED_LEFT="/sys/class/leds/left_joystick/brightness"
+LED_RIGHT="/sys/class/leds/right_joystick/brightness"
 
 # 定义一个函数来设置 LED 的亮度
 set_led_brightness() {
     local value=$1
 
-    if [ -w "$LED_POW" ]; then
-        echo "$value" > "$LED_POW"
+    if [ -w "$LED_LEFT" ]; then
+        echo "$value" > "$LED_LEFT"
     else
-        echo "Error: Unable to write to $LED_POW"
+        echo "Error: Unable to write to $LED_LEFT"
+    fi
+
+    if [ -w "$LED_RIGHT" ]; then
+        echo "$value" > "$LED_RIGHT"
+    else
+        echo "Error: Unable to write to $LED_RIGHT"
     fi
 }
 

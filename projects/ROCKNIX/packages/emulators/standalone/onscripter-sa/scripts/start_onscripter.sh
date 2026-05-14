@@ -17,18 +17,13 @@ fi
 if [ $filename == "Scan_for_new_games.ons" ]; then
     /usr/bin/bash "$romfile"
 else
-	set_kill set "-9 onscripter"
+    set_kill set "-9 onscripter"
     prodir="/storage/.config/onscripter"
-    export LD_LIBRARY_PATH="$prodir/lib32:/usr/lib32"
-    export SPA_PLUGIN_DIR="/usr/lib32/spa-0.2"
-    export PIPEWIRE_MODULE_DIR="/usr/lib32/pipewire-0.3/"
-    export LIBGL_DRIVERS_PATH="/usr/lib32/dri"
     chmod 666 /dev/uinput
     cd $prodir
     rm -f ./log.txt
-    gptokeyb "onscripter" -c "./onscripter.gptk" &
+    gptokeyb -k "onscripter"&
+    #sway_fullscreen "" &
     ./onscripter -r "$romdir" 2>&1 | tee -a ./log.txt
-    unset LD_LIBRARY_PATH
     kill -9 $(pidof gptokeyb)
-    printf "\033c" >> /dev/tty1
 fi

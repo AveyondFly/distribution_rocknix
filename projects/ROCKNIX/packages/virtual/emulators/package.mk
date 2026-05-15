@@ -38,7 +38,7 @@ case "${DEVICE}" in
     PKG_RETROARCH+=" retropie-shaders"
     ;;
   RK3326*)
-    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr pcsx_rearmed-lr"
+    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr gpsp_ezode-lr pcsx_rearmed-lr"
     PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
     PKG_EMUS+=" box64 drastic-sa drastic_adv-sa mednafen portmaster scummvmsa yabasanshiro-sa duckstation-sa"
     LIBRETRO_CORES+=" flycast2021-lr geolith-lr uae4arm"
@@ -495,6 +495,8 @@ makeinstall_target() {
   add_es_system gbh
 
   ### Nintendo GameBoy Advance
+  add_emu_core gba retroarch gpsp_ezode_32b true
+  add_emu_core gba retroarch mgba false
   add_emu_core gba retroarch vbam false
   add_emu_core gba retroarch vba_next false
   add_emu_core gba retroarch beetle_gba false
@@ -520,21 +522,11 @@ makeinstall_target() {
       add_emu_core gba skyemu skyemu-sa false
       ;;
   esac
-
-  case ${DEVICE} in
-    RK3326)
-      add_emu_core gba retroarch mgba false
-      add_emu_core gba retroarch gpsp_ezode_32b true
-      ;;
-    *)
-      add_emu_core gba retroarch mgba true
-      add_emu_core gba retroarch gpsp_ezode_32b false
-      ;;
-  esac
-
   add_es_system gba
 
   ### Nintendo GameBoy Advance Hacks
+  add_emu_core gba retroarch gpsp_ezode_32b true
+  add_emu_core gba retroarch mgba false
   add_emu_core gbah retroarch vbam false
   add_emu_core gbah retroarch vba_next false
   add_emu_core gbah retroarch beetle_gba false
@@ -550,16 +542,6 @@ makeinstall_target() {
   case ${DEVICE} in
     SDM845|SM8250|SM8550|SM8650)
       add_emu_core gbah skyemu skyemu-sa false
-      ;;
-  esac
-  case ${DEVICE} in
-    RK3326)
-      add_emu_core gba retroarch mgba false
-      add_emu_core gba retroarch gpsp_ezode_32b true
-      ;;
-    *)
-      add_emu_core gba retroarch mgba true
-      add_emu_core gba retroarch gpsp_ezode_32b false
       ;;
   esac
   add_es_system gbah

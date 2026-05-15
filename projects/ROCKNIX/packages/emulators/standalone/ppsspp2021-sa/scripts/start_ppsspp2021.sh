@@ -31,6 +31,9 @@ SKIPB=$(get_setting skip_buffer_effects "${PLATFORM}" "${GAME}")
 VSYNC=$(get_setting vsync "${PLATFORM}" "${GAME}")
 CLOCK_SPEED=$(get_setting clock_speed "${PLATFORM}" "${GAME}")
 
+# Force Backend as OPENGL as Vulkan is not supported.
+sed -i '/^GraphicsBackend =/c\GraphicsBackend = 0 (OPENGL)' ${CONF_DIR}/${PPSSPP_INI}
+
 #Set the cores to use
 CORES=$(get_setting "cores" "${PLATFORM}" "${GAME}")
 if [ "${CORES}" = "little" ]; then

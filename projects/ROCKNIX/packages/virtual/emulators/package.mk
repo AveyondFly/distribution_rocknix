@@ -1096,8 +1096,8 @@ makeinstall_target() {
       add_emu_core psp ppsspp ppsspp-sa false
       ;;
     *)
-      add_emu_core psp ppsspp ppsspp2021-sa false
       add_emu_core psp ppsspp ppsspp-sa true
+      add_emu_core psp ppsspp ppsspp2021-sa false
     ;;
   esac
   add_emu_core pspminis retroarch ppsspp false

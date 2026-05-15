@@ -1,0 +1,25 @@
+diff --git a/Common/GPU/Vulkan/VulkanLoader.cpp b/Common/GPU/Vulkan/VulkanLoader.cpp
+index 351668f0f8..5556e65f9a 100644
+--- a/Common/GPU/Vulkan/VulkanLoader.cpp
++++ b/Common/GPU/Vulkan/VulkanLoader.cpp
+@@ -249,9 +249,9 @@ static const char *so_names[] = {
+ #elif PPSSPP_PLATFORM(MAC)
+ 	"@executable_path/../Frameworks/libMoltenVK.dylib",
+ #else
+-	"libvulkan.so",
++	"libvulkanxxxxxxxxxxxxxxxxxxxx.so",
+ #if !defined(__ANDROID__)
+-	"libvulkan.so.1",
++	"libvulkanxxxxxxxxxxxxxxxxxxxx.so.1",
+ #endif
+ #endif
+ };
+@@ -259,7 +259,7 @@ static const char *so_names[] = {
+ 
+ void VulkanSetAvailable(bool available) {
+ 	g_vulkanAvailabilityChecked = true;
+-	g_vulkanMayBeAvailable = available;
++	g_vulkanMayBeAvailable = false;
+ }
+ 
+ bool VulkanMayBeAvailable() {

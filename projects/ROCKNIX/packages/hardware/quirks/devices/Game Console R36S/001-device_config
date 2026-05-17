@@ -6,6 +6,7 @@ cat <<EOF >/storage/.config/profile.d/001-device_config
 # Device Features
 DEVICE_PLAYBACK_PATH_SPK="HP"
 DEVICE_PLAYBACK_PATH_HP="SPK"
+DEVICE_LED_CONTROL="true"
 DEVICE_PWR_LED_GPIO="77"
 DEVICE_TEMP_SENSOR="/sys/devices/virtual/thermal/thermal_zone0/temp"
 EOF

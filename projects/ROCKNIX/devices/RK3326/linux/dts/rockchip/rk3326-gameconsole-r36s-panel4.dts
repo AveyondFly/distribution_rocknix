@@ -11,6 +11,19 @@
 	compatible = "gameconsole,r35s", "gameconsole,r36s", "rockchip,rk3326";
 };
 
+&joypad {
+	abs_x-p-tuning = <300>;
+	abs_x-n-tuning = <300>;
+	abs_y-p-tuning = <300>;
+	abs_y-n-tuning = <300>;
+
+	abs_rx-p-tuning = <300>;
+	abs_rx-n-tuning = <300>;
+	abs_ry-p-tuning = <300>;
+	abs_ry-n-tuning = <300>;
+
+};
+
 &internal_display {
 	compatible = "rocknix,generic-dsi";
 	panel_description = 

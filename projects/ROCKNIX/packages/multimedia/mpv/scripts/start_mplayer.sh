@@ -16,6 +16,14 @@ else
   RES="${FBHEIGHT}x${FBWIDTH}"
 fi
 
-/usr/bin/mpv --fullscreen --geometry=${RES} --hwdec=auto-safe --input-gamepad=yes --input-ipc-server=/tmp/mpvsocket "${1}"
+VID=$(echo "${1}"| sed "s#^/.*/##")
+PLATFORM=$(echo "${2}" | sed 's/^-P//')
+
+HW=$(get_setting hwdec "${PLATFORM}" "${VID}")
+if [ "${HW}" = true ]; then
+   HW_DEC="--vo=dmabuf-wayland --drm-device=/dev/dri/card0"
+fi
+#--vo=dmabuf-wayland --drm-device=/dev/dri/card0
+/usr/bin/mpv --fullscreen --geometry=${RES}  --hwdec=auto-safe $HW_DEC --input-gamepad=yes --input-ipc-server=/tmp/mpvsocket "${1}"
 systemctl stop mpv
 exit 0

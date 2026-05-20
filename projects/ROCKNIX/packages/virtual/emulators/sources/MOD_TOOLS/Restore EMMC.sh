@@ -6,6 +6,13 @@
 
 set -e
 
+LOG_FILE="/storage/roms/emmc_bak/emmc_restore.log"
+log() {
+    log "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
+}
+
+log "=== AURKNIX eMMC Restore Script started ==="
+
 # ==========================================
 # Set up Display Variables
 # ==========================================
@@ -32,14 +39,14 @@ show_image() {
 }
 
 cleanup_on_error() {
-    echo "An error occurred during restore!"
+    log "ERROR: An error occurred during restore! (line ${BASH_LINENO[0]}, exit code $?)"
     show_image "restore_failed.png"
     sleep 10
 }
 
 trap cleanup_on_error ERR
 
-echo "=== AURKNIX eMMC Restore Script ==="
+log "=== AURKNIX eMMC Restore Script ==="
 
 BACKUP_DIR="/storage/roms/emmc_bak"
 BACKUP_FILE="$BACKUP_DIR/emmc_backup.img"
@@ -47,14 +54,14 @@ EMMC_DISK="/dev/mmcblk0"
 
 # 1. 检查 eMMC 磁盘是否存在
 if [ ! -b "$EMMC_DISK" ]; then
-    echo "Error: Could not find eMMC disk at $EMMC_DISK"
+    log "Error: Could not find eMMC disk at $EMMC_DISK"
     exit 1
 fi
 
 # 2. 检查备份目录下的备份镜像是否存在
 if [ ! -f "$BACKUP_FILE" ]; then
-    echo "Error: Could not find backup image at $BACKUP_FILE"
-    echo "Please ensure the backup file exists at /storage/roms/emmc_bak/emmc_backup.img."
+    log "Error: Could not find backup image at $BACKUP_FILE"
+    log "Please ensure the backup file exists at /storage/roms/emmc_bak/emmc_backup.img."
     exit 1
 fi
 
@@ -77,28 +84,28 @@ fi
 
 if [ -z "$event_dev" ]; then
     # Fallback to keyboard input if no gamepad is found
-    echo "No gamepad detected. Falling back to terminal input."
+    log "No gamepad detected. Falling back to terminal input."
     read -p "Are you sure you want to continue? (y/N) " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Restore cancelled."
+        log "Restore cancelled."
         killall -9 mpv 2>/dev/null || true
         trap - ERR
         exit 1
     fi
 else
-    echo "Waiting for gamepad input... Press A (East) to continue, B (South) to cancel."
+    log "Waiting for gamepad input... Press A (East) to continue, B (South) to cancel."
     while true; do
         if evtest --query "$event_dev" "$event_type" "$event_btn_a"; then
             :
         elif [ $? -eq 10 ]; then
-            echo "Button A pressed. Continuing..."
+            log "Button A pressed. Continuing..."
             break
         fi
         if evtest --query "$event_dev" "$event_type" "$event_btn_b"; then
             :
         elif [ $? -eq 10 ]; then
-            echo "Button B pressed. Restore cancelled."
+            log "Button B pressed. Restore cancelled."
             killall -9 mpv 2>/dev/null || true
             trap - ERR
             exit 1
@@ -109,24 +116,24 @@ fi
 
 show_image "restoring.png"
 
-echo "Source Image: $BACKUP_FILE"
-echo "Destination (eMMC): $EMMC_DISK"
-echo "Starting restore... This may take a few minutes. Please do not power off."
+log "Source Image: $BACKUP_FILE"
+log "Destination (eMMC): $EMMC_DISK"
+log "Starting restore... This may take a few minutes. Please do not power off."
 
-dd if="$BACKUP_FILE" of=$EMMC_DISK bs=4M
+dd if="$BACKUP_FILE" of=$EMMC_DISK bs=1M
 sync
 
 set +e
-partprobe $EMMC_DISK || true
+#partprobe $EMMC_DISK || true
 set -e
 
 trap - ERR
 
-echo "============================================="
-echo "Restore complete!"
-echo "The eMMC has been successfully restored from the backup image."
-echo "Please power off the device, remove the TF card (if applicable), and boot from eMMC."
-echo "============================================="
+log "============================================="
+log "Restore complete!"
+log "The eMMC has been successfully restored from the backup image."
+log "Please power off the device, remove the TF card (if applicable), and boot from eMMC."
+log "============================================="
 
 show_image "restore_success.png"
 sleep 5

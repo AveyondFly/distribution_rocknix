@@ -11,13 +11,25 @@ This is an **unofficial** fork of ROCKNIX that provides support for additional d
 ### Additional Emulators
 
 - **BBK 4980** (gam4980-lr): Electronic dictionary game emulator
+- **EKA2L1** (eka2l1-sa): Symbian / N-Gage emulator
+- **flycast2022-sa**: Flycast 2022 standalone (default for Dreamcast / Atomiswave / Naomi)
+- **gpsp_ezode** (gpsp_ezode-lr): gpSP EZODE GBA emulator (default for GBA / GBA Hacks)
 - **HBMAME** (hbmame-lr): Homebrew MAME libretro core
-- **ONScripter** (onscripter-lr): Visual novel engine
+- **mkxp-z**: RPG Maker XP
+- **mrp** (mrp-sa): MRP Games (feature phone game format)
+- **ONScripter** (onscripter-lr / onscripter-sa): Visual novel engine (libretro + standalone)
+- **ppsspp2021-sa**: PPSSPP 2021 standalone (default PSP on RK3326 / RK3566)
 - **PyMO/cpymo**: PyMO AVG game engine in C
 - **free-j2me**: J2ME SDL2 frontend standalone
 - **OpenBOR-ff**: OpenBOR-ff variant
 - **drastic_adv-sa**: Advanced Drastic NDS emulator
 - **fbneoplus-lr**: FBNeo Plus libretro core
+
+### Additional Apps & Tools
+
+- **gamepadtester**: Gamepad tester utility
+- **KPlayer** (kplayer): Enhanced music player with modern UI and online lyric download
+- **KReader** (kebook): E-book reader
 
 ### Additional Supported Devices
 
@@ -28,7 +40,7 @@ This is an **unofficial** fork of ROCKNIX that provides support for additional d
 | BatleXP | G350 |
 | Clone R36s | Type 2 (with/without amplifier), Type 3, Type 4, Sauce V03/V04 |
 | Diium | D007, D-R28S |
-| GameConsole | HG36, K36, K36S, R33S, R36S, R36S Plus, R36T, R36TMax, R36Ultra, R36XXProMax, R40XX, R40XX ProMax, R45H, R46H, R50S, RX6H, T16Max, U8, U8-V2, XGB36 |
+| GameConsole | HG36, K36, K36S, R33S, R36S, R36S Plus, R36T, R36TMax, R36Ultra, R36XXProMax, R40S, R40XX, R40XX ProMax, R45H, R46H, R50S, RX6H, T16Max, U8, U8-V2, XGB36 |
 | Gameforce | CHI |
 | GameMT | E6 |
 | Generic | EE Clone |
@@ -81,6 +93,7 @@ This is an **unofficial** fork of ROCKNIX that provides support for additional d
 * Device to device and device to cloud sync with Syncthing and rclone.
 * VPN support with Wireguard, Tailscale, and ZeroTier.
 * Includes built-in support for scraping and retroachievements.
+* Screen color adjustment (brightness / contrast / saturation / hue) on RK3326 and RK3566 devices.
 
 ## User manuals
 
@@ -120,3 +133,7 @@ All other software is provided under each component's respective license. These 
 ## Credits
 
 Like any Linux distribution, this project is not the work of one person. It is the work of many persons all over the world who have developed the open source bits without which this project could not exist. Special thanks to CoreELEC, LibreELEC, JELOS, ROCKNIX, and to developers and contributors across the open source community.
+
+## Support
+
+If you would like to support maintainer **lcdyk**, you can use Ko-fi: [https://ko-fi.com/lcdyk](https://ko-fi.com/lcdyk).

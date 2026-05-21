@@ -22,7 +22,7 @@ check_update() {
         -F "SOC=${HW_DEVICE}" \
         -F "VERSION=${OS_VERSION}" \
         -F "UID=${USERID:(-12)}" \
-        -F "BUILD=${OS_BUILD}" \
+        -F "BUILD=aurknix" \
         -F "DEV=${QUIRK_DEVICE}" \
         -F "FORCE=${custom_force}" \
         -F "BRANCH=${BRANCH}" \

@@ -16,7 +16,7 @@ send_stats() {
     curl -s -S -X POST \
         -F "ROCKNIX_UID=${USERID:(-12)}" \
         -F "ROCKNIX_VERSION=${OS_VERSION}" \
-        -F "ROCKNIX_BUILD=${OS_BUILD}" \
+        -F "ROCKNIX_BUILD=aurknix" \
         -F "ROCKNIX_SOC=${HW_DEVICE}" \
         -F "ROCKNIX_DEV=${QUIRK_DEVICE}" \
         $ENDPOINT_URL_MOD

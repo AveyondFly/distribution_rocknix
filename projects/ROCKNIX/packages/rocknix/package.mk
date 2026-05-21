@@ -59,7 +59,7 @@ post_install() {
 
   # Issue banner
   cat <<EOF >> ${INSTALL}/etc/issue
-... Version: ${OS_VERSION} (${OS_BUILD}-from-kk)
+... Version: ${OS_VERSION} (aurknix-from-kk)
 ... Built: ${BUILD_DATE}
 
 EOF

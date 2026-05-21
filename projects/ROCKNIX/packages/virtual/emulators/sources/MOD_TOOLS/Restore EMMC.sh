@@ -8,7 +8,7 @@ set -e
 
 LOG_FILE="/storage/roms/emmc_bak/emmc_restore.log"
 log() {
-    log "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
 }
 
 log "=== AURKNIX eMMC Restore Script started ==="

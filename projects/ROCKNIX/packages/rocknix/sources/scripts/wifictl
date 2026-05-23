@@ -15,11 +15,17 @@
 ###
 
 IWD_AP_CFG_DIR="/storage/.cache/iwd/ap"
+CONNMAN_CFG_DIR="/storage/.cache/connman"
 WIFI_TYPE=$(get_setting wifi.adhoc.enabled)
 NETWORK_ADDRESS="192.168.80"
 ADHOC_CLIENT_ID=$(get_setting wifi.adhoc.id)
 WIFI_DEV="$(ls /sys/class/net | grep -m1 ^wlan)"
 DEFAULT_CHAN="6"
+USE_CONNMAN_WIFI="no"
+
+if connmanctl technologies 2>/dev/null | grep -q '/technology/wifi'; then
+  USE_CONNMAN_WIFI="yes"
+fi
 
 # Exit the script if the WiFi device isn't available
 [ -z "${WIFI_DEV}" ] && exit 0
@@ -44,26 +50,81 @@ fi
 ### Functions...
 ###
 
-# Wait for iwd to start and have a device available
+connman_wifi_service() {
+  connmanctl services 2>/dev/null | awk -v ssid="${SSID}" '
+    $0 ~ ssid && /wifi_/ {
+      print $NF
+      exit
+    }'
+}
+
+connman_write_service_config() {
+  local service="${1}"
+
+  mkdir -p "${CONNMAN_CFG_DIR}"
+  cat >"${CONNMAN_CFG_DIR}/${service}.config" <<EOF
+[service_${service}]
+Type=wifi
+Name=${SSID}
+Passphrase=${PSK}
+AutoConnect=true
+EOF
+}
+
 wait_for_wifi() {
-  for i in $(seq 1 5); do
-    iwctl device list | grep -q "${WIFI_DEV}" && break
+  for i in $(seq 1 10); do
+    [ -d "/sys/class/net/${WIFI_DEV}" ] && break
     sleep 1
   done
   [ -n "${COUNTRY}" ] && iw reg set "${COUNTRY}"
+
+  if [ "${USE_CONNMAN_WIFI}" = "yes" ]; then
+    connmanctl enable wifi >/dev/null 2>&1
+    return
+  fi
+
+  for i in $(seq 1 5); do
+    iwctl device list 2>/dev/null | grep -q "${WIFI_DEV}" && break
+    sleep 1
+  done
 }
 
 # lists all wifi networks
 list_wifi() {
   wait_for_wifi
+
+  if [ "${USE_CONNMAN_WIFI}" = "yes" ]; then
+    connmanctl scan wifi >/dev/null 2>&1
+    sleep 2
+    connmanctl services 2>/dev/null | awk '/wifi_/ {
+      n=NF
+      if ($n !~ /^wifi_/) next
+      if (n >= 2 && $1 !~ /^wifi_/ && $1 !~ /^\*?[ARO]+$/) {
+        print $1
+      } else if (n >= 3 && $2 !~ /^wifi_/) {
+        print $2
+      }
+    }' | sort -u
+    return
+  fi
+
   /usr/bin/iwd_get-networks
 }
 
 connect_wifi() {
   wait_for_wifi
 
+  if [ "${USE_CONNMAN_WIFI}" = "yes" ]; then
+    connmanctl scan wifi >/dev/null 2>&1
+    sleep 3
+    SERVICE="$(connman_wifi_service)"
+    [ -z "${SERVICE}" ] && return 1
+    connman_write_service_config "${SERVICE}"
+    connmanctl connect "${SERVICE}" >/dev/null 2>&1
+    return
+  fi
+
   iwctl device ${WIFI_DEV} set-property Mode station
-  # Connect to the network.
   iwctl --passphrase "${PSK}" station ${WIFI_DEV} connect "${SSID}" 2>/dev/null
 }
 
@@ -86,7 +147,6 @@ Gateway=${NETWORK_ADDRESS}.${ADHOC_CLIENT_ID}
 EOF
 
   iwctl device ${WIFI_DEV} set-property Mode ap
-  # Start the AP profile
   iwctl ap ${WIFI_DEV} start-profile "${SSID}" 2>/dev/null
 }
 
@@ -97,6 +157,14 @@ destroy_adhoc() {
 
 has_ap_mode() {
   wait_for_wifi
+
+  if [ "${USE_CONNMAN_WIFI}" = "yes" ]; then
+    PHY=$(basename "$(readlink /sys/class/net/${WIFI_DEV}/phy80211)")
+    if iw phy "${PHY}" info 2>/dev/null | grep -q '\* AP'; then
+      exit 0
+    fi
+    exit 1
+  fi
 
   PHY=$(basename "$(readlink /sys/class/net/${WIFI_DEV}/phy80211)")
   if iwctl adapter "$PHY" show | grep -q 'SupportedModes.*ap'; then
@@ -109,8 +177,14 @@ has_ap_mode() {
 case "${1}" in
   enable)
     rfkill unblock wifi
+    if [ "${USE_CONNMAN_WIFI}" = "yes" ]; then
+      connmanctl enable wifi >/dev/null 2>&1
+    fi
     ;;
   disable)
+    if [ "${USE_CONNMAN_WIFI}" = "yes" ]; then
+      connmanctl disable wifi >/dev/null 2>&1
+    fi
     rfkill block wifi
     ;;
   connect)
@@ -126,6 +200,8 @@ case "${1}" in
     if [ "${WIFI_TYPE}" = "1" ]; then
       destroy_adhoc >/dev/null 2>&1
       iwctl ap ${WIFI_DEV} stop 2>/dev/null
+    elif [ "${USE_CONNMAN_WIFI}" = "yes" ]; then
+      connmanctl disconnect >/dev/null 2>&1
     else
       iwctl station ${WIFI_DEV} disconnect 2>/dev/null
     fi
@@ -144,10 +220,18 @@ case "${1}" in
     has_ap_mode
     ;;
   scan)
-    iwctl station ${WIFI_DEV} scan 2>/dev/null
+    if [ "${USE_CONNMAN_WIFI}" = "yes" ]; then
+      connmanctl scan wifi >/dev/null 2>&1
+    else
+      iwctl station ${WIFI_DEV} scan 2>/dev/null
+    fi
     ;;
   scanlist)
-    iwctl station ${WIFI_DEV} scan 2>/dev/null
+    if [ "${USE_CONNMAN_WIFI}" = "yes" ]; then
+      connmanctl scan wifi >/dev/null 2>&1
+    else
+      iwctl station ${WIFI_DEV} scan 2>/dev/null
+    fi
     sleep 2
     list_wifi
     ;;

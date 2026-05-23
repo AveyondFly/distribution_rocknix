@@ -1,0 +1,65 @@
+#!/bin/sh
+
+PROFILE_DIR="/usr/lib/wifi_dummy-aml/profiles"
+
+dt_compatibles() {
+  [ -r /proc/device-tree/compatible ] && tr '\000' '\n' < /proc/device-tree/compatible
+}
+
+compatible_matches() {
+  local want="$1"
+  dt_compatibles | while IFS= read -r have; do
+    [ "${have}" = "${want}" ] && exit 0
+  done
+}
+
+profile_matches() {
+  local compatible
+
+  for compatible in ${COMPATIBLE}; do
+    if compatible_matches "${compatible}"; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+load_modules() {
+  local module
+
+  for module in ${MODULES}; do
+    modprobe "${module}" || true
+  done
+}
+
+run_profile() {
+  local profile="$1"
+
+  COMPATIBLE=""
+  MODULES=""
+
+  . "${profile}"
+
+  if profile_matches; then
+    echo "wifi_dummy-aml: matched ${profile}"
+    load_modules
+    return 0
+  fi
+
+  return 1
+}
+
+# Power-cycle Amlogic WiFi and rescan SDIO/PCIe. The module returns -ENODEV
+# by design so that it does not remain loaded after doing the one-shot work.
+modprobe wifi_dummy || true
+udevadm settle --timeout=5 || true
+
+if [ -d "${PROFILE_DIR}" ]; then
+  for profile in "${PROFILE_DIR}"/*.conf; do
+    [ -e "${profile}" ] || continue
+    run_profile "${profile}" && exit 0
+  done
+fi
+
+exit 0

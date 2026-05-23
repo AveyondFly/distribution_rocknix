@@ -1,0 +1,47 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+
+/dts-v1/;
+
+#include "g12a_s905x2_2g.dts"
+
+/ {
+	compatible = "skyworth,e900v22c", "amlogic,g12a";
+	model = "SKYWORTH E900V22C";
+
+	/delete-node/ gpioleds;
+
+	leds {
+		compatible = "gpio-leds";
+		status = "okay";
+
+		power_led {
+			label = "power_led";
+			gpios = <&gpio_ao GPIOAO_11 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		net_led {
+			label = "net_led";
+			gpios = <&gpio_ao GPIOAO_9 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+			linux,default-trigger = "0.0:00:link";
+		};
+
+		remote_led {
+			label = "remote_led";
+			gpios = <&gpio_ao GPIOAO_10 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+			linux,default-trigger = "rc-feedback";
+		};
+	};
+};
+
+&sd_emmc_b2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	wifi: wifi@1 {
+		reg = <1>;
+		compatible = "sprd,unisoc-wifi";
+	};
+};

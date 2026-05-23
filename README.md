@@ -70,6 +70,7 @@ This is an **unofficial** fork of ROCKNIX that provides support for additional d
 | CM311 | CM311 |
 | E900V | E900V22C |
 | M401 | M401A |
+| GameBox | X10(S905X4) |
 
 #### RK3562 Devices (WIP)
 | Brand | Models |

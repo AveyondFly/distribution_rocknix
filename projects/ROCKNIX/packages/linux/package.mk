@@ -35,11 +35,11 @@ case ${DEVICE} in
     PKG_PATCH_DIRS="${LINUX} ${DEVICE} default"
     ;;
   S905L3A)
-    PKG_VERSION="d3c5e2d96889c4f48dac2f3d8d0f3b2c107f8161"
+    PKG_VERSION="f2991c87e13b1371edc9a8ab774bc2bc36ac11d5"
     PKG_URL="https://github.com/CoreELEC/linux-amlogic/archive/${PKG_VERSION}.tar.gz"
     PKG_PATCH_DIRS="${DEVICE} default"
-    PKG_COMMON_DRIVERS_VERSION="a8878a3527273385d082d7f5e21605cbd64eb619"
-    PKG_COMMON_DRIVERS_SHA256="7d2aefc983e6423b4537a09ba5c4defe19ebba9c06e514554f255dc4a005e6ef"
+    PKG_COMMON_DRIVERS_VERSION="a687c1bf3c0ea926b6b722fcebb62dd110115eea"
+    PKG_COMMON_DRIVERS_SHA256="b2562adf581ca86f783b84ac4bc519668043a02e1e827baadb88ea22509576f6"
     PKG_COMMON_DRIVERS_URL="https://github.com/CoreELEC/common_drivers/archive/${PKG_COMMON_DRIVERS_VERSION}.tar.gz"
     ;;
   SDM845)
@@ -97,6 +97,7 @@ if [[ "${DEVICE}" == RK3326* ]] || [ "${DEVICE}" = "RK3566" ]; then
 elif [ "${DEVICE}" = "SM8250" -o "${DEVICE}" = "SDM845" -o "${DEVICE}" = "H700" ]; then
   PKG_DEPENDS_UNPACK+=" kernel-firmware"
 elif [ "${DEVICE}" = "S905L3A" ]; then
+  PKG_DEPENDS_TARGET+=" zstd:host"
   PKG_DEPENDS_UNPACK+=" bl30"
 fi
 
@@ -191,6 +192,9 @@ post_patch() {
 
     patch -d ${PKG_BUILD} -p1 \
       < ${PROJECT_DIR}/${PROJECT}/devices/S905L3A/patches/common_drivers-drm-meson-reject-noncontiguous-prime.patch
+
+    patch -d ${PKG_BUILD} -p1 \
+      < ${PROJECT_DIR}/${PROJECT}/devices/S905L3A/patches/common_drivers-dmc-monitor-exit-static-inline.patch
 
     sed -e 's|^KBUILD_CFLAGS += $(call cc-option,-Wimplicit-fallthrough,).*||' \
         -e 's|^KBUILD_CFLAGS   := \(.*\)|KBUILD_CFLAGS   := -Wno-format -Wno-unused-function -Wno-misleading-indentation \1|' \
@@ -292,8 +296,12 @@ pre_make_target() {
 
   cp ${PKG_KERNEL_CFG_FILE} ${PKG_BUILD}/.config
 
-  # set initramfs source
-  ${PKG_BUILD}/scripts/config --set-str CONFIG_INITRAMFS_SOURCE "$(kernel_initramfs_confs) ${BUILD}/initramfs"
+  # Amlogic Android boot images use an external ramdisk, matching CoreELEC.
+  if [ "${DEVICE}" = "S905L3A" ]; then
+    ${PKG_BUILD}/scripts/config --set-str CONFIG_INITRAMFS_SOURCE ""
+  else
+    ${PKG_BUILD}/scripts/config --set-str CONFIG_INITRAMFS_SOURCE "$(kernel_initramfs_confs) ${BUILD}/initramfs"
+  fi
 
   # set default hostname based on ${DISTRONAME}
   ${PKG_BUILD}/scripts/config --set-str CONFIG_DEFAULT_HOSTNAME "${DISTRONAME}"
@@ -447,6 +455,15 @@ pre_make_target() {
 make_target() {
   DTC_FLAGS=-@ kernel_make ${KERNEL_TARGET} ${KERNEL_MAKE_EXTRACMD} modules
 
+  if [ "${BUILD_ANDROID_BOOTIMG}" = "yes" -a "${DEVICE}" = "S905L3A" ]; then
+    mkdir -p ${BUILD}/image
+    initramfs_add_root_links "${BUILD}/initramfs"
+    (cd ${BUILD}/initramfs && find . | cpio -H newc -o --quiet -R 0:0 > ${BUILD}/image/initramfs.cpio)
+
+    find_file_path bootloader/mkbootimg && source ${FOUND_PATH} initramfs
+    mv -f arch/${TARGET_KERNEL_ARCH}/boot/boot.img arch/${TARGET_KERNEL_ARCH}/boot/${KERNEL_TARGET}
+  fi
+
   if [ "${PKG_BUILD_PERF}" = "yes" ]; then
     ( cd tools/perf
 
@@ -492,7 +509,9 @@ makeinstall_target() {
   mkdir -p ${INSTALL}/.image
   cp -p System.map .config Module.symvers ${INSTALL}/.image/
 
-  if [ "${BUILD_ANDROID_BOOTIMG}" = "yes" ]; then
+  if [ "${BUILD_ANDROID_BOOTIMG}" = "yes" -a "${DEVICE}" = "S905L3A" ]; then
+    cp -p arch/${TARGET_KERNEL_ARCH}/boot/${KERNEL_TARGET} ${INSTALL}/.image/
+  elif [ "${BUILD_ANDROID_BOOTIMG}" = "yes" ]; then
     INITRAMFS_DIR="${BUILD}/initramfs"
     mkdir -p ${BUILD}/image
     initramfs_add_root_links "${INITRAMFS_DIR}"

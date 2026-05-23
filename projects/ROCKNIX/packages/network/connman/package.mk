@@ -30,8 +30,6 @@ PKG_CONFIGURE_OPTS_TARGET="--srcdir=.. \
                            --enable-loopback \
                            --enable-ethernet \
                            --disable-gadget \
-                           --disable-wifi \
-                           --disable-iwd \
                            --disable-bluetooth \
                            --disable-ofono \
                            --disable-dundee \
@@ -45,6 +43,27 @@ PKG_CONFIGURE_OPTS_TARGET="--srcdir=.. \
                            --with-dbusconfdir=/etc \
                            --with-systemdunitdir=/usr/lib/systemd/system \
                            --disable-silent-rules"
+
+case "${WIRELESS_DAEMON}" in
+  wpa_supplicant)
+    PKG_DEPENDS_TARGET+=" wpa_supplicant"
+    PKG_CONFIGURE_OPTS_TARGET+=" WPASUPPLICANT=/usr/bin/wpa_supplicant \
+                                 --enable-wifi \
+                                 --disable-iwd"
+    ;;
+  *)
+    PKG_CONFIGURE_OPTS_TARGET+=" --disable-wifi \
+                                 --disable-iwd"
+    ;;
+esac
+
+if [ "${WIRELESS_DAEMON}" = "wpa_supplicant" ]; then
+  PREFERRED_TECHNOLOGIES="ethernet,wifi"
+  TETHERING_TECHNOLOGIES="ethernet,wifi"
+else
+  PREFERRED_TECHNOLOGIES="ethernet"
+  TETHERING_TECHNOLOGIES="ethernet"
+fi
 
 if [ "$WIREGUARD_SUPPORT" = "yes" ]; then
   PKG_CONFIGURE_OPTS_TARGET+=" --enable-wireguard=builtin"
@@ -73,8 +92,8 @@ post_makeinstall_target() {
         -e "s|^# UseGatewaysAsTimeservers.*|UseGatewaysAsTimeservers = false|g" \
         -e "s|^# FallbackNameservers.*|FallbackNameservers = 8.8.8.8,1.1.1.1,2001:4860:4860::8888,2606:4700:4700::1111|g" \
         -e "s|^# FallbackTimeservers.*|FallbackTimeservers = 0.pool.ntp.org,1.pool.ntp.org,2.pool.ntp.org,3.pool.ntp.org|g" \
-        -e "s|^# PreferredTechnologies.*|PreferredTechnologies = ethernet|g" \
-        -e "s|^# TetheringTechnologies.*|TetheringTechnologies = ethernet|g" \
+        -e "s|^# PreferredTechnologies.*|PreferredTechnologies = ${PREFERRED_TECHNOLOGIES:-ethernet}|g" \
+        -e "s|^# TetheringTechnologies.*|TetheringTechnologies = ${TETHERING_TECHNOLOGIES:-ethernet}|g" \
         -e "s|^# AllowHostnameUpdates.*|AllowHostnameUpdates = false|g" \
         -e "s|^# PersistentTetheringMode.*|PersistentTetheringMode = true|g" \
         -e "s|^# NetworkInterfaceBlacklist = vmnet,vboxnet,virbr,ifb|NetworkInterfaceBlacklist = vmnet,vboxnet,virbr,ifb,docker,veth,zt,p2p|g"

@@ -1,0 +1,60 @@
+#!/bin/sh
+
+is_e900v22c() {
+  [ -r /proc/device-tree/compatible ] && \
+    tr '\000' '\n' < /proc/device-tree/compatible | grep -q 'e900v22c'
+}
+
+wait_for_ttybt0() {
+  local i
+
+  for i in $(seq 1 20); do
+    [ -e /dev/ttyBT0 ] && return 0
+    sleep 0.25
+  done
+
+  return 1
+}
+
+case "$1" in
+  start)
+    if ! is_e900v22c; then
+      echo "sprd_sdio-firmware-aml: skipping non-E900V22C board"
+      exit 0
+    fi
+
+    if ! wait_for_ttybt0; then
+      echo "sprd_sdio-firmware-aml: /dev/ttyBT0 not found" >&2
+      exit 1
+    fi
+
+    /usr/sbin/rfkill unblock bluetooth
+    exec /usr/bin/hciattach -s 1500000 /dev/ttyBT0 sprd
+    ;;
+
+  post)
+    if ! is_e900v22c; then
+      exit 0
+    fi
+
+    for i in $(seq 1 20); do
+      /usr/bin/hciconfig hci0 up && \
+        /usr/bin/hcitool -i hci0 cmd 0x08 0x0001 0x02 0x10 0x00 0x00 0x00 0x00 0x00 0x00 && \
+        exit 0
+      sleep 0.2
+    done
+    exit 0
+    ;;
+
+  stop)
+    if is_e900v22c; then
+      /usr/sbin/rfkill block bluetooth
+    fi
+    exit 0
+    ;;
+
+  *)
+    echo "Usage: $0 {start|post|stop}" >&2
+    exit 2
+    ;;
+esac

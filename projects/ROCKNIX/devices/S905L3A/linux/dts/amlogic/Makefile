@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0
 # G12A device trees (from common_drivers)
 dtb-y += g12a_s905x2_2g.dtb
+dtb-y += g12a_s905x2_2g_e900v22c.dtb
 dtb-y += g12a_s905x2_2g_1gbit.dtb
 dtb-y += g12a_s905x2_4g.dtb
 dtb-y += g12a_s905x2_4g_1gbit.dtb
@@ -16,6 +17,7 @@ dtb-y += g12a_s905y2_radxa_zero.dtb
 # SC2 (S905X4 / S905C2) device trees for DTB bring-up testing
 dtb-y += sc2_s905c2l_ah221_drm.dtb
 dtb-y += sc2_s905x4_2g.dtb
+dtb-y += sc2_s905x4_2g_gamebox_10x.dtb
 dtb-y += sc2_s905x4_2g_1gbit.dtb
 dtb-y += sc2_s905x4_4g.dtb
 dtb-y += sc2_s905x4_4g_1gbit.dtb

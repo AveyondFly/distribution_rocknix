@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ROCKNIX <https://github.com/ROCKNIX>
+Date: Sat, 23 May 2026 00:00:00 +0000
+Subject: [PATCH] Fix rtl8733bs build on Amlogic 5.15 vendor kernel
+
+Adapt cfg80211 channel switch callbacks and VFS symbol namespace import
+for the Amlogic common_drivers 5.15.153+ backports used on S905L3A.
+---
+ include/rtw_mlme_ext.h        |  2 +-
+ os_dep/linux/ioctl_cfg80211.c | 12 ++++++++----
+ os_dep/osdep_service.c        |  3 +++
+ 3 files changed, 12 insertions(+), 5 deletions(-)
+
+diff --git a/include/rtw_mlme_ext.h b/include/rtw_mlme_ext.h
+--- a/include/rtw_mlme_ext.h
++++ b/include/rtw_mlme_ext.h
+@@ -274,7 +274,7 @@
+ #if defined(CONFIG_ATMEL_RC_PATCH)
+ 	#define RTW_SCAN_NUM_OF_CH 2
+ 	#define RTW_BACK_OP_CH_MS 200
+-#elseif defined(CONFIG_CUSTOMER_EZVIZ_CHIME2)
++#elif defined(CONFIG_CUSTOMER_EZVIZ_CHIME2)
+ 	#define RTW_SCAN_NUM_OF_CH 1
+ 	#define RTW_BACK_OP_CH_MS 200
+ #else
+diff --git a/os_dep/linux/ioctl_cfg80211.c b/os_dep/linux/ioctl_cfg80211.c
+--- a/os_dep/linux/ioctl_cfg80211.c
++++ b/os_dep/linux/ioctl_cfg80211.c
+@@ -489,8 +489,8 @@ u8 rtw_cfg80211_ch_switch_notify(_adapter *adapter, u8 ch, u8 bw, u8 offset,
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0))
+ 	if (started) {
+-#if defined(CONFIG_MLD_KERNEL_PATCH)
+-		cfg80211_ch_switch_started_notify(adapter->pnetdev, &chdef, 0, 0, false);
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 153))
++		cfg80211_ch_switch_started_notify(adapter->pnetdev, &chdef, 0, 0, false, 0);
+ #elif (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0))
+ 
+ 		/* --- cfg80211_ch_switch_started_notfiy() ---
+@@ -512,8 +512,10 @@ u8 rtw_cfg80211_ch_switch_notify(_adapter *adapter, u8 ch, u8 bw, u8 offset,
+ 	if (!rtw_cfg80211_allow_ch_switch_notify(adapter))
+ 		goto exit;
+ 
+-#if (defined(CONFIG_MLD_KERNEL_PATCH) || (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 2)))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 2))
+ 	cfg80211_ch_switch_notify(adapter->pnetdev, &chdef, 0);
++#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 153))
++	cfg80211_ch_switch_notify(adapter->pnetdev, &chdef, 0, 0);
+ #else
+ 	cfg80211_ch_switch_notify(adapter->pnetdev, &chdef);
+ #endif
+diff --git a/os_dep/osdep_service.c b/os_dep/osdep_service.c
+--- a/os_dep/osdep_service.c
++++ b/os_dep/osdep_service.c
+@@ -2554,6 +2554,9 @@ inline bool ATOMIC_INC_UNLESS(ATOMIC_T *v, int u)
+ * @param mode please refer to linux document
+ * @return Linux specific error code
+ */
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 153))
++MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
++#endif
+ static int openFile(struct file **fpp, const char *path, int flag, int mode)
+ {
+ 	struct file *fp;

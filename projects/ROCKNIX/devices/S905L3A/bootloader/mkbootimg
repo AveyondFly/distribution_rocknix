@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2018-present Team CoreELEC (https://coreelec.org)
+# Adapted for ROCKNIX S905L3A chain-boot (CoreELEC Amlogic-no compatible)
+
+INITRAMFS="${1}.cpio"
+RAMDISK=${BUILD}/image/${INITRAMFS}
+
+echo
+echo "Compressing ${INITRAMFS} with zstd"
+stat -c "  %s bytes  %n" ${RAMDISK}
+zstd -q -f ${RAMDISK}
+RAMDISK=${RAMDISK}.zst
+stat -c "  %s bytes  %n" ${RAMDISK}
+
+LDFLAGS="" mkbootimg --kernel arch/${TARGET_KERNEL_ARCH}/boot/${KERNEL_TARGET} --ramdisk ${RAMDISK} \
+  ${ANDROID_BOOTIMG_OPTIONS} --output arch/${TARGET_KERNEL_ARCH}/boot/boot.img

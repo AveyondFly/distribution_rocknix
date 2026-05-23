@@ -1,0 +1,15 @@
+[Unit]
+Description=Attach /dev/ttyBT0 to BlueZ stack using sprd type
+Wants=wifi_dummy-aml.service
+After=wifi_dummy-aml.service
+Before=bluetooth.service
+PartOf=bluetooth.service
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/sprd_sdio-firmware-aml start
+ExecStartPost=/usr/bin/sprd_sdio-firmware-aml post
+ExecStopPost=/usr/bin/sprd_sdio-firmware-aml stop
+
+[Install]
+WantedBy=bluetooth.service

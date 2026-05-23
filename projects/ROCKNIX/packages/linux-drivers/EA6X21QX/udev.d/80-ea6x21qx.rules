@@ -1,0 +1,10 @@
+### EA6X21QX
+### this driver is split in two individual kernel modules
+ENV{MODALIAS}=="?*", ENV{SUBSYSTEM}=="sdio", ENV{OF_NAME}=="wifi", ENV{OF_COMPATIBLE_0}!="sprd,unisoc-wifi", \
+  ENV{SDIO_ID}=="0000:0000", GOTO="load_module"
+GOTO="end"
+
+LABEL="load_module"
+ENV{MODALIAS}=="?*", ENV{SUBSYSTEM}=="sdio", RUN{builtin}+="kmod load skw_sdio", RUN{builtin}+="kmod load skw"
+
+LABEL="end"

@@ -1,0 +1,10 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+
+/dts-v1/;
+
+#include "sc2_s905x4_2g.dts"
+
+/ {
+	compatible = "gamebox,10x", "amlogic,sc2", "amlogic, sc2";
+	model = "GameBox 10X";
+};

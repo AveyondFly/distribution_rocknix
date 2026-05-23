@@ -9,7 +9,7 @@
 mount -o remount,rw $BOOT_ROOT
 
 # update dtb.img
-for dtb in g12a_s905x2_2g.dtb g12a_s905x2_4g.dtb sc2_s905x4_ah212_drm.dtb; do
+for dtb in g12a_s905x2_2g.dtb g12a_s905x2_4g.dtb sc2_s905x4_2g_gamebox_10x.dtb sc2_s905x4_ah212_drm.dtb; do
   if [ -f $BOOT_ROOT/dtb.img ] && [ -f $SYSTEM_ROOT/usr/share/bootloader/device_trees/$dtb ]; then
     # only update if current dtb.img matches this dtb
     if cmp -s $BOOT_ROOT/dtb.img $SYSTEM_ROOT/usr/share/bootloader/device_trees/$dtb 2>/dev/null; then

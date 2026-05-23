@@ -30,6 +30,7 @@
     KERNEL_TARGET="Image.lzo"
     KERNEL_NAME="kernel.img"
     BUILD_ANDROID_BOOTIMG="yes"
+    ANDROID_BOOTIMG_OPTIONS="--base 0x0 --kernel_offset 0x2000000"
 
   # Kernel extra targets to build (vendor common_drivers dtstree)
     KERNEL_MAKE_EXTRACMD=" dtbs"
@@ -71,18 +72,21 @@
   # for a list of additional drivers see packages/linux-drivers
   # Space separated list is supported,
   # e.g. ADDITIONAL_DRIVERS="DRIVER1 DRIVER2"
-    ADDITIONAL_DRIVERS="gpu-aml opentee_linuxdriver media_modules-aml"
+    ADDITIONAL_DRIVERS="gpu-aml opentee_linuxdriver media_modules-aml wifi_dummy-aml mt7668-wifi-bt uwe5631-aml ap6xxx-aml EA6X21QX rtl8733bs"
 
   # Additional Firmware to use ( )
   # Space separated list is supported,
   # e.g. FIRMWARE=""
-    FIRMWARE=""
+    FIRMWARE="brcmfmac_sdio-firmware-aml"
 
   # Additional packages to install
     ADDITIONAL_PACKAGES="parse-android-dynparts libdevmapper"
 
   # Debug tty path
     DEBUG_TTY="/dev/ttyAML0"
+
+  # MT7668 vendor driver (wlan_mt76x8_sdio) does not work with iwd.
+    WIRELESS_DAEMON="wpa_supplicant"
 
   # Build and install rocknix out-of-tree device trees and overlays (yes / no)
     ROCKNIX_DEVICE_TREE_OVERLAYS=""

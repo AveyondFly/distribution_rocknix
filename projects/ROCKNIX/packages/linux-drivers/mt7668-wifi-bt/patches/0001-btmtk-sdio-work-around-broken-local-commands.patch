@@ -1,0 +1,39 @@
+--- a/MT7668-Bluetooth/btmtk_sdio.c
++++ b/MT7668-Bluetooth/btmtk_sdio.c
+@@ -4207,6 +4207,27 @@ static int btsdio_send_frame(struct hci_dev *hdev, struct sk_buff *skb)
+ 	return 0;
+ }
+ 
++static int btmtk_sdio_post_init(struct hci_dev *hdev)
++{
++	static const u8 le_events[8] = {
++		0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
++	};
++	struct sk_buff *skb;
++
++	skb = __hci_cmd_sync(hdev, HCI_OP_LE_SET_EVENT_MASK,
++			     sizeof(le_events), le_events, HCI_CMD_TIMEOUT);
++	if (IS_ERR(skb)) {
++		pr_warn("%s: LE Set Event Mask failed: %ld\n",
++			__func__, PTR_ERR(skb));
++		return 0;
++	}
++
++	kfree_skb(skb);
++	pr_info("%s: enabled LE advertising reports\n", __func__);
++
++	return 0;
++}
++
+ 
+ static int btmtk_sdio_probe(struct sdio_func *func,
+ 					const struct sdio_device_id *id)
+@@ -4349,6 +4370,8 @@ static int btmtk_sdio_probe(struct sdio_func *func,
+ 	hdev->close    = btsdio_close;
+ 	hdev->flush    = btsdio_flush;
+ 	hdev->send     = btsdio_send_frame;
++	hdev->post_init = btmtk_sdio_post_init;
++	set_bit(HCI_QUIRK_BROKEN_LOCAL_COMMANDS, &hdev->quirks);
+ 
+ 
+ 	ret = hci_register_dev(hdev);

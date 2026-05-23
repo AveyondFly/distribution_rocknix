@@ -10,9 +10,9 @@ if [ -d "${SRCDIR}/device_trees" ]; then
   cp -a "${SRCDIR}/device_trees/"*.dtb "${DSTDIR}/device_trees/"
 fi
 
-# default dtb.img: prefer generic G12A reference, then SC2 fallback
+# default dtb.img: GameBox 10X, then generic G12A/SC2 fallbacks
 DEFAULT_DTB=""
-for dtb in g12a_s905x2_2g.dtb sc2_s905x4_ah212_drm.dtb; do
+for dtb in sc2_s905x4_2g_gamebox_10x.dtb g12a_s905x2_2g.dtb sc2_s905x4_ah212_drm.dtb; do
   if [ -f "${DSTDIR}/device_trees/${dtb}" ]; then
     DEFAULT_DTB="${dtb}"
     break

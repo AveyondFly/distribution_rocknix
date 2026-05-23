@@ -1,0 +1,11 @@
+[Unit]
+Description=Amlogic WiFi power-on and board-specific module loader
+Before=connman.service bluetooth.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/wifi_dummy-aml
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

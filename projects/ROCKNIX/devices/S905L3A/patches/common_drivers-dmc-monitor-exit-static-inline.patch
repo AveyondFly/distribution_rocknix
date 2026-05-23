@@ -1,0 +1,11 @@
+--- a/common_drivers/drivers/memory_debug/ddr_tool/dmc_monitor.h
++++ b/common_drivers/drivers/memory_debug/ddr_tool/dmc_monitor.h
+@@ -199,7 +199,7 @@ static inline int dmc_monitor_init(void)
+ 	return 0;
+ }
+ 
+-void dmc_monitor_exit(void)
++static inline void dmc_monitor_exit(void)
+ {
+ }
+ #endif

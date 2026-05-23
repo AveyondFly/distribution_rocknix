@@ -122,9 +122,42 @@
     <file>rk3588s-retroled-cm5</file>
   </RK3588>
   <S905L3A mkimage_options="aml_boot" dtb_prefix="amlogic">
-    <file>meson-g12a-s905l3a-cm311</file>
-    <file>meson-g12a-s905l3a-e900v22c</file>
-    <file>meson-g12a-s905l3a-m401a</file>
+    <file>g12a_s905x2_2g</file>
+    <file>g12a_s905x2_2g_1gbit</file>
+    <file>g12a_s905x2_4g</file>
+    <file>g12a_s905x2_4g_1gbit</file>
+    <file>g12a_s905x2_beelink_gt_mini_a_2g</file>
+    <file>g12a_s905x2_beelink_gt_mini_a_4g</file>
+    <file>g12a_s905x2_beelink_gt1_mini_2g</file>
+    <file>g12a_s905x2_beelink_gt1_mini_4g</file>
+    <file>g12a_s905x2_mecool_m8s_plus_t2</file>
+    <file>g12a_s905y2_2g</file>
+    <file>g12a_s905y2_4g</file>
+    <file>g12a_s905y2_radxa_zero</file>
+    <file>sc2_s905c2l_ah221_drm</file>
+    <file>sc2_s905x4_2g</file>
+    <file>sc2_s905x4_2g_1gbit</file>
+    <file>sc2_s905x4_4g</file>
+    <file>sc2_s905x4_4g_1gbit</file>
+    <file>sc2_s905x4_ah212_drm</file>
+    <file>sc2_s905x4_ah212_drm_soundbar</file>
+    <file>sc2_s905x4_ah212_linux</file>
+    <file>sc2_s905x4_ah212_mxl258c_drm</file>
+    <file>sc2_s905x4_buzztv_u5_4g_1gbit</file>
+    <file>sc2_s905x4_buzztv_x5_2g</file>
+    <file>sc2_s905x4_buzztv_x5_2g_1gbit</file>
+    <file>sc2_s905x4_buzztv_x5_4g</file>
+    <file>sc2_s905x4_buzztv_x5_4g_1gbit</file>
+    <file>sc2_s905x4_mecool_kt1</file>
+    <file>sc2_s905x4_sei_smb_280_id5</file>
+    <file>sc2_s905x4_sei_smb_280_id6</file>
+    <file>sc2_s905x4_sei_smb_280_id7</file>
+    <file>sc2_s905x4_ugoos_am7</file>
+    <file>sc2_s905x4_ugoos_x4</file>
+    <file>sc2_s905x4_x96_x4_2g</file>
+    <file>sc2_s905x4_x96_x4_2g_1gbit</file>
+    <file>sc2_s905x4_x96_x4_4g</file>
+    <file>sc2_s905x4_x96_x4_4g_1gbit</file>
   </S905L3A>
   <S922X mkimage_options="dtb,extlinux,gou_extras,uboot" fdt_type="fdtdir" dtb_prefix="amlogic">
     <file>meson-g12b-odroid-go-ultra</file>

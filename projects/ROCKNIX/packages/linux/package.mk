@@ -34,6 +34,14 @@ case ${DEVICE} in
     PKG_GIT_CLONE_BRANCH="rk-6.1-rkr3"
     PKG_PATCH_DIRS="${LINUX} ${DEVICE} default"
     ;;
+  S905L3A)
+    PKG_VERSION="d3c5e2d96889c4f48dac2f3d8d0f3b2c107f8161"
+    PKG_URL="https://github.com/CoreELEC/linux-amlogic/archive/${PKG_VERSION}.tar.gz"
+    PKG_PATCH_DIRS="${DEVICE} default"
+    PKG_COMMON_DRIVERS_VERSION="a8878a3527273385d082d7f5e21605cbd64eb619"
+    PKG_COMMON_DRIVERS_SHA256="7d2aefc983e6423b4537a09ba5c4defe19ebba9c06e514554f255dc4a005e6ef"
+    PKG_COMMON_DRIVERS_URL="https://github.com/CoreELEC/common_drivers/archive/${PKG_COMMON_DRIVERS_VERSION}.tar.gz"
+    ;;
   SDM845)
     PKG_VERSION="5.18"
     PKG_URL="https://gitlab.com/tjstyle/linux/-/archive/sdm845/${PKG_VERSION}-release/linux-sdm845-${PKG_VERSION}-release.tar.gz"
@@ -45,7 +53,7 @@ case ${DEVICE} in
         PKG_VERSION="6.19.5"
         PKG_URL="https://www.kernel.org/pub/linux/kernel/v${PKG_VERSION/.*/}.x/${PKG_NAME}-${PKG_VERSION}.tar.xz"
         ;;
-      S905L3A|S922X|RK3399|RK3566)
+      S922X|RK3399|RK3566)
         PKG_VERSION="6.18.21"
         PKG_URL="https://www.kernel.org/pub/linux/kernel/v${PKG_VERSION/.*/}.x/${PKG_NAME}-${PKG_VERSION}.tar.xz"
         ;;
@@ -88,7 +96,68 @@ if [[ "${DEVICE}" == RK3326* ]] || [ "${DEVICE}" = "RK3566" ]; then
   PKG_DEPENDS_UNPACK+=" generic-dsi"
 elif [ "${DEVICE}" = "SM8250" -o "${DEVICE}" = "SDM845" -o "${DEVICE}" = "H700" ]; then
   PKG_DEPENDS_UNPACK+=" kernel-firmware"
+elif [ "${DEVICE}" = "S905L3A" ]; then
+  PKG_DEPENDS_UNPACK+=" bl30"
 fi
+
+fetch_common_drivers() {
+  local tarball="${SOURCES}/common_drivers/common_drivers-${PKG_COMMON_DRIVERS_VERSION}.tar.gz"
+  local src_dir="${SOURCES}/common_drivers/common_drivers-${PKG_COMMON_DRIVERS_VERSION}"
+
+  mkdir -p "${SOURCES}/common_drivers"
+
+  if [ ! -d "${src_dir}" ]; then
+    if [ ! -f "${tarball}" ]; then
+      echo "GET      common_drivers (archive)" >&2
+      if command -v wget >/dev/null 2>&1; then
+        wget -q -O "${tarball}" "${PKG_COMMON_DRIVERS_URL}" || \
+          die "ERROR: Failed to download common_drivers from ${PKG_COMMON_DRIVERS_URL}"
+      else
+        curl -fsSL -o "${tarball}" "${PKG_COMMON_DRIVERS_URL}" || \
+          die "ERROR: Failed to download common_drivers from ${PKG_COMMON_DRIVERS_URL}"
+      fi
+    fi
+
+    echo "${PKG_COMMON_DRIVERS_SHA256}  ${tarball}" | sha256sum -c - >&2 || \
+      die "ERROR: common_drivers checksum mismatch for ${tarball}"
+
+    tar xf "${tarball}" -C "${SOURCES}/common_drivers"
+  fi
+
+  COMMON_DRIVERS_SRC_DIR="${src_dir}"
+}
+
+post_unpack() {
+  if [ "${DEVICE}" = "S905L3A" ]; then
+    # Prevent setlocalversion from walking up to the distribution git tree,
+    # which would append -g<hash>-dirty to every kernel build.
+    mkdir -p ${PKG_BUILD}/.git/hooks
+    touch ${PKG_BUILD}/.scmversion
+  fi
+}
+
+install_common_drivers() {
+  fetch_common_drivers
+  local src_dir="${COMMON_DRIVERS_SRC_DIR}"
+
+  rm -rf ${PKG_BUILD}/common_drivers
+  mkdir -p ${PKG_BUILD}/common_drivers
+
+  rsync -a \
+    --exclude auto_patch/ \
+    --exclude project/ \
+    "${src_dir}/" \
+    ${PKG_BUILD}/common_drivers/
+
+  mkdir -p ${PKG_BUILD}/common_drivers/.git/hooks
+  echo "${PKG_COMMON_DRIVERS_VERSION}" >${PKG_BUILD}/common_drivers/.scmversion
+
+  DEVICE_DTS_DIR="${PROJECT_DIR}/${PROJECT}/devices/${DEVICE}/linux/dts/amlogic"
+  if [ -d "${DEVICE_DTS_DIR}" ]; then
+    rsync -a "${DEVICE_DTS_DIR}/" \
+      ${PKG_BUILD}/common_drivers/arch/arm64/boot/dts/amlogic/
+  fi
+}
 
 post_patch() {
   # linux was already built and its build dir autoremoved - prepare it again for kernel packages
@@ -105,9 +174,34 @@ post_patch() {
     echo "obj-y" += panel-generic-dsi.o >> ${PKG_BUILD}/drivers/gpu/drm/panel/Makefile
   fi
 
-  DTS_SOURCE_DIR="${PROJECT_DIR}/${PROJECT}/devices/${DEVICE}/linux/dts"
-  if [ -d "${DTS_SOURCE_DIR}" ]; then
-    rsync -av "${DTS_SOURCE_DIR}/" ${PKG_BUILD}/arch/arm64/boot/dts/
+  if [ "${DEVICE}" = "S905L3A" ]; then
+    install_common_drivers
+
+    patch -d ${PKG_BUILD} -p1 \
+      < ${PROJECT_DIR}/${PROJECT}/devices/S905L3A/patches/common_drivers-hdmitx-allow-graphics-contenttype.patch
+
+    patch -d ${PKG_BUILD} -p1 \
+      < ${PROJECT_DIR}/${PROJECT}/devices/S905L3A/patches/common_drivers-drm-align-g12a-afbc-height.patch
+
+    patch -d ${PKG_BUILD} -p1 \
+      < ${PROJECT_DIR}/${PROJECT}/devices/S905L3A/patches/common_drivers-drm-hdmi-mainline-lite.patch
+
+    patch -d ${PKG_BUILD} -p1 \
+      < ${PROJECT_DIR}/${PROJECT}/devices/S905L3A/patches/common_drivers-drm-hdmi-force-rgb8-test.patch
+
+    patch -d ${PKG_BUILD} -p1 \
+      < ${PROJECT_DIR}/${PROJECT}/devices/S905L3A/patches/common_drivers-drm-meson-reject-noncontiguous-prime.patch
+
+    sed -e 's|^KBUILD_CFLAGS += $(call cc-option,-Wimplicit-fallthrough,).*||' \
+        -e 's|^KBUILD_CFLAGS   := \(.*\)|KBUILD_CFLAGS   := -Wno-format -Wno-unused-function -Wno-misleading-indentation \1|' \
+        -e 's|^KBUILD_LDFLAGS :=|KBUILD_LDFLAGS := $(call ld-option,--no-warn-rwx-segments)|' \
+        -i ${PKG_BUILD}/Makefile
+    sed -i 's|-z norelro||' ${PKG_BUILD}/arch/arm64/Makefile
+  else
+    DTS_SOURCE_DIR="${PROJECT_DIR}/${PROJECT}/devices/${DEVICE}/linux/dts"
+    if [ -d "${DTS_SOURCE_DIR}" ]; then
+      rsync -av "${DTS_SOURCE_DIR}/" ${PKG_BUILD}/arch/arm64/boot/dts/
+    fi
   fi
 }
 
@@ -124,6 +218,10 @@ make_host() {
 }
 
 makeinstall_host() {
+  # Vendor Amlogic 5.15 headers must not replace the sysroot UAPI used by glibc.
+  if [ "${DEVICE}" = "S905L3A" ]; then
+    return 0
+  fi
   make \
     ARCH=${HEADERS_ARCH:-${TARGET_KERNEL_ARCH}} \
     HOSTCC="${TOOLCHAIN}/bin/host-gcc" \
@@ -137,12 +235,59 @@ makeinstall_host() {
     cp -R dest/include/* ${SYSROOT_PREFIX}/usr/include
 }
 
+build_gpio_data() {
+  cat << EOF > common_drivers/drivers/bootloader/gpio_data.h
+typedef struct bl30_gpio {
+    char *name;
+    uint32_t number;
+} bl30_gpio_t;
+
+typedef struct bl30_gpios_soc {
+    enum meson_cpuid_type_e cpuid;
+    bl30_gpio_t gpio[256];
+} bl30_gpios_soc_t;
+
+bl30_gpios_soc_t bl30_gpios[] = {
+EOF
+
+  for bl30_folder in "src_ao/demos/amlogic/n200/include" "rtos_sdk/soc/riscv"; do
+    for soc_dir in $(get_build_dir bl30)/${bl30_folder}/*; do
+      if [ -d ${soc_dir} -a -e "${soc_dir}/gpio-data.h" ]; then
+        soc_type="$(basename ${soc_dir})"
+        if grep -q "MESON_CPU_MAJOR_ID_${soc_type^^}" common_drivers/include/linux/amlogic/media/registers/cpu_version.h; then
+          printf "  /* soc ${soc_type} */\n" >>common_drivers/drivers/bootloader/gpio_data.h
+          printf "  { MESON_CPU_MAJOR_ID_${soc_type^^}, {\n" >>common_drivers/drivers/bootloader/gpio_data.h
+          cat "${soc_dir}/gpio-data.h" | awk \
+            '/^#define\s*GPIO._/ { printf("    { \"%s\", %d },\n", $2, $3)}' \
+            >>common_drivers/drivers/bootloader/gpio_data.h
+          printf "  }},\n" >>common_drivers/drivers/bootloader/gpio_data.h
+        fi
+      fi
+    done
+  done
+
+  printf "};\n" >>common_drivers/drivers/bootloader/gpio_data.h
+}
+
+initramfs_add_root_links() {
+  # initramfs.conf defines /lib -> usr/lib etc., but that only applies when the
+  # kernel embeds the initramfs. Android bootimg ramdisks are packed manually
+  # from ${BUILD}/initramfs and need these symlinks for dynamically linked tools
+  # such as rocknix-splash (/lib/ld-linux-aarch64.so.1).
+  local root="${1:-${BUILD}/initramfs}"
+
+  ln -sfn usr/lib "${root}/lib"
+  ln -sfn usr/bin "${root}/bin"
+  ln -sfn usr/sbin "${root}/sbin"
+}
+
 pre_make_target() {
   ( cd ${ROOT}
     rm -rf ${BUILD}/initramfs
     rm -f ${STAMPS_INSTALL}/initramfs/install_target ${STAMPS_INSTALL}/*/install_init
     ${SCRIPTS}/install initramfs
   )
+  initramfs_add_root_links
   pkg_lock_status "ACTIVE" "linux:target" "build"
 
   cp ${PKG_KERNEL_CFG_FILE} ${PKG_BUILD}/.config
@@ -177,8 +322,8 @@ pre_make_target() {
     ${PKG_BUILD}/scripts/config --disable CONFIG_ISCSI_IBFT
   fi
 
-  # disable lima/panfrost if libmali is configured
-  if [ "${OPENGLES}" = "libmali" ]; then
+  # disable lima/panfrost if vendor Mali userspace is configured
+  if [ "${OPENGLES}" = "libmali" ] || [ "${OPENGLES}" = "opengl-meson" ]; then
     ${PKG_BUILD}/scripts/config --disable CONFIG_DRM_LIMA
     ${PKG_BUILD}/scripts/config --disable CONFIG_DRM_PANFROST
   fi
@@ -186,6 +331,12 @@ pre_make_target() {
   # disable wireguard support if not enabled
   if [ ! "${WIREGUARD_SUPPORT}" = yes ]; then
     ${PKG_BUILD}/scripts/config --disable CONFIG_WIREGUARD
+  fi
+
+  if [ "${DEVICE}" = "S905L3A" ]; then
+    ( cd ${PKG_BUILD}
+      build_gpio_data
+    )
   fi
 
   if [[ "${TARGET_ARCH}" =~ i*86|x86_64 ]]; then
@@ -342,13 +493,19 @@ makeinstall_target() {
   cp -p System.map .config Module.symvers ${INSTALL}/.image/
 
   if [ "${BUILD_ANDROID_BOOTIMG}" = "yes" ]; then
-    INITRAMFS_DIR=$(sed -n 's/^CONFIG_INITRAMFS_SOURCE="\(.*\)"/\1/p' .config | tr ' ' '\n' | grep -v '\.conf$' | head -1)
+    INITRAMFS_DIR="${BUILD}/initramfs"
     mkdir -p ${BUILD}/image
+    initramfs_add_root_links "${INITRAMFS_DIR}"
     (cd ${INITRAMFS_DIR} && find . | cpio -H newc -o --quiet -R 0:0 > ${BUILD}/image/initramfs.cpio)
+    if [ "${DEVICE}" = "S905L3A" ]; then
+      ANDROID_KERNEL_OFFSET="0x2000000"
+    else
+      ANDROID_KERNEL_OFFSET="0x1080000"
+    fi
     python3 "${TOOLCHAIN}/mkbootimg/mkbootimg.py" \
       --kernel "arch/${TARGET_KERNEL_ARCH}/boot/${KERNEL_TARGET}" \
       --ramdisk "${BUILD}/image/initramfs.cpio" \
-      --base 0x0 --kernel_offset 0x1080000 \
+      --base 0x0 --kernel_offset ${ANDROID_KERNEL_OFFSET} \
       --header_version 0 \
       -o "${INSTALL}/.image/${KERNEL_TARGET}" || { exit 1; }
   elif [ "${BOOTLOADER}" != "qcom-abl" ]; then
@@ -385,16 +542,23 @@ makeinstall_target() {
 
   if [ "${BOOTLOADER}" = "u-boot" ]; then
     mkdir -p ${INSTALL}/usr/share/bootloader
-    for dtb in arch/${TARGET_KERNEL_ARCH}/boot/dts/**/*.dtb; do
-      if [ -f ${dtb} ]; then
-        if [[ "${DEVICE}" == RK3326* ]] || [ "${DEVICE}" = "H700" -o "${DEVICE}" = "RK3399" -o "${DEVICE}" = "RK3562" -o "${DEVICE}" = "RK3566" -o "${DEVICE}" = "RK3588" ]; then
-          mkdir -p ${INSTALL}/usr/share/bootloader/device_trees
-          cp -v ${dtb} ${INSTALL}/usr/share/bootloader/device_trees
-        else
-          cp -v ${dtb} ${INSTALL}/usr/share/bootloader
+    if [ "${DEVICE}" = "S905L3A" ]; then
+      mkdir -p ${INSTALL}/usr/share/bootloader/device_trees
+      for dtb in common_drivers/arch/${TARGET_KERNEL_ARCH}/boot/dts/amlogic/*.dtb; do
+        [ -f ${dtb} ] && cp -v ${dtb} ${INSTALL}/usr/share/bootloader/device_trees
+      done
+    else
+      for dtb in arch/${TARGET_KERNEL_ARCH}/boot/dts/**/*.dtb; do
+        if [ -f ${dtb} ]; then
+          if [[ "${DEVICE}" == RK3326* ]] || [ "${DEVICE}" = "H700" -o "${DEVICE}" = "RK3399" -o "${DEVICE}" = "RK3562" -o "${DEVICE}" = "RK3566" -o "${DEVICE}" = "RK3588" ]; then
+            mkdir -p ${INSTALL}/usr/share/bootloader/device_trees
+            cp -v ${dtb} ${INSTALL}/usr/share/bootloader/device_trees
+          else
+            cp -v ${dtb} ${INSTALL}/usr/share/bootloader
+          fi
         fi
-      fi
-    done
+      done
+    fi
   fi
 
   makeinstall_host

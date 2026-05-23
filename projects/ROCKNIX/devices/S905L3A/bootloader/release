@@ -1,11 +1,24 @@
 # SPDX-License-Identifier: GPL-2.0
 # Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
 
-mkdir -p ${RELEASE_DIR}/3rdparty/bootloader
-  cp -a ${INSTALL}/usr/share/bootloader/* ${RELEASE_DIR}/3rdparty/bootloader
+SRCDIR="${INSTALL}/usr/share/bootloader"
+DSTDIR="${RELEASE_DIR}/3rdparty/bootloader"
 
-# default dtb.img: use e900v22c
-if [ -f ${RELEASE_DIR}/3rdparty/bootloader/meson-g12a-s905l3a-e900v22c.dtb ]; then
-  cp -v ${RELEASE_DIR}/3rdparty/bootloader/meson-g12a-s905l3a-e900v22c.dtb \
-        ${RELEASE_DIR}/3rdparty/bootloader/dtb.img
+mkdir -p "${DSTDIR}/device_trees"
+cp -a "${SRCDIR}"/* "${DSTDIR}/" 2>/dev/null || true
+if [ -d "${SRCDIR}/device_trees" ]; then
+  cp -a "${SRCDIR}/device_trees/"*.dtb "${DSTDIR}/device_trees/"
+fi
+
+# default dtb.img: prefer generic G12A reference, then SC2 fallback
+DEFAULT_DTB=""
+for dtb in g12a_s905x2_2g.dtb sc2_s905x4_ah212_drm.dtb; do
+  if [ -f "${DSTDIR}/device_trees/${dtb}" ]; then
+    DEFAULT_DTB="${dtb}"
+    break
+  fi
+done
+
+if [ -n "${DEFAULT_DTB}" ]; then
+  cp -v "${DSTDIR}/device_trees/${DEFAULT_DTB}" "${DSTDIR}/dtb.img"
 fi

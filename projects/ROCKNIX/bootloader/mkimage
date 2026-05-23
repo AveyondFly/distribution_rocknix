@@ -131,8 +131,16 @@ mkimage_aml_boot() {
   if [ -f "${RELEASE_DIR}/3rdparty/bootloader/Generic_cfgload" ]; then
     mcopy "${RELEASE_DIR}/3rdparty/bootloader/Generic_cfgload" ::/cfgload
   fi
+  if [ -f "${RELEASE_DIR}/3rdparty/bootloader/Generic_cfgload_env" ]; then
+    mcopy "${RELEASE_DIR}/3rdparty/bootloader/Generic_cfgload_env" ::/cfgload_env
+  fi
   if [ -f "${RELEASE_DIR}/3rdparty/bootloader/dtb.img" ]; then
     mcopy "${RELEASE_DIR}/3rdparty/bootloader/dtb.img" ::
+  fi
+  if [ -d "${RELEASE_DIR}/3rdparty/bootloader/device_trees" ]; then
+    echo "image: copying device trees..."
+    mmd ::/device_trees 2>/dev/null || true
+    mcopy "${RELEASE_DIR}/3rdparty/bootloader/device_trees/"*.dtb ::/device_trees/
   fi
 }
 

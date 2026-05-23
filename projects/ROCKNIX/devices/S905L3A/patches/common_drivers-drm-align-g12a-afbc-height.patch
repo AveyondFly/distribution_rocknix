@@ -1,0 +1,11 @@
+--- a/common_drivers/drivers/drm/vpu-hw/meson_osd_afbc.c
++++ b/common_drivers/drivers/drm/vpu-hw/meson_osd_afbc.c
+@@ -656,7 +656,7 @@ static void g12a_osd_afbc_set_state(struct meson_vpu_block *vblk,
+ 	header_addr = plane_info->phy_addr;
+ 
+ 	frame_width = plane_info->byte_stride / 4;
+-	frame_height = BYTE_8_ALIGNED(plane_info->fb_h);
++	frame_height = BYTE_32_ALIGNED(plane_info->fb_h);
+ 	line_stride = line_stride_calc_afbc(pixel_format,
+ 					    frame_width, aligned_32);
+ 

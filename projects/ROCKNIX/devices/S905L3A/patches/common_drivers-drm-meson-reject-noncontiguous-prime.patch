@@ -1,0 +1,28 @@
+--- a/common_drivers/drivers/drm/meson_gem.c
++++ b/common_drivers/drivers/drm/meson_gem.c
+@@ -7,6 +7,7 @@
+ #include <drm/drm_gem.h>
+ #include <drm/drm_vma_manager.h>
+ #include <drm/drm_gem_cma_helper.h>
++#include <drm/drm_prime.h>
+ 
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+@@ -818,8 +819,17 @@ am_meson_gem_prime_import_sg_table(struct drm_device *dev,
+ {
+ 	struct am_meson_gem_object *meson_gem_obj;
+ 	int ret;
++	unsigned long contiguous_size;
++
++	contiguous_size = drm_prime_get_contiguous_size(sgt);
++	if (contiguous_size < attach->dmabuf->size) {
++		DRM_DEBUG("%s: reject non-contiguous imported dmabuf size=%zu contiguous=%lu nents=%u\n",
++			  __func__, attach->dmabuf->size, contiguous_size,
++			  sgt->nents);
++		return ERR_PTR(-EINVAL);
++	}
+ 
+ 	meson_gem_obj = kzalloc(sizeof(*meson_gem_obj), GFP_KERNEL);
+ 	if (!meson_gem_obj)
+ 		return ERR_PTR(-ENOMEM);
+ 

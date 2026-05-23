@@ -36,5 +36,14 @@ post_install() {
   if [ "${DEVICE}" = "S905L3A" ]; then
     enable_service persist-mac.service
     enable_service s905l3a-audio.service
+    mkdir -p ${INSTALL}/usr/share/wireplumber/wireplumber.conf.d
+    cp ${PKG_DIR}/platforms/S905L3A/wireplumber/51-sc2-alsa-hdmi.conf \
+      ${INSTALL}/usr/share/wireplumber/wireplumber.conf.d/
+    mkdir -p ${INSTALL}/usr/share/alsa-card-profile/mixer/profile-sets
+    cp ${PKG_DIR}/platforms/S905L3A/alsa-card-profile/s905l3a-hdmi.conf \
+      ${INSTALL}/usr/share/alsa-card-profile/mixer/profile-sets/
+    mkdir -p ${INSTALL}/usr/lib/udev/rules.d
+    cp ${PKG_DIR}/platforms/S905L3A/udev/90-s905l3a-alsa-profile.rules \
+      ${INSTALL}/usr/lib/udev/rules.d/
   fi
 }

@@ -1,0 +1,63 @@
+--- a/common_drivers/drivers/drm/meson_hdmi.c
++++ b/common_drivers/drivers/drm/meson_hdmi.c
+@@ -95,11 +95,11 @@ struct hdmitx_color_attr color_attr_list[] = {
+ 
+ /* this is prior selected list of other display mode */
+ struct hdmitx_color_attr other_color_attr_list[] = {
++	{HDMI_COLORSPACE_RGB, 8}, //"rgb,8bit"
+ 	{HDMI_COLORSPACE_YUV444, 10}, //"444,10bit"
+ 	{HDMI_COLORSPACE_YUV422, 12}, //"422,12bit"
+ 	{HDMI_COLORSPACE_RGB, 10}, //"rgb,10bit"
+ 	{HDMI_COLORSPACE_YUV444, 8}, //"444,8bit"
+-	{HDMI_COLORSPACE_RGB, 8}, //"rgb,8bit"
+ 	{HDMI_COLORSPACE_RESERVED6, COLORDEPTH_RESERVED}
+ };
+ 
+@@ -1271,7 +1271,7 @@ void meson_hdmitx_reset(struct drm_connector *connector)
+ 	hdmitx_state->base.content_protection = am_hdmi_info.hdcp_request_content_protection;
+ 
+ 	hdmitx_state->pref_hdr_policy = MESON_PREF_SDR;
+-	hdmitx_state->color_attr_para.colorformat = HDMI_COLORSPACE_YUV444;
++	hdmitx_state->color_attr_para.colorformat = HDMI_COLORSPACE_RGB;
+ 	hdmitx_state->color_attr_para.bitdepth = 8;
+ 	hdmitx_state->frac_rate_policy = tx_comm->frac_rate_policy;
+ 
+@@ -2058,9 +2058,8 @@ void meson_hdmitx_encoder_atomic_enable(struct drm_encoder *encoder,
+ 		return;
+ 	}
+ 
+-	if (meson_crtc_state->uboot_mode_init == 1 &&
+-		meson_conn_state->update != 1)
+-		vmode |= VMODE_INIT_BIT_MASK;
++	if (meson_crtc_state->uboot_mode_init == 1)
++		DRM_INFO("[%s] force RGB8 mode setting from uboot init\n", __func__);
+ 
+ 	if (!meson_crtc_state->seamless) {
+ 		hdmitx_set_hdr_priority(am_hdmi_info.hdmitx_dev->hdmitx_common,
+@@ -2168,10 +2168,11 @@ int meson_hdmitx_encoder_atomic_check(struct drm_encoder *encoder,
+ 
+ 	if (meson_crtc_state->uboot_mode_init == 1) {
+ 		hdmitx_get_init_state(common, &hdmitx_state->hcs);
+-		attr->colorformat = hdmitx_state->hcs.para.cs;
+-		attr->bitdepth = colordepth_to_bitdepth(hdmitx_state->hcs.para.cd);
++		attr->colorformat = HDMI_COLORSPACE_RGB;
++		attr->bitdepth = 8;
+ 		hdmitx_state->hdr_priority = hdmitx_state->hcs.hdr_priority;
+ 		hdmitx_state->frac_rate_policy = common->frac_rate_policy;
++		hdmitx_state->update = true;
+ 	}
+ 
+ 	/*The recovery mode not have composer to set attr*/
+--- a/common_drivers/drivers/drm/meson_crtc.c
++++ b/common_drivers/drivers/drm/meson_crtc.c
+@@ -707,8 +707,8 @@ static void am_meson_crtc_atomic_enable(struct drm_crtc *crtc,
+ 		else
+ 			meson_vout_update_mode_name(amcrtc->vout_index, name, "dummy");
+ 	} else {
+-		if (meson_crtc_state->uboot_mode_init)
+-			mode |= VMODE_INIT_BIT_MASK;
++		if (meson_crtc_state->uboot_mode_init)
++			DRM_INFO("%s-[%d]: force vout mode update from uboot init\n", __func__, amcrtc->crtc_index);
+ 
+ 		if (meson_crtc_state->seamless) {
+ 			drm_crtc_vblank_on(crtc);

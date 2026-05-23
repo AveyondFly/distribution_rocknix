@@ -1,0 +1,55 @@
+--- a/common_drivers/drivers/drm/meson_hdmi.c
++++ b/common_drivers/drivers/drm/meson_hdmi.c
+@@ -212,7 +212,7 @@ static void build_hdmitx_attr_str(char *attr_str, u32 format, u32 bit_depth)
+ 	};
+ 
+ 	sprintf(attr_str, "%s,%dbit", colorspace, bit_depth);
+-	DRM_INFO("%s:%s = %u+%u\n", __func__, attr_str, format, bit_depth);
++	DRM_DEBUG("%s:%s = %u+%u\n", __func__, attr_str, format, bit_depth);
+ }
+ 
+ static struct hdmitx_color_attr *meson_hdmitx_get_candidate_attr_list
+@@ -413,20 +413,10 @@ static int meson_hdmitx_decide_color_attr
+ 					fmt_attr.bitdepth, common->fmt_attr);
+ 					attr->bitdepth = fmt_attr.bitdepth;
+ 			} else {
+-				if (common->rxcap.ColorDeepSupport & 0x78 && attr->colorformat != HDMI_COLORSPACE_YUV420) {
+-					enum hdmi_color_depth cd;
+-					for (cd = COLORDEPTH_30B; cd >= COLORDEPTH_24B; cd--) {
+-						if (common->rxcap.ColorDeepSupport & (1 << (cd - 1))) {
+-							attr->bitdepth = colordepth_to_bitdepth(cd);
+-							break;
+-						}
+-					}
+-				} else if (common->rxcap.hf_ieeeoui == HF_IEEEOUI) {
+-					if (common->rxcap.dc_30bit_420)
+-						attr->bitdepth = colordepth_to_bitdepth(COLORDEPTH_30B);
+-					else
+-						attr->bitdepth = colordepth_to_bitdepth(COLORDEPTH_24B);
+-				}
++				/* Match mainline Meson HDMI for UI scanout: keep
++				 * automatic colour depth at 8bpc unless explicitly forced.
++				 */
++				attr->bitdepth = colordepth_to_bitdepth(COLORDEPTH_24B);
+ 
+ 				if (is_hdmi4k_support_420(vic & 0xff)) {
+ 					if (attr->colorformat == HDMI_COLORSPACE_RGB || attr->colorformat == HDMI_COLORSPACE_YUV444) {
+@@ -1287,8 +1277,7 @@ void meson_hdmitx_reset(struct drm_connector *connector)
+ 
+ 	/*drm api need update state, so need delay attach when create state.*/
+ 	if (!connector->max_bpc_property)
+-		drm_connector_attach_max_bpc_property
+-				(connector, 8, HDMITX_MAX_BPC);
++		drm_connector_attach_max_bpc_property(connector, 8, 8);
+ }
+ 
+ static int meson_hdmitx_get_mode(void)
+@@ -2027,7 +2017,7 @@ int meson_encoder_vrr_change(struct drm_encoder *encoder,
+ 		}
+ 	}
+ 
+-	DRM_INFO("[%s], seamless is %d\n", __func__, meson_crtc_state->seamless);
++	DRM_DEBUG("[%s], seamless is %d\n", __func__, meson_crtc_state->seamless);
+ 	return meson_crtc_state->seamless;
+ }
+ 

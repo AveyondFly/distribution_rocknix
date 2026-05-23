@@ -1,0 +1,15 @@
+--- a/common_drivers/drivers/media/vout/hdmitx_common/hdmitx_drm_hook.c
++++ b/common_drivers/drivers/media/vout/hdmitx_common/hdmitx_drm_hook.c
+@@ -22,8 +22,10 @@ unsigned int hdmitx_common_get_contenttypes(void)
+ 	unsigned int types = 1 << DRM_MODE_CONTENT_TYPE_NO_DATA;/*NONE DATA*/
+ 	struct rx_cap *prxcap = &global_tx_base->rxcap;
+ 
+-	if (prxcap->cnc0)
+-		types |= 1 << DRM_MODE_CONTENT_TYPE_GRAPHICS;
++	/* wlroots/sway always sets Graphics on atomic commit; many sinks
++	 * omit CNC bits in EDID and would otherwise fail modeset.
++	 */
++	types |= 1 << DRM_MODE_CONTENT_TYPE_GRAPHICS;
+ 	if (prxcap->cnc1)
+ 		types |= 1 << DRM_MODE_CONTENT_TYPE_PHOTO;
+ 	if (prxcap->cnc2)

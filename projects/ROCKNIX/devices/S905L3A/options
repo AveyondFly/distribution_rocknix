@@ -31,8 +31,8 @@
     KERNEL_NAME="kernel.img"
     BUILD_ANDROID_BOOTIMG="yes"
 
-  # Kernel extra targets to build
-    KERNEL_MAKE_EXTRACMD=" $(get_kernel_make_extracmd)"
+  # Kernel extra targets to build (vendor common_drivers dtstree)
+    KERNEL_MAKE_EXTRACMD=" dtbs"
 
   # Kernel cmdline
     EXTRA_CMDLINE="quiet console=ttyAML0,115200n8 console=tty0 systemd.debug_shell=ttyAML0"
@@ -43,11 +43,23 @@
   # No U-Boot firmware needed (chain-boot from stock Android U-Boot)
     UBOOT_FIRMWARE=""
 
-  # GPU driver - pure Panfrost (open source)
-    GRAPHIC_DRIVERS="panfrost"
+  # OpenGL(X) implementation to use (no / mesa)
+    OPENGL="no"
+
+  # OpenGL-ES implementation to use (no / mesa / opengl-meson)
+    OPENGLES="opengl-meson"
+
+  # Mali GPU family for the proprietary userspace driver.
+    MALI_FAMILY="bifrost-g31"
+
+  # Xorg Graphic drivers to use (Amlogic kernel driver is provided by gpu-aml)
+    GRAPHIC_DRIVERS="gpu-aml"
 
   # For maximum cross compatbility
     PREFER_GLES="yes"
+
+  # TEE supported SoC (CoreELEC Amlogic-no compatible list)
+    TEE_SOC="S928X A311D2 S905W2 S905X4 S905Y4 S905X5M S905X5 S905A"
 
   # Displayserver to use (wl / x11 / no)
     DISPLAYSERVER="wl"
@@ -59,7 +71,7 @@
   # for a list of additional drivers see packages/linux-drivers
   # Space separated list is supported,
   # e.g. ADDITIONAL_DRIVERS="DRIVER1 DRIVER2"
-    ADDITIONAL_DRIVERS="RTW88"
+    ADDITIONAL_DRIVERS="gpu-aml opentee_linuxdriver media_modules-aml"
 
   # Additional Firmware to use ( )
   # Space separated list is supported,
@@ -67,7 +79,7 @@
     FIRMWARE=""
 
   # Additional packages to install
-    ADDITIONAL_PACKAGES=""
+    ADDITIONAL_PACKAGES="parse-android-dynparts libdevmapper"
 
   # Debug tty path
     DEBUG_TTY="/dev/ttyAML0"

@@ -5,4 +5,6 @@
 ### Set the default device configuration
 cat <<EOF >/storage/.config/profile.d/090-ui_service
 UI_SERVICE="sway.service essway.service"
+MALI_WAYLAND_AFBC=0
+SDL_VIDEODRIVER=wayland
 EOF

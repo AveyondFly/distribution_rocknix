@@ -13,7 +13,7 @@ PKG_GAMESUPPORT="sixaxis rocknix-hotkey jstest-sdl gamecontrollerdb sdljoytest c
 [[ "${DEVICE}" == SM* ]] && PKG_GAMESUPPORT+=" sdltouchtest"
 
 case ${DEVICE} in
-  SM8250|SM8550|SM8650|SDM845|S922X|S905L3A|RK3326)
+  SM8250|SM8550|SM8650|SDM845|S922X|RK3326)
     PKG_GAMESUPPORT+=" mangohud"
   ;;
 esac

@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ROCKNIX <build@rocknix.org>
+Date: Thu, 21 May 2026 00:00:00 +0000
+Subject: [PATCH] linux: guard OPEN_TREE_* macros when kernel headers define them
+
+When building against newer kernel headers (e.g. Linux 7.0) that already
+define OPEN_TREE_CLONE and OPEN_TREE_CLOEXEC in linux/mount.h, glibc's
+unconditional redefinition triggers -Werror.  Only provide fallback
+definitions when the kernel headers did not.
+
+Upstream-Status: Backport [glibc bug 33921]
+
+--- a/sysdeps/unix/sysv/linux/sys/mount.h
++++ b/sysdeps/unix/sysv/linux/sys/mount.h
+@@ -265,8 +265,12 @@ enum
+ #define FSOPEN_CLOEXEC          0x00000001
+ 
+ /* open_tree flags.  */
++#ifndef OPEN_TREE_CLONE
+ #define OPEN_TREE_CLONE    1         /* Clone the target tree and attach the clone */
++#endif
++#ifndef OPEN_TREE_CLOEXEC
+ #define OPEN_TREE_CLOEXEC  O_CLOEXEC /* Close the file on execve() */
++#endif
+ 
+ 
+ __BEGIN_DECLS

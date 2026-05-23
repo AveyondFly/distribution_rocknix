@@ -2,15 +2,20 @@
 # SPDX-License-Identifier: GPL-2.0
 # Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
 #
-# Set HDMI audio routing via TOHDMITX before pipewire starts
-# This must run before pipewire initializes the ALSA devices
+# HDMI audio routing before pipewire starts.
+# CoreELEC on SC2/S905X4: Kodi uses ALSA DEV=0 (SPDIF-B) with
+# HDMITX Audio Source Select = Spdif_b. Do not route via Tdm_C.
 
-# Set HDMI audio routing via TOHDMITX
-amixer -c 0 -q cset numid=65 on   # TOHDMITX Switch
-amixer -c 0 -q cset numid=64 1    # TOHDMITX I2S SRC = I2S B
-amixer -c 0 -q cset numid=41 on   # FRDDR_A SRC 1 EN Switch
-amixer -c 0 -q cset numid=44 1    # FRDDR_A SINK 1 SEL = OUT 1
-amixer -c 0 -q cset numid=47 on   # FRDDR_B SRC 1 EN Switch
-amixer -c 0 -q cset numid=50 1    # FRDDR_B SINK 1 SEL = OUT 1
-amixer -c 0 -q cset numid=53 on   # FRDDR_C SRC 1 EN Switch
-amixer -c 0 -q cset numid=56 1    # FRDDR_C SINK 1 SEL = OUT 1
+mixer() {
+  amixer -c "$1" sset "$2" "$3" >/dev/null 2>&1
+}
+
+card=0
+
+# This script is installed only for DEVICE=S905L3A, and the matching
+# WirePlumber profile routes playback to SPDIF-B (hw:0,0).
+mixer "${card}" 'HDMITX Audio Source Select' 'Spdif_b'
+mixer "${card}" 'Audio I2S to HDMITX Format' 'Stereo PCM'
+mixer "${card}" 'Audio hdmi-out mute' off
+
+exit 0

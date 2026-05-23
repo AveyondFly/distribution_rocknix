@@ -9,16 +9,22 @@
 mount -o remount,rw $BOOT_ROOT
 
 # update dtb.img
-for dtb in meson-g12a-s905l3a-e900v22c.dtb meson-g12a-s905l3a-cm311.dtb meson-g12a-s905l3a-m401a.dtb; do
-  if [ -f $BOOT_ROOT/dtb.img ] && [ -f $SYSTEM_ROOT/usr/share/bootloader/$dtb ]; then
+for dtb in g12a_s905x2_2g.dtb g12a_s905x2_4g.dtb sc2_s905x4_ah212_drm.dtb; do
+  if [ -f $BOOT_ROOT/dtb.img ] && [ -f $SYSTEM_ROOT/usr/share/bootloader/device_trees/$dtb ]; then
     # only update if current dtb.img matches this dtb
-    if cmp -s $BOOT_ROOT/dtb.img $SYSTEM_ROOT/usr/share/bootloader/$dtb 2>/dev/null; then
+    if cmp -s $BOOT_ROOT/dtb.img $SYSTEM_ROOT/usr/share/bootloader/device_trees/$dtb 2>/dev/null; then
       echo "Updating dtb.img from $dtb..."
-      cp -p $SYSTEM_ROOT/usr/share/bootloader/$dtb $BOOT_ROOT/dtb.img
+      cp -p $SYSTEM_ROOT/usr/share/bootloader/device_trees/$dtb $BOOT_ROOT/dtb.img
       break
     fi
   fi
 done
+
+# update device_trees
+if [ -d $SYSTEM_ROOT/usr/share/bootloader/device_trees ]; then
+  mkdir -p $BOOT_ROOT/device_trees
+  cp -f $SYSTEM_ROOT/usr/share/bootloader/device_trees/*.dtb $BOOT_ROOT/device_trees/
+fi
 
 # update boot scripts
 for f in aml_autoscript config.ini; do
@@ -31,6 +37,11 @@ done
 if [ -f $SYSTEM_ROOT/usr/share/bootloader/Generic_cfgload ]; then
   echo "Updating cfgload..."
   cp -p $SYSTEM_ROOT/usr/share/bootloader/Generic_cfgload $BOOT_ROOT/cfgload
+fi
+
+if [ -f $SYSTEM_ROOT/usr/share/bootloader/Generic_cfgload_env ]; then
+  echo "Updating cfgload_env..."
+  cp -p $SYSTEM_ROOT/usr/share/bootloader/Generic_cfgload_env $BOOT_ROOT/cfgload_env
 fi
 
 sync

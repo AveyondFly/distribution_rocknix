@@ -22,6 +22,9 @@ case "${DEVICE}" in
     DRIVER_VERSION="r51p0"
     PKG_DEPENDS_TARGET+=" vulkan-wsi-layer vulkan-tools"
   ;;
+  S905L3A)
+    DRIVER_VERSION="g24p0"
+  ;;
   RK3588|RK3562)
     DRIVER_VERSION="g13p0"
   ;;

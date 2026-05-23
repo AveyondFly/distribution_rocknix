@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026-present ROCKNIX (https://github.com/ROCKNIX)
+
+# Limit ACP probing to SPDIF-B (hw:0,0) on SC2 Amlogic sound cards.
+SUBSYSTEM=="sound", DEVPATH=="*auge_sound*", ENV{ACP_PROFILE_SET}="s905l3a-hdmi.conf"

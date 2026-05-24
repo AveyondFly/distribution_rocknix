@@ -8,8 +8,8 @@
 # Get Internal LED State
 LED_STATE=$(get_setting "led.color")
 if [ ! -n "${LED_STATE}" ]; then
-  LED_STATE="off"
-  set_setting "led.color" "off"
+  LED_STATE="all_off"
+  set_setting "led.color" "all_off"
 fi
 
 # Run LED control at boot

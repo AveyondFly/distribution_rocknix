@@ -81,6 +81,7 @@
 
   # Additional packages to install
     ADDITIONAL_PACKAGES="parse-android-dynparts libdevmapper libmali"
+    ADDITIONAL_PACKAGES_32BIT="libmali"
 
   # Debug tty path
     DEBUG_TTY="/dev/ttyAML0"

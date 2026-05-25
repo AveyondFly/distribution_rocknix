@@ -330,8 +330,9 @@ pre_make_target() {
     ${PKG_BUILD}/scripts/config --disable CONFIG_ISCSI_IBFT
   fi
 
-  # disable lima/panfrost if vendor Mali userspace is configured
-  if [ "${OPENGLES}" = "libmali" ] || [ "${OPENGLES}" = "opengl-meson" ]; then
+  # disable lima/panfrost if a vendor Mali kernel driver/userspace is configured
+  if [ "${OPENGLES}" = "libmali" ] || [ "${OPENGLES}" = "opengl-meson" ] || \
+     listcontains "${GRAPHIC_DRIVERS}" "gpu-aml"; then
     ${PKG_BUILD}/scripts/config --disable CONFIG_DRM_LIMA
     ${PKG_BUILD}/scripts/config --disable CONFIG_DRM_PANFROST
   fi

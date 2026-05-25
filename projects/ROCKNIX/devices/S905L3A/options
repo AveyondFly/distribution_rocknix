@@ -47,8 +47,8 @@
   # OpenGL(X) implementation to use (no / mesa)
     OPENGL="no"
 
-  # OpenGL-ES implementation to use (no / mesa / opengl-meson)
-    OPENGLES="opengl-meson"
+  # OpenGL-ES implementation to use (no / mesa / libmali)
+    OPENGLES="mesa"
 
   # Mali GPU family for the proprietary userspace driver.
     MALI_FAMILY="bifrost-g31"
@@ -80,7 +80,7 @@
     FIRMWARE="brcmfmac_sdio-firmware-aml"
 
   # Additional packages to install
-    ADDITIONAL_PACKAGES="parse-android-dynparts libdevmapper"
+    ADDITIONAL_PACKAGES="parse-android-dynparts libdevmapper libmali"
 
   # Debug tty path
     DEBUG_TTY="/dev/ttyAML0"

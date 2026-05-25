@@ -36,6 +36,9 @@ post_install() {
   if [ "${DEVICE}" = "S905L3A" ]; then
     enable_service persist-mac.service
     enable_service s905l3a-audio.service
+    mkdir -p ${INSTALL}/usr/share/pipewire/pipewire.conf.d
+    cp ${PKG_DIR}/platforms/S905L3A/pipewire/51-s905l3a-static-hdmi-sink.conf \
+      ${INSTALL}/usr/share/pipewire/pipewire.conf.d/
     mkdir -p ${INSTALL}/usr/share/wireplumber/wireplumber.conf.d
     cp ${PKG_DIR}/platforms/S905L3A/wireplumber/51-sc2-alsa-hdmi.conf \
       ${INSTALL}/usr/share/wireplumber/wireplumber.conf.d/

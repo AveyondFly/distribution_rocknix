@@ -44,9 +44,6 @@
   # No U-Boot firmware needed (chain-boot from stock Android U-Boot)
     UBOOT_FIRMWARE=""
 
-  # OpenGL(X) implementation to use (no / mesa)
-    OPENGL="no"
-
   # OpenGL-ES implementation to use (no / mesa / libmali)
     OPENGLES="mesa"
 
@@ -54,7 +51,7 @@
     MALI_FAMILY="bifrost-g31"
 
   # Xorg Graphic drivers to use (Amlogic kernel driver is provided by gpu-aml)
-    GRAPHIC_DRIVERS="gpu-aml"
+    GRAPHIC_DRIVERS="mali"
 
   # For maximum cross compatbility
     PREFER_GLES="yes"

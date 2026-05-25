@@ -87,9 +87,9 @@ case "${DEVICE}" in
     PKG_RETROARCH+=" retropie-shaders"
     ;;
   S905L3A)
-    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr pcsx_rearmed-lr"
+    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr gpsp_ezode-lr pcsx_rearmed-lr"
     PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
-    PKG_EMUS+=" box64 drastic-sa drastic_adv-sa mednafen portmaster scummvmsa yabasanshiro-sa duckstation-sa"
+    PKG_EMUS+=" box64 drastic-sa drastic_adv-sa mednafen portmaster scummvmsa yabasanshiro-sa duckstation-sa ppsspp2021-sa"
     LIBRETRO_CORES+=" flycast2021-lr geolith-lr uae4arm"
     PKG_RETROARCH+=" retropie-shaders"
     ;;

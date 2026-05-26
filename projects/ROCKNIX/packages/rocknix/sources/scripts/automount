@@ -214,7 +214,7 @@ function find_games() {
     SYSTEM_PARTITIONS=""
     OTHER_PARTITIONS=""
     for dev in "mmcblk[0-9]" "sd[a-z]" "nvme[0-9]"; do
-      for PART in $(blkid | grep -E "${dev}" | awk 'BEGIN {FS=":"}; /ext4/ || /btrfs/ || /fat/ || /ntfs/ {print $1}' | sort -r); do
+      for PART in $(blkid | grep -E "/dev/${dev}" | awk 'BEGIN {FS=":"}; /ext4/ || /btrfs/ || /fat/ || /ntfs/ {print $1}' | sort -r); do
         ROOTDEV=$(echo ${PART} | sed -e "s#^/.*/##g" -e "s#p[0-9].*\$##g")
         if [ "${ROOTDEV}" = "${SYSTEM_DISK}" ]
         then
@@ -231,8 +231,12 @@ function find_games() {
       [ -z "${DEV}" ] && continue
       ROOTDEV=$(echo ${DEV} | sed -e "s#^/.*/##g" -e "s#p[0-9].*\$##g")
       log $0 "Inspecting ${DEV}."
-      SIZE=$(awk '/'${ROOTDEV}'$/ {print $3}' /proc/partitions)
-      if (( ${SIZE} <= 8388608 ))
+      SIZE=$(awk -v dev="${ROOTDEV}" '$4 == dev {print $3; exit}' /proc/partitions)
+      if [ -z "${SIZE}" ] && [ -r "/sys/class/block/${ROOTDEV}/size" ]
+      then
+        SIZE=$(($(cat "/sys/class/block/${ROOTDEV}/size") / 2))
+      fi
+      if [ -z "${SIZE}" ] || (( SIZE <= 8388608 ))
       then
         log $0 "Device ${ROOTDEV} is too small, ignoring."
         # We don't want to mount partitions smaller than ~8GB.

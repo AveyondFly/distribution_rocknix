@@ -5,4 +5,5 @@
 
 . /etc/profile
 
-echo 0 > /sys/class/gpio/gpio65/value
+/usr/bin/ledcontrol all_off
+/usr/bin/analog_sticks_ledcontrol_single off

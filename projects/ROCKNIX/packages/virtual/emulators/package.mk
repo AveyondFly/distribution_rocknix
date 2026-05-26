@@ -393,6 +393,7 @@ makeinstall_target() {
       ;;
   esac
   install_script "Start Flycast.sh"
+  install_script "Start Flycast2022.sh"
   add_es_system dreamcast
 
   ### EasyRPG
@@ -1087,6 +1088,7 @@ makeinstall_target() {
   add_emu_core psp retroarch ppsspp false
   add_es_system psp
   install_script "Start PPSSPP.sh"
+  install_script "Start PPSSPP2021.sh"
 
   ### Sony Playstation Portable Minis
   add_emu_core pspminis ppsspp ppsspp-sa true

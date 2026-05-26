@@ -237,21 +237,61 @@ if [ "$UPDATE_MODE" != "device_change" ]; then
     done
 fi
 
-# 获取分辨率并交换宽高的功能
+# 获取当前输出分辨率并交换宽高的功能
 TARGET_RES="1920x1080 1080x1920 1024x768 1280x720 720x1280 960x720 720x960 854x480 480x854 544x960 960x544 720x720 480x640 640x480 480x320 320x480"
+RESOLUTION_RE='(1920x1080|1080x1920|1280x720|1024x768|960x720|720x960|720x1280|854x480|480x854|960x544|544x960|720x720|640x480|480x640|480x320|320x480)'
 
-detected_res=$(
-    grep -oE '(1920x1080|1080x1920|1280x720|1024x768|960x720|720x960|720x1280|854x480|480x854|960x544|544x960|720x720|640x480|480x640|480x320|320x480)' /sys/class/graphics/fb0/modes |
-    grep -xE "$(echo "$TARGET_RES" | tr ' ' '|')" |
-    head -n1
-)
+normalize_resolution() {
+    local res="$1"
+    local width height
 
-if [[ -n "$detected_res" ]]; then
-    IFS='x' read -r width height <<< "$detected_res"
+    [ -n "$res" ] || return 1
+
+    case " $TARGET_RES " in
+        *" $res "*) ;;
+        *) return 1 ;;
+    esac
+
+    IFS='x' read -r width height <<< "$res"
     if (( width < height )); then
-        detected_res="${height}x${width}"
+        res="${height}x${width}"
     fi
-fi
+
+    echo "$res"
+}
+
+detect_current_resolution() {
+    local width height res state candidate
+
+    if [ -r /sys/class/display/vinfo ]; then
+        width="$(sed -n 's/^[[:space:]]*width:[[:space:]]*//p' /sys/class/display/vinfo | head -n1)"
+        height="$(sed -n 's/^[[:space:]]*height:[[:space:]]*//p' /sys/class/display/vinfo | head -n1)"
+        if [[ "$width" =~ ^[0-9]+$ && "$height" =~ ^[0-9]+$ ]] &&
+           res="$(normalize_resolution "${width}x${height}")"; then
+            echo "$res"
+            return
+        fi
+    fi
+
+    for state in /sys/kernel/debug/dri/*/state; do
+        [ -r "$state" ] || continue
+        while read -r candidate; do
+            if res="$(normalize_resolution "$candidate")"; then
+                echo "$res"
+                return
+            fi
+        done < <(sed -n 's/.*name:\[\([0-9]\+x[0-9]\+\)p[0-9].*/\1/p' "$state")
+    done
+
+    for candidate in $(grep -oE "$RESOLUTION_RE" /sys/class/graphics/fb0/modes 2>/dev/null); do
+        if res="$(normalize_resolution "$candidate")"; then
+            echo "$res"
+            return
+        fi
+    done
+}
+
+detected_res="$(detect_current_resolution)"
 
 # Default scale factors
 MENU_SCALE_FACTOR="0.400000"

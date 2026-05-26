@@ -151,7 +151,7 @@ echo "${TARGET_VERSION}" >${INSTALL}/etc/release
 
 # Create /etc/os-release
 cat <<EOF >${INSTALL}/etc/os-release
-OS_NAME="${DISTRONAME}"
+OS_NAME="ROCKNIX"
 OS_VERSION="${OS_VERSION}"
 OS_BUILD="rocknix"
 GIT_ORGANIZATION="${GIT_ORGANIZATION}"

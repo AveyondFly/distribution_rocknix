@@ -26,14 +26,20 @@ if test "${max_freq_a53}" != ""; then setenv max_freq_a53 "max_freq_a53=${max_fr
 if test "${wol}" != ""; then setenv wol "enable_wol=${wol}"; fi
 if test "${keymap}" != ""; then setenv keymap "keymap=${keymap}"; fi
 if test "${fbcon}" != ""; then setenv fbcon "fbcon=${fbcon}"; fi
-if test "${quiet}" = "0" || test "${quiet}" = "no" || test "${quiet}" = "off"; then setenv quietopt ""; else setenv quietopt "quiet"; fi
+if test "${quiet}" = "0" || test "${quiet}" = "no" || test "${quiet}" = "off"; then
+  setenv quietopt ""
+  setenv bootstatus "debug=yes progress systemd.debug_shell=ttyAML0"
+else
+  setenv quietopt "quiet"
+  setenv bootstatus "systemd.show_status=0"
+fi
 
 if test "${mac}" = "" && test "${ethaddr}" != ""; then setenv localmac "mac=${ethaddr}"; fi
 if test "${loadaddr_kernel}" != ""; then setenv loadaddr_kernel "0x02000000"; setenv loadaddr "${loadaddr_kernel}"; fi
 
 setenv irsetup "remotewakeup=${remotewakeup} decode_type=${decode_type} remotewakeupmask=${remotewakeupmask}"
 setenv displayopt "vout=${vout},enable frac_rate_policy=${frac_rate_policy} hdmitx=${hdmitx} hdr_policy=${hdr_policy}"
-setenv initargs "${rootopt} ${quietopt} ${consoleopt} ${fbcon} ${keymap} ${max_freq_cluster} ${max_freq_a53} ${wol} ${localmac} ${cec} ${irsetup} ${usbpower} ${gpiopower} debug=yes progress systemd.debug_shell=ttyAML0"
+setenv initargs "${rootopt} ${quietopt} ${bootstatus} ${consoleopt} ${fbcon} ${keymap} ${max_freq_cluster} ${max_freq_a53} ${wol} ${localmac} ${cec} ${irsetup} ${usbpower} ${gpiopower}"
 setenv bootargs "${bootargs} ${initargs} ${displayopt} ${rocknix}"
 
 fatload ${device} ${devnr}:${partnr} ${loadaddr} kernel.img

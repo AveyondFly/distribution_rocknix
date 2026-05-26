@@ -462,9 +462,19 @@ hdmi_con() {
 }
 
 load_splash() {
-  /usr/bin/rocknix-splash
+  if [ "@DEVICENAME@" = "S905L3A" ]; then
+    clear >/dev/console
+    cat /sysroot/etc/motd >/dev/console
+    echo "" >/dev/console
+  elif [ -e /dev/fb0 ]; then
+    /usr/bin/rocknix-splash 2>/dev/null
+    echo -en "\033[1000H\033[2K$(cat /sysroot/etc/issue)\n\n" >/dev/console
+  elif [ -f /sysroot/etc/motd ]; then
+    clear >/dev/console
+    cat /sysroot/etc/motd >/dev/console
+    echo "" >/dev/console
+  fi
 
-  echo -en "\033[1000H\033[2K$(cat /sysroot/etc/issue)\n\n" >/dev/console
   if [ -f "/storage/.configured" ]
   then
     echo -ne "\033[1000H\033[2K==> Loading, please wait..." >/dev/console

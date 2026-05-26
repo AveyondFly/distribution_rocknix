@@ -309,11 +309,17 @@ jobs:
            REMOTE_DIR="/aurknix/nightly/${{ env.DATE }}"
          fi
          BaiduPCS-Go mkdir "$REMOTE_DIR" || echo "Directory may already exist"
-         FILES=$(find . -type f -name "*.img.gz")
-         for FILE in $FILES; do
-           echo "Uploading: $FILE"
-           BaiduPCS-Go upload --norapid "$FILE" "$REMOTE_DIR"
-         done         
+         chmod +x .github/scripts/prepare-s905l3a-zh-cn-img.sh
+         mapfile -t FILES < <(find . -type f -name "*.img.gz" | sort)
+         for FILE in "${FILES[@]}"; do
+           UPLOAD_FILE="${FILE}"
+           if [[ "${FILE}" == *S905L3A* ]]; then
+             echo "Preparing S905L3A zh_CN image from ${FILE}..."
+             UPLOAD_FILE="$(.github/scripts/prepare-s905l3a-zh-cn-img.sh "${FILE}")"
+           fi
+           echo "Uploading: ${UPLOAD_FILE}"
+           BaiduPCS-Go upload --norapid "${UPLOAD_FILE}" "$REMOTE_DIR"
+         done
 
   release-official:
     if: ${{ always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && github.repository_owner == 'AveyondFly' && needs.set-envs.outputs.OFFICIAL == 'yes' }}

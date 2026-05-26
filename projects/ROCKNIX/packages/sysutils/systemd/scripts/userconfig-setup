@@ -55,8 +55,17 @@ then
   fi
 
   mkdir -p /storage/.config/modprobe.d  >/dev/null 2>&1
-  touch /storage/.configured  >/dev/null 2>&1
+  echo "${QUIRK_DEVICE}" > /storage/.configured
   sync
+else
+  if [ "$(tr -d '\n' < /storage/.configured 2>/dev/null)" != "${QUIRK_DEVICE}" ]; then
+    tocon "Device changed, resetting profile..."
+    if [ -d "/storage/.config/profile.d" ]; then
+      rm -f /storage/.config/profile.d/*
+    fi
+    echo "${QUIRK_DEVICE}" > /storage/.configured
+    sync
+  fi
 fi
 
 if [ ! -e "/storage/.cache/ld.so.cache" ]

@@ -5,6 +5,7 @@
 
 hidecursor
 ROM_DIR="/storage/roms"
+RACFG="/storage/.config/retroarch/retroarch.cfg"
 
 UPDATE_MODE="$1"
 
@@ -35,7 +36,9 @@ function Test_Button_B(){
 function Set_system() {
     SYSCFG="/storage/.config/system/configs/system.cfg"
     sed -i -e '/system.hostname\=/c\system.hostname\='"${1}"'' ${SYSCFG}
-    
+    sed -i -e '/system\.display_mode_hdmi\=/d' ${SYSCFG}
+    sed -i -e '/system\.display_mode\=/d' ${SYSCFG}
+
     if [ "$UPDATE_MODE" != "device_change" ]; then
         sed -i -e '/audio.volume\=/c\audio.volume\=60' ${SYSCFG}
         sed -i -e '/rotate.root.password\=/c\rotate.root.password\=0' ${SYSCFG}
@@ -63,7 +66,6 @@ function Set_system_cfg_entry() {
 
 function Set_ra_ext() {
 	gamecontrollerdb="/storage/.config/SDL-GameControllerDB/gamecontrollerdb.txt"
-	RACFG="/storage/.config/retroarch/retroarch.cfg"
 
 	# 通过joyguid获取GUID
 	guid=$(joyguid 2>/dev/null | tr -d '\n')
@@ -119,6 +121,45 @@ function Set_ra_ext() {
 	sed -i -e '/input_fps_toggle_btn\ \=/c\input_fps_toggle_btn\ \=\ \"'${mapped_y}'\"' ${RACFG}
 	sed -i -e '/menu_scale_factor\ \=/c\menu_scale_factor\ \=\ \"'${1}'\"' ${RACFG}
 	sed -i -e '/menu_widget_scale_factor\ \=/c\menu_widget_scale_factor\ \=\ \"'${2}'\"' ${RACFG}
+}
+
+function Setup_drastic_cheat() {
+  local drastic_dir="/storage/.config/drastic"
+  local cheat_file="${drastic_dir}/usrcheat.dat"
+  local chs_file="${drastic_dir}/usrcheat_chs.dat"
+  local backup_file="${drastic_dir}/usrcheat.dat.bak"
+  local language
+
+  language="$(get_setting language 2>/dev/null)"
+  case "${language}" in
+    zh_*|zh-*)
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+
+  mkdir -p "${drastic_dir}"
+
+  if [ ! -e "${chs_file}" ] && [ -e "/usr/config/drastic/usrcheat_chs.dat" ]; then
+    cp -f "/usr/config/drastic/usrcheat_chs.dat" "${chs_file}"
+  fi
+
+  if [ ! -e "${chs_file}" ]; then
+    return 0
+  fi
+
+  if [ -L "${cheat_file}" ] && [ "$(readlink "${cheat_file}")" = "usrcheat_chs.dat" ]; then
+    return 0
+  fi
+
+  if [ -f "${cheat_file}" ] && [ ! -L "${cheat_file}" ]; then
+    mv -f "${cheat_file}" "${backup_file}"
+  elif [ -e "${cheat_file}" ]; then
+    rm -f "${cheat_file}"
+  fi
+
+  ln -sf usrcheat_chs.dat "${cheat_file}"
 }
 
 
@@ -200,42 +241,50 @@ else
 fi
 
 if [ "$UPDATE_MODE" != "device_change" ]; then
-    # 如果没有输入设备，直接默认 English
     if [ -z "$event_dev" ]; then
-        echo -e "No input device. Default to \033[32mEnglish\033[0m" >/dev/tty0
-        sed -i -e '/system\.language\=/c system\.language\=en_US' /storage/.config/system/configs/system.cfg
-        sync
-        exit 0
+        if [ -e "/flash/zh_CN" ]; then
+            echo -e "No input device. Default to \033[32mSimple Chinese\033[0m" >/dev/tty0
+            sed -i -e '/system\.language\=/c system\.language\=zh_CN' /storage/.config/system/configs/system.cfg
+            sed -i -e '/system\.timezone\=/c system\.timezone\=Asia/Shanghai' /storage/.config/system/configs/system.cfg
+            sync
+        else
+            echo -e "No input device. Default to \033[32mEnglish\033[0m" >/dev/tty0
+            sed -i -e '/system\.language\=/c system\.language\=en_US' /storage/.config/system/configs/system.cfg
+            sync
+            exit 0
+        fi
+    else
+        printf "\n " >/dev/tty0
+        printf "\n==> Please set the system default language:" >/dev/tty0
+        printf "\n " >/dev/tty0
+        echo -e "\nPress \033[31mA\033[0m to \033[32mSimple Chinese\033[0m. \033[33mB\033[0m to \033[32mEnglish\033[0m.\n" >/dev/tty0
+        time_start=$(date --date=`date +'%H:%M:%S'` +%s)
+        while true
+        do
+           Test_Button_A
+           if [ "$?" -eq "10" ]; then
+             sed -i -e '/system\.language\=/c system\.language\=zh_CN' /storage/.config/system/configs/system.cfg
+             sed -i -e '/system\.timezone\=/c system\.timezone\=Asia/Shanghai' /storage/.config/system/configs/system.cfg
+             echo -e "\033[31mA\033[0m - \033[32mSimple Chinese\033[0m" >/dev/tty0
+             break
+           fi
+           Test_Button_B
+           if [ "$?" -eq "10" ]; then
+             sed -i -e '/system\.language\=zh_CN/c system\.language\=en_US' /storage/.config/system/configs/system.cfg
+             echo -e "\033[33mB\033[0m - \033[32mEnglish\033[0m" >/dev/tty0
+             break
+           fi
+           time_end=$(date --date=`date +'%H:%M:%S'` +%s) && let "time_time=${time_end} - ${time_start}"
+           if [ $time_time -ge 59 ]; then
+             echo -e "Timeout $event_dev. Default to \033[32mEnglish\033[0m" >/dev/tty0
+             sed -i -e '/system\.language\=/c system\.language\=en_US' /storage/.config/system/configs/system.cfg
+             break
+           fi
+        done
     fi
-
-    printf "\n " >/dev/tty0
-    printf "\n==> Please set the system default language:" >/dev/tty0
-    printf "\n " >/dev/tty0
-    echo -e "\nPress \033[31mA\033[0m to \033[32mSimple Chinese\033[0m. \033[33mB\033[0m to \033[32mEnglish\033[0m.\n" >/dev/tty0
-    time_start=$(date --date=`date +'%H:%M:%S'` +%s)
-    while true
-    do
-       Test_Button_A
-       if [ "$?" -eq "10" ]; then
-         sed -i -e '/system\.language\=/c system\.language\=zh_CN' /storage/.config/system/configs/system.cfg
-         sed -i -e '/system\.timezone\=/c system\.timezone\=Asia/Shanghai' /storage/.config/system/configs/system.cfg
-         echo -e "\033[31mA\033[0m - \033[32mSimple Chinese\033[0m" >/dev/tty0
-         break
-       fi
-       Test_Button_B
-       if [ "$?" -eq "10" ]; then
-         sed -i -e '/system\.language\=zh_CN/c system\.language\=en_US' /storage/.config/system/configs/system.cfg
-         echo -e "\033[33mB\033[0m - \033[32mEnglish\033[0m" >/dev/tty0
-         break
-       fi
-       time_end=$(date --date=`date +'%H:%M:%S'` +%s) && let "time_time=${time_end} - ${time_start}"
-       if [ $time_time -ge 59 ]; then
-         echo -e "Timeout $event_dev. Default to \033[32mEnglish\033[0m" >/dev/tty0
-         sed -i -e '/system\.language\=/c system\.language\=en_US' /storage/.config/system/configs/system.cfg
-         break
-       fi
-    done
 fi
+
+Setup_drastic_cheat
 
 # 获取当前输出分辨率并交换宽高的功能
 TARGET_RES="1920x1080 1080x1920 1024x768 1280x720 720x1280 960x720 720x960 854x480 480x854 544x960 960x544 720x720 480x640 640x480 480x320 320x480"
@@ -880,10 +929,11 @@ case "${QUIRK_DEVICE}" in
 # 兜底
     *)
         echo "${QUIRK_DEVICE}"
-        Set_system "Rockchip"
+        Set_system "Aurknix"
     ;;
 esac
 
+cp -f /usr/config/retroarch/retroarch.cfg ${RACFG}
 Set_ra_ext "$MENU_SCALE_FACTOR" "$MENU_WIDGET_SCALE_FACTOR"
 
 if [ "$(systemctl is-active input)" = "active" ]

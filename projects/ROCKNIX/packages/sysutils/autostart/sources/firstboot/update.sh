@@ -349,6 +349,8 @@ MENU_WIDGET_SCALE_FACTOR="0.300000"
 case "$detected_res" in
     "1920x1080")
         echo "1920x1080"
+        sed -i -e '/gba.shaderset\=/c\gba.shaderset\=zfast_lcd_standard.glslp' /storage/.config/system/configs/system.cfg
+        sed -i -e '/gbah.shaderset\=/c\gbah.shaderset\=zfast_lcd_standard.glslp' /storage/.config/system/configs/system.cfg
         ;;
     "1280x720")
         echo "1280x720"
@@ -500,7 +502,7 @@ fi
 
 
 
-if [ "$HW_DEVICE" = "RK3326" ]; then
+if [ "$HW_DEVICE" = "RK3326" ] || [ "$HW_DEVICE" = "S905L3A" ]; then
     sed -i -e '/gba.shaderset\=/c\gba.shaderset\=handheld/dot.glslp' /storage/.config/system/configs/system.cfg
     sed -i -e '/gbah.shaderset\=/c\gbah.shaderset\=handheld/dot.glslp' /storage/.config/system/configs/system.cfg
 fi

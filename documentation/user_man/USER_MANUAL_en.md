@@ -114,7 +114,7 @@ RK3566 **does not reuse** RK3326 images. Published builds use two image lines; t
 | E900V | E900V22C |
 | M401 | M401A |
 
-### 3.4 RK3562 (WIP)
+### 3.4 RK356X (WIP)
 
 | Brand | Models |
 |-------|--------|

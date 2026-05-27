@@ -73,8 +73,8 @@ on:
         required: false
         default: false
         type: boolean
-      RK3562:
-        description: 'RK3562'
+      RK356X:
+        description: 'RK356X'
         required: false
         default: false
         type: boolean
@@ -118,7 +118,7 @@ jobs:
             ["SM8550"]="${{ inputs.SM8550 }}"
             ["SM8650"]="${{ inputs.SM8650 }}"
             ["S905L3A"]="${{ inputs.S905L3A }}"
-            ["RK3562"]="${{ inputs.RK3562 }}"
+            ["RK356X"]="${{ inputs.RK356X }}"
           )
           
           SELECTED_MATRIX=""
@@ -134,7 +134,7 @@ jobs:
           done
           
           if [[ -z "$SELECTED_MATRIX" ]]; then
-            MATRIX='[{"device":"RK3326","project":"ROCKNIX"},{"device":"RK3326S","project":"ROCKNIX"},{"device":"RK3399","project":"ROCKNIX"},{"device":"RK3566","project":"ROCKNIX"},{"device":"RK3588","project":"ROCKNIX"},{"device":"S922X","project":"ROCKNIX"},{"device":"H700","project":"ROCKNIX"},{"device":"SDM845","project":"ROCKNIX"},{"device":"SM8250","project":"ROCKNIX"},{"device":"SM8550","project":"ROCKNIX"},{"device":"SM8650","project":"ROCKNIX"},{"device":"S905L3A","project":"ROCKNIX"},{"device":"RK3562","project":"ROCKNIX"}]'
+            MATRIX='[{"device":"RK3326","project":"ROCKNIX"},{"device":"RK3326S","project":"ROCKNIX"},{"device":"RK3399","project":"ROCKNIX"},{"device":"RK3566","project":"ROCKNIX"},{"device":"RK3588","project":"ROCKNIX"},{"device":"S922X","project":"ROCKNIX"},{"device":"H700","project":"ROCKNIX"},{"device":"SDM845","project":"ROCKNIX"},{"device":"SM8250","project":"ROCKNIX"},{"device":"SM8550","project":"ROCKNIX"},{"device":"SM8650","project":"ROCKNIX"},{"device":"S905L3A","project":"ROCKNIX"},{"device":"RK356X","project":"ROCKNIX"}]'
           else
             MATRIX="[$SELECTED_MATRIX]"
           fi

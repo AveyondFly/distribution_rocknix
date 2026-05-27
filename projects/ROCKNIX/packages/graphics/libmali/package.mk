@@ -25,7 +25,7 @@ case "${DEVICE}" in
   S905L3A)
     DRIVER_VERSION="g24p0"
   ;;
-  RK3588|RK3562)
+  RK3588|RK356X)
     DRIVER_VERSION="g13p0"
   ;;
   *) # RK3326 and RK3566

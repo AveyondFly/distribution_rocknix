@@ -72,7 +72,7 @@ This is an **unofficial** fork of ROCKNIX that provides support for additional d
 | M401 | M401A |
 | GameBox | X10(S905X4) |
 
-#### RK3562 Devices (WIP)
+#### RK356X Devices (WIP)
 | Brand | Models |
 |-------|--------|
 | RO520C | LP3X-V10 |

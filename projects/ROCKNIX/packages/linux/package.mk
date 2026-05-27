@@ -22,7 +22,7 @@ PKG_PATCH_DIRS="${LINUX} mainline ${DEVICE} default"
 [[ "${DEVICE}" == SM* || "${BUILD_ANDROID_BOOTIMG}" == "yes" ]] && PKG_DEPENDS_TARGET+=" mkbootimg:host"
 
 case ${DEVICE} in
-  RK3326S|RK3562)
+  RK3326S|RK356X)
     PKG_VERSION="1ba51b059f25533c5529b7f68186190b47d6a7b3"
     PKG_URL="https://github.com/rockchip-linux/kernel/archive/${PKG_VERSION}.tar.gz"
     PKG_GIT_CLONE_BRANCH="develop-6.6"
@@ -570,7 +570,7 @@ makeinstall_target() {
     else
       for dtb in arch/${TARGET_KERNEL_ARCH}/boot/dts/**/*.dtb; do
         if [ -f ${dtb} ]; then
-          if [[ "${DEVICE}" == RK3326* ]] || [ "${DEVICE}" = "H700" -o "${DEVICE}" = "RK3399" -o "${DEVICE}" = "RK3562" -o "${DEVICE}" = "RK3566" -o "${DEVICE}" = "RK3588" ]; then
+          if [[ "${DEVICE}" == RK3326* ]] || [ "${DEVICE}" = "H700" -o "${DEVICE}" = "RK3399" -o "${DEVICE}" = "RK356X" -o "${DEVICE}" = "RK3566" -o "${DEVICE}" = "RK3588" ]; then
             mkdir -p ${INSTALL}/usr/share/bootloader/device_trees
             cp -v ${dtb} ${INSTALL}/usr/share/bootloader/device_trees
           else

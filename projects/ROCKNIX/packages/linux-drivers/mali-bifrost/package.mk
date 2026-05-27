@@ -14,7 +14,7 @@ case ${DEVICE} in
   PKG_URL="https://developer.arm.com/-/media/Files/downloads/mali-drivers/kernel/mali-valhall-gpu/VX504X08X-SW-99002-${PKG_VERSION}.tar"
   PKG_PATCH_DIRS+=" 6.12-LTS"
   ;;
-  RK3326S|RK3562)
+  RK3326S|RK356X)
   # RK3562/RK3326S uses ARM official r52p0 DDK, kernel patch provides version_compat_defs.h compatibility
   PKG_VERSION="r52p0-00eac0"
   PKG_URL="https://developer.arm.com/-/media/Files/downloads/mali-drivers/kernel/mali-valhall-gpu/VX504X08X-SW-99002-${PKG_VERSION}.tar"

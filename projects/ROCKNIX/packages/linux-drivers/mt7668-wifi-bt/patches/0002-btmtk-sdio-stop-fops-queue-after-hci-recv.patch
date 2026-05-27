@@ -1,0 +1,71 @@
+--- a/MT7668-Bluetooth/btmtk_sdio.c
++++ b/MT7668-Bluetooth/btmtk_sdio.c
+@@ -3001,7 +3001,6 @@
+ 	u16 buf_len = 0;
+ 	int ret = 0;
+ 	struct sk_buff *skb = NULL;
+-	struct sk_buff *fops_skb = NULL;
+ 	u32 type = 0;
+ 	u32 fourbalignment_len = 0;
+ 	u32 dump_len = 0;
+@@ -3295,48 +3294,28 @@
+ 		btmtk_sdio_hci_snoop_save(type, skb->data, buf_len);
+ 		btmtk_usb_dispatch_data_bluetooth_kpi(&rxbuf[MTK_SDIO_PACKET_HEADER_SIZE], buf_len + 1, 0);
+ 
+-		fops_skb = bt_skb_alloc(buf_len, GFP_ATOMIC);
+-		if (fops_skb == NULL) {
+-			pr_err("No memory for fops_skb\n");
+-			ret = -ENOMEM;
+-			goto exit;
+-		}
+-		bt_cb(fops_skb)->pkt_type = type;
+-		memcpy(fops_skb->data, skb->data, buf_len);
+-		
+ 		{
+ 			struct sk_buff *skb_hci = bt_skb_alloc(buf_len, GFP_KERNEL);
+-			skb_put(skb_hci, buf_len);
+ 
+-			memcpy(skb_hci->data, fops_skb->data, buf_len);
++			if (skb_hci == NULL) {
++				pr_err("No memory for skb_hci\n");
++				ret = -ENOMEM;
++				goto exit;
++			}
++
++			skb_put(skb_hci, buf_len);
++			memcpy(skb_hci->data, skb->data, buf_len);
+ 			hci_skb_pkt_type(skb_hci) = type;
+ 
+ 			ret = hci_recv_frame(hdev, skb_hci);
+-			if (ret < 0)
+-				printk(KERN_ERR "XXX: error recv frame: %d\n", ret);
+-		}
+-		
+-		fops_skb->len = buf_len;
+-
+-		/* Drop BLE Advertising Reports to prevent memory leak */
+-		if (type == HCI_EVENT_PKT && fops_skb->data[0] == 0x3E) {
+-			kfree_skb(fops_skb);
+-			kfree_skb(skb);
+-			skb = NULL;
+-			goto exit;
++			if (ret < 0) {
++				pr_err("%s: hci_recv_frame failed: %d\n", __func__, ret);
++				kfree_skb(skb_hci);
++			}
+ 		}
+ 
+-		/* Queue other events normally */
+-		LOCK_UNSLEEPABLE_LOCK(&(metabuffer.spin_lock));
+-		skb_queue_tail(&g_priv->adapter->fops_queue, fops_skb);
+-		if (skb_queue_empty(&g_priv->adapter->fops_queue))
+-			pr_info("%s fops_queue is empty\n", __func__);
+-		UNLOCK_UNSLEEPABLE_LOCK(&(metabuffer.spin_lock));
+-
+ 		kfree_skb(skb);
+ 		skb = NULL;
+-
+-		wake_up_interruptible(&inq);
+ 		goto exit;
+ 	} else {
+ 		kfree_skb(skb);

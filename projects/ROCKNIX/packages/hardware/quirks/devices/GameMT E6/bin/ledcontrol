@@ -28,14 +28,12 @@ case $COLOR in
         set_led_brightness "$LED_GREEN" 0
         set_led_brightness "$LED_RED" 0
         set_led_brightness "$LED_WHITE" 0
-	set_setting led.color ${1}
         ;;
     on)
         set_led_brightness "$LED_BLUE" 1
         set_led_brightness "$LED_GREEN" 1
         set_led_brightness "$LED_RED" 1
         set_led_brightness "$LED_WHITE" 1
-	set_setting led.color ${1}
         ;;
     list)
 cat <<EOF

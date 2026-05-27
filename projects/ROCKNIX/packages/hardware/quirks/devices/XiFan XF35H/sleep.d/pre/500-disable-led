@@ -1,9 +1,0 @@
-#!/bin/bash
-
-# SPDX-License-Identifier: GPL-2.0-or-later
-# Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
-
-. /etc/profile
-
-/usr/bin/ledcontrol all_off
-/usr/bin/analog_sticks_ledcontrol_single off

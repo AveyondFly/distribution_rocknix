@@ -28,7 +28,7 @@ mkdir -p "${mnt}"
 gunzip -c "${src}" > "${img}"
 
 loop="$(sudo losetup -f --show -P "${img}")"
-sudo mount "/dev/${loop}p1" "${mnt}"
+sudo mount "${loop}p1" "${mnt}"
 sudo touch "${mnt}/zh_CN"
 sudo umount "${mnt}"
 sudo losetup -d "${loop}"

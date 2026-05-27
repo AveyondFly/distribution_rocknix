@@ -6,6 +6,14 @@
 
 . /etc/profile.d/001-functions
 
+if [ -z "$QUIRK_DEVICE" ]; then
+    QUIRK_DEVICE="$(tr -d '\0' </sys/firmware/devicetree/base/model 2>/dev/null)"
+    if [ -z "$QUIRK_DEVICE" ]; then
+        QUIRK_DEVICE="$(tr -d '\0' </sys/class/dmi/id/sys_vendor 2>/dev/null) $(tr -d '\0' </sys/class/dmi/id/product_name 2>/dev/null)"
+    fi
+    QUIRK_DEVICE="$(echo ${QUIRK_DEVICE} | sed -e "s#[/]#-#g")"
+fi
+
 if [ ! -e "/storage/.configured" ]
 then
   tocon "Initializing configuration..."

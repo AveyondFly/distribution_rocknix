@@ -8,8 +8,8 @@
 # Get Internal LED State
 LED_STATE=$(get_setting "led.color")
 if [ ! -n "${LED_STATE}" ]; then
-  LED_STATE="flow"
-  set_setting "led.color" "flow"
+  LED_STATE="blue_on"
+  set_setting "led.color" "blue_on"
 fi
 
 if [ ! -d "/sys/class/gpio/gpio65" ]; then
@@ -22,7 +22,7 @@ fi
 /usr/bin/ledcontrol ${LED_STATE}
 ANALOG_STICK_LED_STATE=$(get_setting "analogsticks.led.color")
 if [ ! -n "${ANALOG_STICK_LED_STATE}" ]; then
-  ANALOG_STICK_LED_STATE="off"
-  set_setting "analogsticks.led.color" "off"
+  ANALOG_STICK_LED_STATE="flow"
+  set_setting "analogsticks.led.color" "flow"
 fi
 /usr/bin/analog_sticks_ledcontrol_single ${ANALOG_STICK_LED_STATE}

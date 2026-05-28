@@ -1519,6 +1519,7 @@ makeinstall_target() {
   install_script "MOD_TOOLS/Generate SDL GameControllerDB.sh"
   install_script "MOD_TOOLS/Bezels Installer.sh"
   install_script "MOD_TOOLS/Reset Drastic Cfg.sh"
+  install_script "MOD_TOOLS/Reset YabaSanshiro Input.sh"
   if [ "${DEVICE}" != "S905L3A" ]; then
     install_script "MOD_TOOLS/Install AURKNIX to EMMC.sh"
     install_script "MOD_TOOLS/Backup EMMC.sh"

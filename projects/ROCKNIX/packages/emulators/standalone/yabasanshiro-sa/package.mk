@@ -78,7 +78,9 @@ makeinstall_target() {
   mkdir -p ${INSTALL}/usr/bin
   cp -a ${PKG_BUILD}/src/retro_arena/yabasanshiro ${INSTALL}/usr/bin/yabasanshiro
   cp -a ${PKG_DIR}/scripts/start_yabasanshiro.sh ${INSTALL}/usr/bin
+  cp -a ${PKG_DIR}/scripts/yabasanshiro-input-setup.sh ${INSTALL}/usr/bin
   chmod 0755 ${INSTALL}/usr/bin/start_yabasanshiro.sh
+  chmod 0755 ${INSTALL}/usr/bin/yabasanshiro-input-setup.sh
   mkdir -p ${INSTALL}/usr/config/yabasanshiro
   cp ${PKG_DIR}/config/config ${INSTALL}/usr/config/yabasanshiro/.config
   cp -r ${PKG_DIR}/config/devices ${INSTALL}/usr/config/yabasanshiro/

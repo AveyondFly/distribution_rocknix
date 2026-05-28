@@ -1,0 +1,11 @@
+--- wlroots-0.19.0-rk/types/wlr_egl_buffer.c.orig	2026-05-28 11:34:00.000000000 +0800
++++ wlroots-0.19.0-rk/types/wlr_egl_buffer.c	2026-05-28 11:34:00.000000000 +0800
+@@ -68,6 +68,7 @@
+ 	struct wlr_egl_buffer *buffer =
+ 		wl_container_of(wlr_buffer, buffer, base);
+ 	wl_list_remove(&buffer->resource_destroy.link);
+ 	wl_list_remove(&buffer->release.link);
++	wlr_buffer_finish(wlr_buffer);
+ 	free(buffer);
+ }
+ 

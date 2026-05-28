@@ -3,7 +3,7 @@
 # Copyright (C) 2023 JELOS (https://github.com/JustEnoughLinuxOS)
 
 . /etc/profile
-set_kill set "-9 ppsspp2021"
+set_kill set "-9 PPSSPPSDL"
 
 SOURCE_DIR="/usr/config/ppsspp2021"
 CONF_DIR="/storage/.config/ppsspp2021"
@@ -46,6 +46,12 @@ else
 fi
 
 ARG=${1//[\\]/}
+
+if [ "${HW_DEVICE}" = "S905L3A" ]; then
+  # Avoid underruns on the vendor HDMI PCM without changing global PipeWire latency.
+  export PULSE_LATENCY_MSEC=80
+  export PIPEWIRE_LATENCY=2048/48000
+fi
 
   echo "GAME set to: ${GAME}"
   echo "PLATFORM set to: ${PLATFORM}"

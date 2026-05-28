@@ -1,0 +1,12 @@
+diff --git a/Core/KeyMapDefaults.cpp b/Core/KeyMapDefaults.cpp
+index 7862341e36..05c4176354 100644
+--- a/Core/KeyMapDefaults.cpp
++++ b/Core/KeyMapDefaults.cpp
+@@ -245,6 +245,7 @@ static const DefMappingStruct defaultPadMap[] = {
+ 	{VIRTKEY_AXIS_X_MAX, JOYSTICK_AXIS_X, +1},
+ 	{VIRTKEY_AXIS_Y_MIN, JOYSTICK_AXIS_Y, +1},
+ 	{VIRTKEY_AXIS_Y_MAX, JOYSTICK_AXIS_Y, -1},
++	{VIRTKEY_PAUSE       , NKCODE_BUTTON_THUMBL},
+ 	{VIRTKEY_PAUSE       , NKCODE_BUTTON_SELECT },
+ 	{VIRTKEY_PAUSE       , NKCODE_BUTTON_L2 },
+ };

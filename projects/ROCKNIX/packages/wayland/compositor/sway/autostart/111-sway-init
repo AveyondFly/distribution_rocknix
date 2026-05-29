@@ -167,4 +167,6 @@ if [ "${QUIRK_DEVICE}" = "Anbernic RG DS" ]; then
   echo "exec_always swaymsg '[app_id=\"emulationstation\"]' focus output ${con}, output ${second_con} power off" >> $SWAY_HOME/config
   echo "exec_always swaymsg '[app_id=\"emulationstation\"]' seat seat1 attach \"1046:911:Goodix_Capacitive_TouchScreen\"" >> $SWAY_HOME/config
   echo "exec_always swaymsg '[app_id=\"emulationstation\"]' seat seat1 fallback yes" >> $SWAY_HOME/config
+elif [ "${QUIRK_DEVICE}" = "AISLPC R36T" ]; then
+  echo "output DSI-1 scale 0.9" >> $SWAY_HOME/config
 fi

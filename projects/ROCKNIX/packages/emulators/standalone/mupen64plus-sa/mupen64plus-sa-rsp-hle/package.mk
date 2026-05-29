@@ -14,7 +14,7 @@ PKG_LONGDESC="Mupen64Plus Standalone RSP HLE"
 PKG_TOOLCHAIN="manual"
 
 case ${DEVICE} in
-  RK3588|S922X|S905L3A|RK3399|RK3566*|RK356X*)
+  RK3588|S922X|S905|RK3399|RK3566*|RK356X*)
     PKG_DEPENDS_TARGET+=" mupen64plus-sa-simplecore"
   ;;
 esac
@@ -48,7 +48,7 @@ make_target() {
   cp ${PKG_BUILD}/projects/unix/mupen64plus-rsp-hle.so ${PKG_BUILD}/projects/unix/mupen64plus-rsp-hle-base.so
 
   case ${DEVICE} in
-    RK3588|S922X|S905L3A|RK3399|RK3566*|RK356X*)
+    RK3588|S922X|S905|RK3399|RK3566*|RK356X*)
       export APIDIR=$(get_build_dir mupen64plus-sa-simplecore)/src/api
       make -C projects/unix all ${PKG_MAKE_OPTS_TARGET}
       cp ${PKG_BUILD}/projects/unix/mupen64plus-rsp-hle.so ${PKG_BUILD}/projects/unix/mupen64plus-rsp-hle-simple.so

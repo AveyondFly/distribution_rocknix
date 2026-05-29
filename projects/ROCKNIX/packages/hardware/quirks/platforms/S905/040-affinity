@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0
 # Copyright (C) 2023 JELOS (https://github.com/JustEnoughLinuxOS)
 
-# S905L3A: quad Cortex-A53, no big.LITTLE
+# S905: quad Cortex-A53, no big.LITTLE
 cat <<EOF >/storage/.config/profile.d/040-affinity
 SLOW_CORES="taskset -c 0-3"
 FAST_CORES="taskset -c 0-3"

@@ -462,7 +462,7 @@ hdmi_con() {
 }
 
 load_splash() {
-  if [ "@DEVICENAME@" = "S905L3A" ]; then
+  if [ "@DEVICENAME@" = "S905" ]; then
     clear >/dev/console
     cat /sysroot/etc/motd >/dev/console
     echo "" >/dev/console

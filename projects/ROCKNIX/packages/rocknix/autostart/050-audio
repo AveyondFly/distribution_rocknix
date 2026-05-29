@@ -14,9 +14,9 @@ then
 fi
 
 ### Skip audio routing for platforms that handle it elsewhere
-### S905L3A: HDMI routing handled by s905l3a-audio.service
+### S905: HDMI routing handled by s905-audio.service
 case "${HW_DEVICE}" in
-  S905L3A)
+  S905)
     # Audio routing already handled by platform-specific service
     ;;
   *)

@@ -106,7 +106,7 @@ ROM、BIOS 与版权合规由用户自行负责；请将合法拥有的游戏文
 | MiniLoong | Pocket1 |
 | Powkiddy | X55、X35S、X35H |
 
-### 3.3 S905L3A Android 电视盒
+### 3.3 S905 Android 电视盒
 
 | 品牌 | 型号 |
 |------|------|

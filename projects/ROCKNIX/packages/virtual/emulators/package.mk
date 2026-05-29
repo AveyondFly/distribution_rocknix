@@ -86,7 +86,7 @@ case "${DEVICE}" in
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr geolith-lr flycast2021-lr uae4arm"
     PKG_RETROARCH+=" retropie-shaders"
     ;;
-  S905L3A)
+  S905)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr gpsp_ezode-lr pcsx_rearmed-lr"
     PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
     PKG_EMUS+=" box64 drastic-sa drastic_adv-sa mednafen portmaster scummvmsa yabasanshiro-sa duckstation-sa ppsspp2021-sa"
@@ -281,7 +281,7 @@ makeinstall_target() {
 
   ## Sammy Atomiswave
   case ${DEVICE} in
-    H700|RK3326*|RK3399|RK3566|RK356X|RK3588|S905L3A)
+    H700|RK3326*|RK3399|RK3566|RK356X|RK3588|S905)
       add_emu_core atomiswave flycast flycast2022-sa true
       add_emu_core atomiswave retroarch flycast2021 false
       add_emu_core atomiswave retroarch flycast false
@@ -376,7 +376,7 @@ makeinstall_target() {
 
   ### Sega Dreamcast
   case ${DEVICE} in
-    H700|RK3326*|RK3399|RK3566|RK356X|RK3588|S905L3A)
+    H700|RK3326*|RK3399|RK3566|RK356X|RK3588|S905)
       add_emu_core dreamcast flycast flycast2022-sa true
       add_emu_core dreamcast retroarch flycast2021 false
       add_emu_core dreamcast retroarch flycast false
@@ -502,7 +502,7 @@ makeinstall_target() {
   add_emu_core gba retroarch vba_next false
   add_emu_core gba retroarch beetle_gba false
   case ${DEVICE} in
-    H700|RK3326*|RK3566|RK356X|S905L3A|S922X)
+    H700|RK3326*|RK3566|RK356X|S905|S922X)
       add_emu_core gba retroarch gpsp false
       ;;
     RK3399|RK3588|SM8250|SM8550|SDM845)
@@ -781,7 +781,7 @@ makeinstall_target() {
 
   ### Sega Naomi
   case ${DEVICE} in
-    H700|RK3326*|RK3399|RK3566|RK356X|RK3588|S905L3A)
+    H700|RK3326*|RK3399|RK3566|RK356X|RK3588|S905)
       add_emu_core naomi flycast flycast2022-sa true
       add_emu_core naomi retroarch flycast2021 false
       add_emu_core naomi retroarch flycast false
@@ -888,7 +888,7 @@ makeinstall_target() {
       add_emu_core nds retroarch melondsds false
       install_script "Start MelonDS.sh"
       ;;
-    S922X|S905L3A)
+    S922X|S905)
       add_emu_core nds drastic drastic_adv-sa false
       add_emu_core nds drastic drastic-sa true
       add_emu_core nds retroarch melonds false
@@ -1047,7 +1047,7 @@ makeinstall_target() {
       add_emu_core psx retroarch pcsx_rearmed true
       add_emu_core psx retroarch beetle_psx false
       ;;
-    S905L3A)
+    S905)
       add_emu_core psx retroarch pcsx_rearmed true
       ;;
   esac
@@ -1520,7 +1520,7 @@ makeinstall_target() {
   install_script "MOD_TOOLS/Bezels Installer.sh"
   install_script "MOD_TOOLS/Reset Drastic Cfg.sh"
   install_script "MOD_TOOLS/Reset YabaSanshiro Input.sh"
-  if [ "${DEVICE}" != "S905L3A" ]; then
+  if [ "${DEVICE}" != "S905" ]; then
     install_script "MOD_TOOLS/Install AURKNIX to EMMC.sh"
     install_script "MOD_TOOLS/Backup EMMC.sh"
     install_script "MOD_TOOLS/Restore EMMC.sh"

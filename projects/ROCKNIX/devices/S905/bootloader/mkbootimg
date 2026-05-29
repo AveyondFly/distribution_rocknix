@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2018-present Team CoreELEC (https://coreelec.org)
-# Adapted for ROCKNIX S905L3A chain-boot (CoreELEC Amlogic-no compatible)
+# Adapted for ROCKNIX S905 chain-boot (CoreELEC Amlogic-no compatible)
 
 INITRAMFS="${1}.cpio"
 RAMDISK=${BUILD}/image/${INITRAMFS}

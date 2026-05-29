@@ -16,7 +16,7 @@ PKG_PATCH_DIRS+=" v4l2-request v4l2-drmprime"
 
 post_unpack() {
   # Fix FFmpeg version
-  if [ "${DEVICE}" = "S922X" -o "${DEVICE}" = "S905L3A" ]; then
+  if [ "${DEVICE}" = "S922X" -o "${DEVICE}" = "S905" ]; then
     echo "${PKG_FFMPEG_BRANCH}-${PKG_VERSION:0:7}" > ${PKG_BUILD}/VERSION
   else
     echo "${PKG_VERSION}" > ${PKG_BUILD}/RELEASE
@@ -47,7 +47,7 @@ if [ "${V4L2_SUPPORT}" = "yes" ]; then
   PKG_FFMPEG_V4L2="--enable-v4l2_m2m --enable-libdrm"
 
   case ${DEVICE} in
-    PC|RK*|S922X|S905L3A)
+    PC|RK*|S922X|S905)
       PKG_V4L2_REQUEST="yes"
     ;;
     *)

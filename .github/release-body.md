@@ -16,7 +16,7 @@ AURKNIX is made up of many open-source components. Components are provided under
 | **RK3326** (unified image) | [AURKNIX-RK3326.aarch64-$DATE.img.gz](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK3326.aarch64-$DATE.img.gz) | [documentation](/documentation/PER_DEVICE_DOCUMENTATION/RK3326/) |
 | **RK3566 (Generic)**<br>*Anbernic RG353P / RG353PS / RG353V / RG353VS / RG503, RG ARC-D / RG ARC-S; Powkiddy RGB10 Max 3, RGB20 Pro, RGB20 SX, RGB30, RK2023* | [AURKNIX-RK3566.aarch64-$DATE-Generic.img.gz](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK3566.aarch64-$DATE-Generic.img.gz) | [documentation](/documentation/PER_DEVICE_DOCUMENTATION/RK3566/) |
 | **RK3566 (Specific)**<br>*Powkiddy X55, X35S, X35H; GameMT E5P / E6P; Diium D50 Plus; MiniLoong Pocket 1* | [AURKNIX-RK3566.aarch64-$DATE-Specific.img.gz](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK3566.aarch64-$DATE-Specific.img.gz) | [documentation](/documentation/PER_DEVICE_DOCUMENTATION/RK3566/) |
-| **S905L3A** | [AURKNIX-S905L3A.aarch64-$DATE.img.gz](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-S905L3A.aarch64-$DATE.img.gz) | [documentation](/documentation/PER_DEVICE_DOCUMENTATION/S905L3A/) |
+| **S905** | [AURKNIX-S905.aarch64-$DATE.img.gz](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-S905.aarch64-$DATE.img.gz) | [documentation](/documentation/PER_DEVICE_DOCUMENTATION/S905/) |
 
 ## Upgrading
 * Download and install the update online via the System Settings menu.
@@ -30,7 +30,7 @@ AURKNIX is made up of many open-source components. Components are provided under
 |---------------------|----------------------|
 | **RK3326** | [AURKNIX-RK3326.aarch64-$DATE.tar](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK3326.aarch64-$DATE.tar) |
 | **RK3566** (Generic & Specific) | [AURKNIX-RK3566.aarch64-$DATE.tar](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK3566.aarch64-$DATE.tar) |
-| **S905L3A** | [AURKNIX-S905L3A.aarch64-$DATE.tar](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-S905L3A.aarch64-$DATE.tar) |
+| **S905** | [AURKNIX-S905.aarch64-$DATE.tar](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-S905.aarch64-$DATE.tar) |
 
 ## Documentation
 

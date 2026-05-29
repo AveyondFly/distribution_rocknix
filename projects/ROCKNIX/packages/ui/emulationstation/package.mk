@@ -84,8 +84,8 @@ makeinstall_target() {
   sed -i 's|</config>|  <bool name="EnableSounds" value="true" />\n</config>|' \
     ${INSTALL}/usr/config/emulationstation/es_settings.cfg
 
-  # Add device-specific settings for S905L3A
-  if [ "${DEVICE}" = "S905L3A" ]; then
+  # Add device-specific settings for S905
+  if [ "${DEVICE}" = "S905" ]; then
     sed -i 's|</config>|  <bool name="BackgroundJoystickInput" value="true" />\n</config>|' \
       ${INSTALL}/usr/config/emulationstation/es_settings.cfg
   fi

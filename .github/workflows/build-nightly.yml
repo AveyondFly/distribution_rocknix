@@ -68,8 +68,8 @@ on:
         required: false
         default: false
         type: boolean
-      S905L3A:
-        description: 'S905L3A'
+      S905:
+        description: 'S905'
         required: false
         default: false
         type: boolean
@@ -117,7 +117,7 @@ jobs:
             ["SM8250"]="${{ inputs.SM8250 }}"
             ["SM8550"]="${{ inputs.SM8550 }}"
             ["SM8650"]="${{ inputs.SM8650 }}"
-            ["S905L3A"]="${{ inputs.S905L3A }}"
+            ["S905"]="${{ inputs.S905 }}"
             ["RK356X"]="${{ inputs.RK356X }}"
           )
           
@@ -134,7 +134,7 @@ jobs:
           done
           
           if [[ -z "$SELECTED_MATRIX" ]]; then
-            MATRIX='[{"device":"RK3326","project":"ROCKNIX"},{"device":"RK3326S","project":"ROCKNIX"},{"device":"RK3399","project":"ROCKNIX"},{"device":"RK3566","project":"ROCKNIX"},{"device":"RK3588","project":"ROCKNIX"},{"device":"S922X","project":"ROCKNIX"},{"device":"H700","project":"ROCKNIX"},{"device":"SDM845","project":"ROCKNIX"},{"device":"SM8250","project":"ROCKNIX"},{"device":"SM8550","project":"ROCKNIX"},{"device":"SM8650","project":"ROCKNIX"},{"device":"S905L3A","project":"ROCKNIX"},{"device":"RK356X","project":"ROCKNIX"}]'
+            MATRIX='[{"device":"RK3326","project":"ROCKNIX"},{"device":"RK3326S","project":"ROCKNIX"},{"device":"RK3399","project":"ROCKNIX"},{"device":"RK3566","project":"ROCKNIX"},{"device":"RK3588","project":"ROCKNIX"},{"device":"S922X","project":"ROCKNIX"},{"device":"H700","project":"ROCKNIX"},{"device":"SDM845","project":"ROCKNIX"},{"device":"SM8250","project":"ROCKNIX"},{"device":"SM8550","project":"ROCKNIX"},{"device":"SM8650","project":"ROCKNIX"},{"device":"S905","project":"ROCKNIX"},{"device":"RK356X","project":"ROCKNIX"}]'
           else
             MATRIX="[$SELECTED_MATRIX]"
           fi
@@ -309,13 +309,13 @@ jobs:
            REMOTE_DIR="/aurknix/nightly/${{ env.DATE }}"
          fi
          BaiduPCS-Go mkdir "$REMOTE_DIR" || echo "Directory may already exist"
-         chmod +x .github/scripts/prepare-s905l3a-zh-cn-img.sh
+         chmod +x .github/scripts/prepare-s905-zh-cn-img.sh
          mapfile -t FILES < <(find . -type f -name "*.img.gz" | sort)
          for FILE in "${FILES[@]}"; do
            UPLOAD_FILE="${FILE}"
-           if [[ "${FILE}" == *S905L3A* ]]; then
-             echo "Preparing S905L3A zh_CN image from ${FILE}..."
-             UPLOAD_FILE="$(.github/scripts/prepare-s905l3a-zh-cn-img.sh "${FILE}")"
+           if [[ "${FILE}" == *S905* ]]; then
+             echo "Preparing S905 zh_CN image from ${FILE}..."
+             UPLOAD_FILE="$(.github/scripts/prepare-s905-zh-cn-img.sh "${FILE}")"
            fi
            echo "Uploading: ${UPLOAD_FILE}"
            BaiduPCS-Go upload --norapid "${UPLOAD_FILE}" "$REMOTE_DIR"

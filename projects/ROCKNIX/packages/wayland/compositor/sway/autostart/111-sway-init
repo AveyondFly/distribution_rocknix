@@ -35,7 +35,7 @@ rm -f ${env_file}
 echo "WLR_DRM_DEVICES=/dev/dri/card${card_no}" >> ${env_file}
 echo "WLR_BACKENDS=drm,libinput" >> ${env_file}
 
-if [ "${HW_DEVICE}" = "S905L3A" ]; then
+if [ "${HW_DEVICE}" = "S905" ]; then
     echo "MALI_WSIALLOC_MEMORY_HEAP_NAME=/dev/dma_heap/heap-gfx" >> ${env_file}
 fi
 

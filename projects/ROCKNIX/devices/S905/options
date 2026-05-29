@@ -24,7 +24,7 @@
     esac
 
     PARTITION_TABLE="msdos"
-    HW_CPU="Amlogic S905L3A"
+    HW_CPU="Amlogic S905"
 
   # Kernel target
     KERNEL_TARGET="Image.lzo"

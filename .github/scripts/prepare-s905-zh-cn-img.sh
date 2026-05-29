@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Unpack S905L3A image, touch zh_CN on the AURKNIX (/flash) partition, recompress.
+# Unpack S905 image, touch zh_CN on the AURKNIX (/flash) partition, recompress.
 set -euo pipefail
 
-src="${1:?usage: prepare-s905l3a-zh-cn-img.sh input.img.gz}"
+src="${1:?usage: prepare-s905-zh-cn-img.sh input.img.gz}"
 
-if [[ "${src}" != *S905L3A* ]]; then
-  echo "Not an S905L3A image: ${src}" >&2
+if [[ "${src}" != *S905* ]]; then
+  echo "Not an S905 image: ${src}" >&2
   exit 1
 fi
 

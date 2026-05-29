@@ -7,7 +7,7 @@ After=systemd-udevd.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/lib/autostart/quirks/platforms/S905L3A/bin/persist-mac
+ExecStart=/usr/lib/autostart/quirks/platforms/S905/bin/persist-mac
 
 [Install]
 WantedBy=sysinit.target

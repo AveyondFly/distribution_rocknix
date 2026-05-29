@@ -106,7 +106,7 @@ RK3566 **does not reuse** RK3326 images. Published builds use two image lines; t
 | MiniLoong | Pocket1 |
 | Powkiddy | X55, X35S, X35H |
 
-### 3.3 S905L3A Android TV boxes
+### 3.3 S905 Android TV boxes
 
 | Brand | Models |
 |-------|--------|

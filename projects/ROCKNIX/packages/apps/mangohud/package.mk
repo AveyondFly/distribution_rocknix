@@ -78,7 +78,7 @@ post_makeinstall_target() {
     RK3326*)
       sed -e "s/@FONT_SIZE@/30/g" -i ${INSTALL}/usr/config/MangoHud/MangoHud.conf
     ;;
-    S922X|S905L3A)
+    S922X|S905)
       sed -e "s/@FONT_SIZE@/30/g" -i ${INSTALL}/usr/config/MangoHud/MangoHud.conf
 
       # No GPU temperature sensor available

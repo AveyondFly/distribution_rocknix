@@ -64,12 +64,10 @@ This is an **unofficial** fork of ROCKNIX that provides support for additional d
 | MiniLoong | Pocket1 |
 | Powkiddy | X55, X35S, X35H |
 
-#### S905L3A Android TV Boxes
+#### S905 Android TV Boxes
 | Brand | Models |
 |-------|--------|
-| CM311 | CM311 |
-| E900V | E900V22C |
-| M401 | M401A |
+| Skyworth | E900V22C(S905L3A) |
 | GameBox | X10(S905X4) |
 
 #### RK356X Devices (WIP)

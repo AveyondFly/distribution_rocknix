@@ -4,7 +4,7 @@ Date: Sat, 23 May 2026 00:00:00 +0000
 Subject: [PATCH] Fix rtl8733bs build on Amlogic 5.15 vendor kernel
 
 Adapt cfg80211 channel switch callbacks and VFS symbol namespace import
-for the Amlogic common_drivers 5.15.153+ backports used on S905L3A.
+for the Amlogic common_drivers 5.15.153+ backports used on S905.
 ---
  include/rtw_mlme_ext.h        |  2 +-
  os_dep/linux/ioctl_cfg80211.c | 12 ++++++++----

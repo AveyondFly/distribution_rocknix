@@ -12,7 +12,7 @@ mixer() {
 
 card=0
 
-# This script is installed only for DEVICE=S905L3A, and the matching
+# This script is installed only for DEVICE=S905, and the matching
 # WirePlumber profile routes playback to SPDIF-B (hw:0,0).
 mixer "${card}" 'HDMITX Audio Source Select' 'Spdif_b'
 mixer "${card}" 'Audio I2S to HDMITX Format' 'Stereo PCM'

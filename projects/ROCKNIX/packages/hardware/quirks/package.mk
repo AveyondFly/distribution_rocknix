@@ -33,17 +33,17 @@ post_install() {
   if [ "${DEVICE}" = "RK3326" -o "${DEVICE}" = "RK3566" ]; then
     enable_service volume-fixup.service
   fi
-  if [ "${DEVICE}" = "S905L3A" ]; then
+  if [ "${DEVICE}" = "S905" ]; then
     enable_service persist-mac.service
-    enable_service s905l3a-audio.service
+    enable_service s905-audio.service
     mkdir -p ${INSTALL}/usr/share/wireplumber/wireplumber.conf.d
-    cp ${PKG_DIR}/platforms/S905L3A/wireplumber/51-sc2-alsa-hdmi.conf \
+    cp ${PKG_DIR}/platforms/S905/wireplumber/51-sc2-alsa-hdmi.conf \
       ${INSTALL}/usr/share/wireplumber/wireplumber.conf.d/
     mkdir -p ${INSTALL}/usr/share/alsa-card-profile/mixer/profile-sets
-    cp ${PKG_DIR}/platforms/S905L3A/alsa-card-profile/s905l3a-hdmi.conf \
+    cp ${PKG_DIR}/platforms/S905/alsa-card-profile/s905-hdmi.conf \
       ${INSTALL}/usr/share/alsa-card-profile/mixer/profile-sets/
     mkdir -p ${INSTALL}/usr/lib/udev/rules.d
-    cp ${PKG_DIR}/platforms/S905L3A/udev/90-s905l3a-alsa-profile.rules \
+    cp ${PKG_DIR}/platforms/S905/udev/90-s905-alsa-profile.rules \
       ${INSTALL}/usr/lib/udev/rules.d/
   fi
 }

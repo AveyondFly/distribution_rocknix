@@ -34,7 +34,7 @@ case ${DEVICE} in
     PKG_GIT_CLONE_BRANCH="rk-6.1-rkr3"
     PKG_PATCH_DIRS="${LINUX} ${DEVICE} default"
     ;;
-  S905L3A)
+  S905)
     PKG_VERSION="f2991c87e13b1371edc9a8ab774bc2bc36ac11d5"
     PKG_URL="https://github.com/CoreELEC/linux-amlogic/archive/${PKG_VERSION}.tar.gz"
     PKG_PATCH_DIRS="${DEVICE} default"
@@ -96,7 +96,7 @@ if [[ "${DEVICE}" == RK3326* ]] || [ "${DEVICE}" = "RK3566" ]; then
   PKG_DEPENDS_UNPACK+=" generic-dsi"
 elif [ "${DEVICE}" = "SM8250" -o "${DEVICE}" = "SDM845" -o "${DEVICE}" = "H700" ]; then
   PKG_DEPENDS_UNPACK+=" kernel-firmware"
-elif [ "${DEVICE}" = "S905L3A" ]; then
+elif [ "${DEVICE}" = "S905" ]; then
   PKG_DEPENDS_TARGET+=" zstd:host"
   PKG_DEPENDS_UNPACK+=" bl30"
 fi
@@ -129,7 +129,7 @@ fetch_common_drivers() {
 }
 
 post_unpack() {
-  if [ "${DEVICE}" = "S905L3A" ]; then
+  if [ "${DEVICE}" = "S905" ]; then
     # Prevent setlocalversion from walking up to the distribution git tree,
     # which would append -g<hash>-dirty to every kernel build.
     mkdir -p ${PKG_BUILD}/.git/hooks
@@ -175,26 +175,26 @@ post_patch() {
     echo "obj-y" += panel-generic-dsi.o >> ${PKG_BUILD}/drivers/gpu/drm/panel/Makefile
   fi
 
-  if [ "${DEVICE}" = "S905L3A" ]; then
+  if [ "${DEVICE}" = "S905" ]; then
     install_common_drivers
 
     patch -d ${PKG_BUILD} -p1 \
-      < ${PROJECT_DIR}/${PROJECT}/devices/S905L3A/patches/common_drivers-hdmitx-allow-graphics-contenttype.patch
+      < ${PROJECT_DIR}/${PROJECT}/devices/S905/patches/common_drivers-hdmitx-allow-graphics-contenttype.patch
 
     patch -d ${PKG_BUILD} -p1 \
-      < ${PROJECT_DIR}/${PROJECT}/devices/S905L3A/patches/common_drivers-drm-align-g12a-afbc-height.patch
+      < ${PROJECT_DIR}/${PROJECT}/devices/S905/patches/common_drivers-drm-align-g12a-afbc-height.patch
 
     patch -d ${PKG_BUILD} -p1 \
-      < ${PROJECT_DIR}/${PROJECT}/devices/S905L3A/patches/common_drivers-drm-hdmi-mainline-lite.patch
+      < ${PROJECT_DIR}/${PROJECT}/devices/S905/patches/common_drivers-drm-hdmi-mainline-lite.patch
 
     patch -d ${PKG_BUILD} -p1 \
-      < ${PROJECT_DIR}/${PROJECT}/devices/S905L3A/patches/common_drivers-drm-hdmi-force-rgb8-test.patch
+      < ${PROJECT_DIR}/${PROJECT}/devices/S905/patches/common_drivers-drm-hdmi-force-rgb8-test.patch
 
     patch -d ${PKG_BUILD} -p1 \
-      < ${PROJECT_DIR}/${PROJECT}/devices/S905L3A/patches/common_drivers-drm-meson-reject-noncontiguous-prime.patch
+      < ${PROJECT_DIR}/${PROJECT}/devices/S905/patches/common_drivers-drm-meson-reject-noncontiguous-prime.patch
 
     patch -d ${PKG_BUILD} -p1 \
-      < ${PROJECT_DIR}/${PROJECT}/devices/S905L3A/patches/common_drivers-dmc-monitor-exit-static-inline.patch
+      < ${PROJECT_DIR}/${PROJECT}/devices/S905/patches/common_drivers-dmc-monitor-exit-static-inline.patch
 
     sed -e 's|^KBUILD_CFLAGS += $(call cc-option,-Wimplicit-fallthrough,).*||' \
         -e 's|^KBUILD_CFLAGS   := \(.*\)|KBUILD_CFLAGS   := -Wno-format -Wno-unused-function -Wno-misleading-indentation \1|' \
@@ -223,7 +223,7 @@ make_host() {
 
 makeinstall_host() {
   # Vendor Amlogic 5.15 headers must not replace the sysroot UAPI used by glibc.
-  if [ "${DEVICE}" = "S905L3A" ]; then
+  if [ "${DEVICE}" = "S905" ]; then
     return 0
   fi
   make \
@@ -297,7 +297,7 @@ pre_make_target() {
   cp ${PKG_KERNEL_CFG_FILE} ${PKG_BUILD}/.config
 
   # Amlogic Android boot images use an external ramdisk, matching CoreELEC.
-  if [ "${DEVICE}" = "S905L3A" ]; then
+  if [ "${DEVICE}" = "S905" ]; then
     ${PKG_BUILD}/scripts/config --set-str CONFIG_INITRAMFS_SOURCE ""
   else
     ${PKG_BUILD}/scripts/config --set-str CONFIG_INITRAMFS_SOURCE "$(kernel_initramfs_confs) ${BUILD}/initramfs"
@@ -342,7 +342,7 @@ pre_make_target() {
     ${PKG_BUILD}/scripts/config --disable CONFIG_WIREGUARD
   fi
 
-  if [ "${DEVICE}" = "S905L3A" ]; then
+  if [ "${DEVICE}" = "S905" ]; then
     ( cd ${PKG_BUILD}
       build_gpio_data
     )
@@ -456,7 +456,7 @@ pre_make_target() {
 make_target() {
   DTC_FLAGS=-@ kernel_make ${KERNEL_TARGET} ${KERNEL_MAKE_EXTRACMD} modules
 
-  if [ "${BUILD_ANDROID_BOOTIMG}" = "yes" -a "${DEVICE}" = "S905L3A" ]; then
+  if [ "${BUILD_ANDROID_BOOTIMG}" = "yes" -a "${DEVICE}" = "S905" ]; then
     mkdir -p ${BUILD}/image
     initramfs_add_root_links "${BUILD}/initramfs"
     (cd ${BUILD}/initramfs && find . | cpio -H newc -o --quiet -R 0:0 > ${BUILD}/image/initramfs.cpio)
@@ -510,14 +510,14 @@ makeinstall_target() {
   mkdir -p ${INSTALL}/.image
   cp -p System.map .config Module.symvers ${INSTALL}/.image/
 
-  if [ "${BUILD_ANDROID_BOOTIMG}" = "yes" -a "${DEVICE}" = "S905L3A" ]; then
+  if [ "${BUILD_ANDROID_BOOTIMG}" = "yes" -a "${DEVICE}" = "S905" ]; then
     cp -p arch/${TARGET_KERNEL_ARCH}/boot/${KERNEL_TARGET} ${INSTALL}/.image/
   elif [ "${BUILD_ANDROID_BOOTIMG}" = "yes" ]; then
     INITRAMFS_DIR="${BUILD}/initramfs"
     mkdir -p ${BUILD}/image
     initramfs_add_root_links "${INITRAMFS_DIR}"
     (cd ${INITRAMFS_DIR} && find . | cpio -H newc -o --quiet -R 0:0 > ${BUILD}/image/initramfs.cpio)
-    if [ "${DEVICE}" = "S905L3A" ]; then
+    if [ "${DEVICE}" = "S905" ]; then
       ANDROID_KERNEL_OFFSET="0x2000000"
     else
       ANDROID_KERNEL_OFFSET="0x1080000"
@@ -562,7 +562,7 @@ makeinstall_target() {
 
   if [ "${BOOTLOADER}" = "u-boot" ]; then
     mkdir -p ${INSTALL}/usr/share/bootloader
-    if [ "${DEVICE}" = "S905L3A" ]; then
+    if [ "${DEVICE}" = "S905" ]; then
       mkdir -p ${INSTALL}/usr/share/bootloader/device_trees
       for dtb in common_drivers/arch/${TARGET_KERNEL_ARCH}/boot/dts/amlogic/*.dtb; do
         [ -f ${dtb} ] && cp -v ${dtb} ${INSTALL}/usr/share/bootloader/device_trees

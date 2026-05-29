@@ -22,7 +22,7 @@ case "${DEVICE}" in
   SDM845)
     OPT_ENABLE_KERNEL=5.18.0
   ;;
-  S905L3A)
+  S905)
     OPT_ENABLE_KERNEL=5.15.0
   ;;
   *)
@@ -30,7 +30,7 @@ case "${DEVICE}" in
   ;;
 esac
 
-if [ "${DEVICE}" = "S905L3A" ]; then
+if [ "${DEVICE}" = "S905" ]; then
   PKG_DEPENDS_TARGET="${PKG_DEPENDS_TARGET/linux:host/linux-uapi:host}"
 fi
 

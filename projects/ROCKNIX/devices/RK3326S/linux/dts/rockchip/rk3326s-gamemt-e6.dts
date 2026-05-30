@@ -8,32 +8,39 @@
 #include "px30-android.dtsi"
 #include "rk3326-evb-lp3-v10.dtsi"
 #include "rk3326-863-cif-sensor.dtsi"
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "GameMT E6";
 	compatible = "gmmt,e6", "rockchip,rk3326";
 
-	power-led {
+	leds: gpio-leds {
 		compatible = "gpio-leds";
-
-		green {
-			gpios = <&gpio0 RK_PB7 GPIO_ACTIVE_HIGH>;
-			default-state = "on";
-		};
-
-		led3 {
-			gpios = <&gpio2 RK_PA5 GPIO_ACTIVE_HIGH>;
-			default-state = "on";
-		};
-
-		led_ygl {
+		
+		led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			default-state = "off";
+			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio2 RK_PA3 GPIO_ACTIVE_HIGH>;
-			default-state = "on";
 		};
-
-		led_ygr {
+		
+		led-1 {
+			color = <LED_COLOR_ID_RED>;
+			default-state = "off";
+			function = LED_FUNCTION_CHARGING;
 			gpios = <&gpio2 RK_PA4 GPIO_ACTIVE_HIGH>;
-			default-state = "on";
+		};
+		led-2 {
+			color = <LED_COLOR_ID_BLUE>;
+			default-state = "off";
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio2 RK_PA5 GPIO_ACTIVE_HIGH>;
+		};
+		led-3 {
+			color = <LED_COLOR_ID_WHITE>;
+			default-state = "off";
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio0 RK_PB7 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

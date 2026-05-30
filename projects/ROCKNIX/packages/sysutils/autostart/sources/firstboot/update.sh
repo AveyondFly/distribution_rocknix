@@ -748,7 +748,7 @@ case "${QUIRK_DEVICE}" in
     "GameMT E6")
         echo "${QUIRK_DEVICE}"
         Set_system "E6"
-        amixer -c 0 -M cset name="Playback Mux" SPK
+        amixer -c 0 -M cset name="${DEVICE_PLAYBACK_PATH}" $DEVICE_PLAYBACK_PATH_SPK
     ;;
     "GameMT E6Plus")
         echo "${QUIRK_DEVICE}"

@@ -502,7 +502,7 @@ fi
 
 
 
-if [ "$HW_DEVICE" = "RK3326" ] || [ "$HW_DEVICE" = "S905" ]; then
+if [ "$HW_DEVICE" = "RK3326" ] || [ "$HW_DEVICE" = "RK3326S" ] || [ "$HW_DEVICE" = "S905" ]; then
     sed -i -e '/gba.shaderset\=/c\gba.shaderset\=handheld/dot.glslp' /storage/.config/system/configs/system.cfg
     sed -i -e '/gbah.shaderset\=/c\gbah.shaderset\=handheld/dot.glslp' /storage/.config/system/configs/system.cfg
 fi

@@ -44,6 +44,14 @@ card=/sys/class/drm/card${card_no}
 connected_cons=()
 for connector in ${card}/card${card_no}*/
 do
+    base=$(basename "${connector}")
+    case "${base}" in
+        card${card_no}-HDMI-*|card${card_no}-DP-*|card${card_no}-DisplayPort-*|card${card_no}-DSI-*)
+            ;;
+        *)
+            continue
+            ;;
+    esac
     status=$(cat ${connector}/status)
     if [ "$status" = "connected" ]; then
         # If device has a connected DSI port, store that device.
@@ -83,12 +91,23 @@ echo "WLR_CON=${con}" >> ${env_file}
 # check refresh rate
 if [[ "${con}" == HDMI* || "${con}" == DP* || "${con}" == DisplayPort* ]]; then
     DISPLAY_MODE=$(get_setting system.display_mode_hdmi)
+    if [ -z "${DISPLAY_MODE}" ]; then
+        DISPLAY_MODE=$(get_setting system.display_mode)
+    fi
     if [ -n "${DISPLAY_MODE}" ]; then
         width=$(echo "${DISPLAY_MODE}" | sed -n 's/^[[:space:]]*\([0-9][0-9]*\)x\([0-9][0-9]*\).*/\1/p')
         height=$(echo "${DISPLAY_MODE}" | sed -n 's/^[[:space:]]*\([0-9][0-9]*\)x\([0-9][0-9]*\).*/\2/p')
         rr=$(echo "${DISPLAY_MODE}" | sed -n 's/.*@[[:space:]]*\([0-9.][0-9.]*\)[[:space:]]*Hz.*/\1/p')
+        if [ -z "${rr}" ]; then
+            rr=$(echo "${DISPLAY_MODE}" | sed -n 's/.*@[[:space:]]*\([0-9.][0-9.]*\)$/\1/p')
+        fi
+        if [ -z "${rr}" ] && ! echo "${DISPLAY_MODE}" | grep -q 'x'; then
+            rr=$(echo "${DISPLAY_MODE}" | tr -cd '[[:digit:]].')
+        fi
         if [ -n "${width}" ] && [ -n "${height}" ] && [ -n "${rr}" ]; then
             echo "${output} mode ${width}x${height}@${rr}Hz" >> $SWAY_HOME/config
+        elif [ -n "${rr}" ]; then
+            echo "${output} mode $(fbwidth)x$(fbheight)@${rr}Hz" >> $SWAY_HOME/config
         fi
     fi
 else

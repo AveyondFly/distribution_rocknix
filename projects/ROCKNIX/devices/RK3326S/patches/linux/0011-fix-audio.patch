@@ -1,0 +1,26 @@
+diff --git a/sound/soc/codecs/rk817_codec.c b/sound/soc/codecs/rk817_codec.c
+index 8e0aeef3f61c..3f0b3f96ecd2 100644
+--- a/sound/soc/codecs/rk817_codec.c
++++ b/sound/soc/codecs/rk817_codec.c
+@@ -1358,12 +1358,15 @@ static int rk817_resume(struct snd_soc_component *component)
+ {
+ 	struct rk817_codec_priv *rk817 = snd_soc_component_get_drvdata(component);
+ 
+-	if (rk817->resume_path) {
+-		if (rk817->capture_path != MIC_OFF)
+-			rk817_capture_path_config(component, OFF, rk817->capture_path);
+-		if (rk817->playback_path != OFF)
+-			rk817_playback_path_config(component, OFF, rk817->playback_path);
+-	}
++	/*
++	 * Suspend always powers down the codec; re-apply active paths so
++	 * register/mclk state matches the ALSA controls after system resume.
++	 */
++	if (rk817->capture_path != MIC_OFF)
++		rk817_capture_path_config(component, OFF, rk817->capture_path);
++
++	if (rk817->playback_path != OFF)
++		rk817_playback_path_config(component, OFF, rk817->playback_path);
+ 
+ 	return 0;
+ }

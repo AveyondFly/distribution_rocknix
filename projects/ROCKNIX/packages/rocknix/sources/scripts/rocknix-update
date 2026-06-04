@@ -4,176 +4,230 @@
 
 . /etc/profile
 
-BRANCH="$(get_setting updates.branch)"
+DISTRO_PREFIX="AURKNIX"
+GITHUB_ORG="${GIT_ORGANIZATION:-AveyondFly}"
+GITHUB_REPO_NAME="${GIT_REPO:-distribution_rocknix}"
+GITHUB_REPO="${GITHUB_ORG}/${GITHUB_REPO_NAME}"
+GITHUB_API="https://api.github.com/repos/${GITHUB_REPO}"
+
 FORCE="$(get_setting updates.force)"
 
-ENDPOINT_URL="https://update.rocknix.org"
+# OTA package: AURKNIX-{SOC}.{ARCH}-{DATE}.tar (same for RK3326 / RK3566 platforms)
+update_package_name() {
+  printf '%s-%s.%s-%s.tar' "${DISTRO_PREFIX}" "${HW_DEVICE}" "${HW_ARCH}" "$1"
+}
 
-MACHINEIDFILE=/storage/.cache/systemd-machine-id
-USERID=$(cat ${MACHINEIDFILE})
+github_curl() {
+  curl -sSf -H "Accept: application/vnd.github+json" \
+    -H "User-Agent: rocknix-update" "$@"
+}
 
-# Function to check for an update. It returns a URL if an update is available.
+# Fetch release JSON for $1 tag, or /releases/latest when empty.
+fetch_release_json() {
+  tag=$1
+  if [ -z "${tag}" ]; then
+    github_curl "${GITHUB_API}/releases/latest"
+  else
+    github_curl "${GITHUB_API}/releases/tags/${tag}"
+  fi
+}
+
+# True if $1 is a forced 8-digit build date (argument or updates.force setting).
+is_forced_version() {
+  v=$1
+  echo "${v}" | grep -q '^[0-9]\{8\}$'
+}
+
+# Returns 0 if an update should be offered for target_tag vs installed OS_VERSION.
+version_should_update() {
+  target_tag=$1
+  custom_force=$2
+
+  if is_forced_version "${custom_force}"; then
+    return 0
+  fi
+  case "${FORCE}" in
+    1|yes|true) return 0 ;;
+  esac
+  if is_forced_version "${FORCE}"; then
+    return 0
+  fi
+  [ "${target_tag}" -gt "${OS_VERSION}" ]
+}
+
+# Print browser_download_url for the OTA .tar, or nothing on failure.
 check_update() {
-    custom_force="${1:-$FORCE}"
+  custom_force="${1:-}"
+  forced_tag=""
 
-    update_url=$(curl -s -S -X POST \
-        -F "OS=${OS_NAME}" \
-        -F "ARCH=${HW_ARCH}" \
-        -F "SOC=${HW_DEVICE}" \
-        -F "VERSION=${OS_VERSION}" \
-        -F "UID=${USERID:(-12)}" \
-        -F "BUILD=aurknix" \
-        -F "DEV=${QUIRK_DEVICE}" \
-        -F "FORCE=${custom_force}" \
-        -F "BRANCH=${BRANCH}" \
-        "$ENDPOINT_URL")
-    echo "$update_url"
-    return $?
+  if is_forced_version "${custom_force}"; then
+    forced_tag="${custom_force}"
+  elif is_forced_version "${FORCE}"; then
+    forced_tag="${FORCE}"
+  fi
+
+  if [ -n "${HW_DEVICE}" ] && [ -n "${HW_ARCH}" ] && [ -n "${OS_VERSION}" ]; then
+    :
+  else
+    echo "Missing HW_DEVICE, HW_ARCH, or OS_VERSION from /etc/os-release." >&2
+    return 1
+  fi
+
+  if [ -n "${forced_tag}" ]; then
+    release_json=$(fetch_release_json "${forced_tag}") || return 1
+    target_tag="${forced_tag}"
+  else
+    release_json=$(fetch_release_json "") || return 1
+    target_tag=$(echo "${release_json}" | jq -r '.tag_name // empty')
+    [ -n "${target_tag}" ] || return 1
+    if ! version_should_update "${target_tag}" "${custom_force}"; then
+      return 1
+    fi
+  fi
+
+  pkg_name=$(update_package_name "${target_tag}")
+  update_url=$(echo "${release_json}" | jq -r --arg n "${pkg_name}" \
+    '.assets[] | select(.name == $n) | .browser_download_url' | head -n 1)
+
+  if [ -z "${update_url}" ] || [ "${update_url}" = "null" ]; then
+    echo "Update package not found for ${HW_DEVICE}: ${pkg_name}" >&2
+    echo "See https://github.com/${GITHUB_REPO}/releases" >&2
+    return 1
+  fi
+
+  echo "${update_url}"
+  return 0
 }
 
-# Function to get list of releases
+# List recent release tags from GitHub.
 get_releases() {
-    releases=$(curl -s -S -X POST \
-        -F "OS=${OS_NAME}" \
-        -F "ARCH=${HW_ARCH}" \
-        -F "SOC=${HW_DEVICE}" \
-        -F "BRANCH=${BRANCH}" \
-        -F "LIST=1" \
-        "$ENDPOINT_URL")
-    echo "$releases"
-    return $?
+  pkg_suffix="-${HW_DEVICE}.${HW_ARCH}-"
+  github_curl "${GITHUB_API}/releases?per_page=30" |
+    jq -r --arg suf "${pkg_suffix}" --arg pre "${DISTRO_PREFIX}" '
+      .[] |
+      .tag_name as $tag |
+      ([.assets[] | select(.name | test("^" + $pre + $suf) and endswith(".tar"))] | length) as $n |
+      select($n > 0) |
+      "\($tag)"
+    '
 }
 
-# Returns 0 if there is enough available free space at target_path in megabytes.
 check_disk_space() {
-    target_path=$1
-    required_mB=$2
-    available_mB=$(df -m "$target_path" | awk 'NR==2 {print $4}')
-    if [ "$available_mB" -ge "$required_mB" ]; then
-        return 0
-    else
-        return 1
-    fi
+  target_path=$1
+  required_mB=$2
+  available_mB=$(df -m "$target_path" | awk 'NR==2 {print $4}')
+  if [ "${available_mB}" -ge "${required_mB}" ]; then
+    return 0
+  fi
+  return 1
 }
 
-# Download a file from url to destination and show progress.
 download_file() {
-    url=$1
-    destination=$2
-    curl --progress-bar -S -L "$url" -o "$destination"
-    return $?
+  url=$1
+  destination=$2
+  curl --progress-bar -S -L "${url}" -o "${destination}"
 }
 
-# Main update logic.
+# Extract YYYYMMDD tag from GitHub release download URL.
+tag_from_update_url() {
+  basename "$(dirname "$1")"
+}
+
 main_update() {
-    custom_force="${1:-$FORCE}"
-    update_url=$(check_update "$custom_force")
+  custom_force="${1:-}"
+  update_url=$(check_update "${custom_force}") || {
+    echo "No update available or invalid update URL."
+    exit 1
+  }
 
-    # Check if the returned update_url looks like a URL (e.g., starts with http)
-    case "$update_url" in
-        http://*|https://*)
-            echo "Update available at: $update_url" ;;
-        *)
-            echo "No update available or invalid update URL."
-            exit 1
-            ;;
-    esac
+  target_tag=$(tag_from_update_url "${update_url}")
+  echo "Update available: ${target_tag}"
+  echo "Download: ${update_url}"
 
-    # Check that there is at least 2GB of available free space on /storage.
-    if ! check_disk_space "/storage" "2048"; then
-        echo "Not enough free space on /storage (need at least 2GB)."
-        exit 1
-    fi
+  if ! check_disk_space "/storage" "2048"; then
+    echo "Not enough free space on /storage (need at least 2GB)."
+    exit 1
+  fi
 
-    # Ensure that the /storage/.update folder exists.
-    if [ ! -d "/storage/.update" ]; then
-        mkdir -p /storage/.update || { echo "Failed to create /storage/.update directory."; exit 1; }
-    fi
+  if [ ! -d "/storage/.update" ]; then
+    mkdir -p /storage/.update || { echo "Failed to create /storage/.update directory."; exit 1; }
+  fi
 
-    # Extract the file name from the update URL.
-    filename=$(basename "$update_url")
+  filename=$(basename "${update_url}")
+  update_file="/storage/.update/${filename}"
+  checksum_file="/storage/.update/${filename}.sha256"
 
-    # Define download destinations inside /storage/.update folder using the original file names.
-    update_file="/storage/.update/${filename}"
-    checksum_file="/storage/.update/${filename}.sha256"
+  echo "Downloading update file..."
+  download_file "${update_url}" "${update_file}" || {
+    echo "Failed to download update file."
+    exit 1
+  }
 
-    # Download the update file.
-    echo "Downloading update file..."
-    download_file "$update_url" "$update_file"
-    if [ $? -ne 0 ]; then
-        echo "Failed to download update file."
-        exit 1
-    fi
+  checksum_url="${update_url}.sha256"
+  echo "Downloading checksum file..."
+  download_file "${checksum_url}" "${checksum_file}" || {
+    echo "Failed to download checksum file."
+    rm -f "${update_file}"
+    exit 1
+  }
 
-    # Download the checksum file (append .sha256 to the update URL).
-    checksum_url="${update_url}.sha256"
-    echo "Downloading checksum file..."
-    download_file "$checksum_url" "$checksum_file"
-    if [ $? -ne 0 ]; then
-        echo "Failed to download checksum file."
-        rm -f "$update_file"
-        exit 1
-    fi
-
-    # Verify checksum.
-    echo "Verifying the downloaded update..."
-    expected_checksum=$(awk '{print $1}' "$checksum_file")
-    actual_checksum=$(sha256sum "$update_file" | awk '{print $1}')
-    if [ "$expected_checksum" = "$actual_checksum" ]; then
-        echo "Checksum verified successfully. Reboot to apply the update."
-        set_setting updates.force 0
-        sync
-    else
-        echo "Checksum verification failed. Removing downloaded files."
-        rm -f "$update_file" "$checksum_file"
-        exit 1
-    fi
+  echo "Verifying the downloaded update..."
+  expected_checksum=$(awk '{print $1}' "${checksum_file}")
+  actual_checksum=$(sha256sum "${update_file}" | awk '{print $1}')
+  if [ "${expected_checksum}" = "${actual_checksum}" ]; then
+    echo "Checksum verified successfully. Reboot to apply the update."
+    set_setting updates.force 0
+    sync
+  else
+    echo "Checksum verification failed. Removing downloaded files."
+    rm -f "${update_file}" "${checksum_file}"
+    exit 1
+  fi
 }
 
-# Check network connectivity (ping DNS server)
-if ! ping -c 1 8.8.8.8 >/dev/null 2>&1; then
-    echo "Network connection unavailable."
-    exit 1
+if ! command -v jq >/dev/null 2>&1; then
+  echo "jq is required but not installed."
+  exit 1
 fi
 
-# Read the first argument to determine the mode.
+if ! ping -c 1 8.8.8.8 >/dev/null 2>&1; then
+  echo "Network connection unavailable."
+  exit 1
+fi
+
 mode=$1
 
-# Check if the mode is a number (e.g., 20250101), which indicates forcing a specific version
-if echo "$mode" | grep -q '^[0-9]\{8\}$'; then
-    # If mode is a date (8 digits), treat it as a forced version
-    echo "Forcing update to version $mode..."
-    main_update "$mode"
-    exit 0
+if echo "${mode}" | grep -q '^[0-9]\{8\}$'; then
+  echo "Forcing update to version ${mode}..."
+  main_update "${mode}"
+  exit 0
 fi
 
-case "$mode" in
-    check)
-        update_url=$(check_update)
-        case "$update_url" in
-            *)
-                echo "No update available."
-                exit 1
-                ;;
-        esac
-        ;;
-    releases)
-        # Get the list of available releases
-        echo "Checking available releases..."
-        releases=$(get_releases)
-        echo "$releases"
-        exit 0
-        ;;
-    update|"")
-        # If mode is "update" or no argument is provided, proceed with the update.
-        main_update
-        ;;
-    *)
-        echo "Usage: $0 [check|update|releases|<version>]"
-        echo "  check     - Check for available updates and print version"
-        echo "  update    - Update to the latest version"
-        echo "  releases  - Show available releases"
-        echo "  <version> - Force update to specific version (e.g., 20250101)"
-        exit 1
-        ;;
+case "${mode}" in
+  check)
+    # EmulationStation reads stdout: exactly one line (version tag) when an update exists.
+    if update_url=$(check_update); then
+      echo "$(tag_from_update_url "${update_url}")"
+      exit 0
+    fi
+    echo "No update available (installed: ${OS_VERSION})." >&2
+    exit 1
+    ;;
+  releases)
+    echo "Releases with OTA package ${DISTRO_PREFIX}-*${HW_DEVICE}.${HW_ARCH}-*.tar:"
+    echo "Repository: https://github.com/${GITHUB_REPO}/releases"
+    get_releases
+    exit 0
+    ;;
+  update|"")
+    main_update
+    ;;
+  *)
+    echo "Usage: $0 [check|update|releases|<version>]"
+    echo "  check     - Check for updates (GitHub releases)"
+    echo "  update    - Download latest OTA package from GitHub"
+    echo "  releases  - List release tags with an OTA package for this device"
+    echo "  <version> - Force download a specific release (e.g. 20260601)"
+    exit 1
+    ;;
 esac

@@ -23,14 +23,15 @@ then
   MYLANG="${MYLOCALE}.${MYCHARMAP}"
   MYLOCPATH="/storage/.config/emulationstation"
 
-  if [ ! -e "${MYLOCPATH}/locale/${MYLANG}/LC_NAME" ]; then
+  if [ ! -s "${MYLOCPATH}/locale/${MYLANG}/LC_NAME" ]; then
+    rm -rf "${MYLOCPATH}/locale/${MYLANG}"
     performance
- I18NPATH="/usr/share/i18n"
- localedef -i ${MYLOCALE} \
-           -c \
-           -v \
-           -f ${MYCHARMAP} \
-           ${MYLOCPATH}/locale/${MYLANG} >/var/log/start_es.log 2>&1
+    export I18NPATH="/usr/share/i18n"
+    localedef -i "${MYLOCALE}" \
+              -c \
+              -v \
+              -f "${MYCHARMAP}" \
+              "${MYLOCPATH}/locale/${MYLANG}" >/var/log/start_es.log 2>&1
     ${DEVICE_CPU_GOVERNOR}
   fi
 

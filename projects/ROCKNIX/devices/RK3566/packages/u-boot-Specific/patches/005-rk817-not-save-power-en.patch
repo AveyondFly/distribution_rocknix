@@ -1,0 +1,19 @@
+diff --git a/drivers/power/pmic/rk8xx.c b/drivers/power/pmic/rk8xx.c
+--- a/drivers/power/pmic/rk8xx.c
++++ b/drivers/power/pmic/rk8xx.c
+@@ -336,6 +336,8 @@ static int rk8xx_probe(struct udevice *dev)
+ 		off_source = RK817_OFF_SOURCE;
+ 		init_data = rk817_init_reg;
+ 		init_data_num = ARRAY_SIZE(rk817_init_reg);
++		if (dev_read_bool(dev, "not-save-power-en"))
++			break;
+ 		power_en0 = pmic_reg_read(dev, RK817_POWER_EN0);
+ 		power_en1 = pmic_reg_read(dev, RK817_POWER_EN1);
+ 		power_en2 = pmic_reg_read(dev, RK817_POWER_EN2);
+diff --git a/dts/upstream/src/arm64/rockchip/rk3566-quartz64-a.dts b/dts/upstream/src/arm64/rockchip/rk3566-quartz64-a.dts
+--- a/dts/upstream/src/arm64/rockchip/rk3566-quartz64-a.dts
++++ b/dts/upstream/src/arm64/rockchip/rk3566-quartz64-a.dts
+@@ -335,2 +335,3 @@
+ 		wakeup-source;
++		not-save-power-en;
+ 

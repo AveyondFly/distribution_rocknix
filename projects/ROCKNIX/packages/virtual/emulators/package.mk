@@ -1520,6 +1520,9 @@ makeinstall_target() {
   install_script "MOD_TOOLS/Bezels Installer.sh"
   install_script "MOD_TOOLS/Reset Drastic Cfg.sh"
   install_script "MOD_TOOLS/Reset YabaSanshiro Input.sh"
+  if [ "${DEVICE}" = "RK3566" ]; then
+    install_script "MOD_TOOLS/FixShutdown.sh"
+  fi
   if [ "${DEVICE}" != "S905" ]; then
     install_script "MOD_TOOLS/Install AURKNIX to EMMC.sh"
     install_script "MOD_TOOLS/Backup EMMC.sh"

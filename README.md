@@ -31,6 +31,12 @@ This is an **unofficial** fork of ROCKNIX that provides support for additional d
 - **KPlayer** (kplayer): Enhanced music player with modern UI and online lyric download
 - **KReader** (kebook): E-book reader
 
+### Ports
+
+Independent ports apps:
+
+- [**Kodi**](https://github.com/AveyondFly/console_mod_res/releases/download/v0.9/kodi.zip): Media player and entertainment hub
+
 ### Additional Supported Devices
 
 #### RK3326 Devices (unified image)

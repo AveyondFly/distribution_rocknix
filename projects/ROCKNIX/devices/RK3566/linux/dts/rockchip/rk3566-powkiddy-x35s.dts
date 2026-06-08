@@ -1,8 +1,8 @@
 #include "rk3566-powkiddy-x55.dts"
 
 / {
-	model = "Powkiddy x35h";
-	compatible = "powkiddy,x35h", "rockchip,rk3566";
+	model = "Powkiddy x35s";
+	compatible = "powkiddy,x35s", "rockchip,rk3566";
 };
 
 &battery {
@@ -17,18 +17,8 @@
 };
 
 &joypad {
-	abs_x-p-tuning = <0xc8>;
-	abs_x-n-tuning = <0xc8>;
-	abs_y-p-tuning = <0xc8>;
-	abs_y-n-tuning = <0xc8>;
-	abs_rx-p-tuning = <0xc8>;
-	abs_rx-n-tuning = <0xc8>;
-	abs_ry-p-tuning = <0xc8>;
-	abs_ry-n-tuning = <0xc8>;
 	invert-absx;
 	invert-absy;
-	invert-absrx;
-	invert-absry;
 	sw5 {
 		label = "GPIO BTN-B";
 		linux,code = <BTN_SOUTH>;

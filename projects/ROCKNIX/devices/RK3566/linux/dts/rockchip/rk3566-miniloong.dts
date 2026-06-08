@@ -405,7 +405,7 @@
 	assigned-clocks = <&pmucru CLK_RTC_32K>, <&cru PLL_GPLL>,
 			  <&pmucru PLL_PPLL>, <&cru PLL_VPLL>;
 	assigned-clock-rates = <32768>, <1200000000>,
-			       <200000000>, <126400000>;
+			       <200000000>, <594000000>;
 };
 
 &cpu0 {
@@ -462,9 +462,9 @@
 		panel_description =
                 "G size=229,143 delays=120,120,120,120,20 format=rgb888 lanes=4 flags=0xa03",
 
-		"M clock=74151 horizontal=720,460,14,20 vertical=960,30,8,20 default=1",
-                "M clock=46014 horizontal=720,150,14,20 vertical=960,30,8,20",
-		"M clock=128010 horizontal=720,630,15,20 vertical=960,30,8,20",
+		"M clock=74250 horizontal=720,462,14,20 vertical=960,30,8,20 default=1",
+                "M clock=45693 horizontal=720,144,14,20 vertical=960,30,8,20",
+		"M clock=118800 horizontal=720,530,15,20 vertical=960,30,8,20",
 
                 "I seq=ff988103",
                 "I seq=0100", "I seq=0200", "I seq=0372", "I seq=0400", "I seq=0500", "I seq=0609", "I seq=0700",

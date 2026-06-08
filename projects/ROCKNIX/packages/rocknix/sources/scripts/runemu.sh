@@ -130,6 +130,7 @@ function bluetooth() {
 }
 
 if [[ ${PLATFORM} == "psx" ]]; then
+	ROMNAMETMP=${ROMNAME%.*}
 	if [ -f "${ROMNAMETMP}.bios" ]; then
 		cp -f "${ROMNAMETMP}.bios" "/storage/roms/bios/scph101.bin"
 		cp -f "${ROMNAMETMP}.bios" "/storage/roms/bios/scph5500.bin"

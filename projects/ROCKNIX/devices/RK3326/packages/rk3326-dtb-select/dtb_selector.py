@@ -1,4 +1,31 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+RK3326 掌机 DTB 选择器
+========================
+功能：
+  - 交互式菜单选择设备厂商和型号
+  - 自动生成 extlinux.conf 配置文件
+  - 部署设备所需的 overlays（如有）
+  - 支持中英文界面切换
+
+支持设备：
+  R36S系列、安伯尼克、稀范科技、PowKiddy、Odroid 等 RK3326 掌机
+
+用法：
+  python dtb_selector.py
+
+环境变量：
+  RK3326_DTB_SELECT_CONFIG  - 自定义 config 目录路径
+  RK3326_DTB_SELECT_NO_REMOUNT - 跳过 /flash 分区重挂载
+  ROCKNIX_BOOT - 启动分区挂载点（默认 /flash）
+
+新增设备：
+    1. ALL_DEVICES 中添加
+    2. DEVICE_TRANSLATIONS 中添加
+    3. 如果有新厂家则需要CATEGORIES
+"""
+
 import os, sys, re, shutil, subprocess, tempfile
 from typing import Optional, List, Dict
 from dataclasses import dataclass
@@ -16,6 +43,77 @@ except Exception:
     _wlen = lambda s: len(s)
 
 ANSI_RE = re.compile(r'\x1b\[[0-9;]*m')
+
+# ==== 多语言支持 ====
+LANG = "zh"  # 默认中文，启动时可选
+
+TRANSLATIONS = {
+    "zh": {
+        "title_lang_select": "请选择语言 / Please select language",
+        "lang_zh": "中文",
+        "lang_en": "English",
+        "title_select_vendor": "请选择厂商 / 机型分类",
+        "devices_count": "{} 台设备",
+        "exit": "退出程序",
+        "back": "返回上一级",
+        "input_number": "输入编号：",
+        "invalid_number": "无效编号，请重试。",
+        "applying_config": "正在应用配置",
+        "model": "机型",
+        "serial": "SERIAL",
+        "vt": "VT",
+        "debug": "DEBUG",
+        "overlay": "OVERLAY",
+        "no_change": "（不改）",
+        "generated_extlinux": "已生成 extlinux.conf",
+        "deployed_overlays": "已部署 overlays",
+        "deleted_overlays": "已删除 overlays（当前机型无需 overlays）",
+        "config_complete": "配置完成！",
+        "config_failed": "配置失败，请检查 config 文件夹",
+        "press_any_key": "按任意键返回厂商列表...",
+        "press_any_key_exit": "按任意键退出...",
+        "thank_you": "感谢使用，再见！",
+        "error_missing_config": "错误：缺少 config 目录",
+        "error_missing_template": "错误：缺少模板",
+        "error_missing_overlays": "错误：缺少 overlays 源目录",
+    },
+    "en": {
+        "title_lang_select": "Please select language / 请选择语言",
+        "lang_zh": "中文",
+        "lang_en": "English",
+        "title_select_vendor": "Select Manufacturer / Device Category",
+        "devices_count": "{} devices",
+        "exit": "Exit",
+        "back": "Back",
+        "input_number": "Enter number: ",
+        "invalid_number": "Invalid number, please try again.",
+        "applying_config": "Applying Configuration",
+        "model": "Model",
+        "serial": "SERIAL",
+        "vt": "VT",
+        "debug": "DEBUG",
+        "overlay": "OVERLAY",
+        "no_change": "(no change)",
+        "generated_extlinux": "Generated extlinux.conf",
+        "deployed_overlays": "Deployed overlays",
+        "deleted_overlays": "Deleted overlays (not required for this device)",
+        "config_complete": "Configuration complete!",
+        "config_failed": "Configuration failed, please check config folder",
+        "press_any_key": "Press any key to return to vendor list...",
+        "press_any_key_exit": "Press any key to exit...",
+        "thank_you": "Thank you, goodbye!",
+        "error_missing_config": "Error: Missing config directory",
+        "error_missing_template": "Error: Missing template",
+        "error_missing_overlays": "Error: Missing overlays source directory",
+    },
+}
+
+def t(key: str, *args) -> str:
+    """获取翻译文本，支持格式化参数"""
+    text = TRANSLATIONS[LANG].get(key, key)
+    if args:
+        return text.format(*args)
+    return text
 
 # ==== 路径 ====
 if getattr(sys, 'frozen', False):
@@ -53,7 +151,9 @@ def _remount_flash(rw: bool) -> None:
 def clear_screen():
     os.system("cls" if os.name == "nt" else "clear")
 
-def wait_anykey(msg="按任意键退出..."):
+def wait_anykey(msg=None):
+    if msg is None:
+        msg = t("press_any_key_exit")
     print(msg, end="", flush=True)
     if os.name == "nt":
         try:
@@ -209,6 +309,139 @@ CATEGORIES: Dict[str, Dict[str, DtbEntry]] = {
     },
 }
 
+# ==== 厂商名称英文翻译 ====
+CATEGORY_TRANSLATIONS = {
+    "稀范科技": "Xifan Tech",
+    "安伯尼克": "Anbernic",
+    "亿米创": "YMC",
+    "迪优米": "Diium",
+    "Magicx": "Magicx",
+    "泡机堂": "PowKiddy",
+    "漫特科技": "GAMEMT",
+    "Odroid": "Odroid",
+    "Game Console": "Game Console",
+    "R36S克隆": "R36S Clone",
+    "R36S酱油": "R36S Sauce",
+    "K36系列": "K36 Series",
+    "AISLPC": "AISLPC",
+    "Batlexp": "Batlexp",
+    "其他": "Others",
+}
+
+# ==== 设备名称英文翻译 ====
+DEVICE_TRANSLATIONS = {
+    # R36s克隆
+    "R36S克隆 种类1带功放": "R36S Clone Type1 with Amp",
+    "R36S克隆 种类1不带功放": "R36S Clone Type1 without Amp",
+    "R36S克隆 种类1不带功放并反转右摇杆": "R36S Clone Type1 without Amp (Inverted R-Stick)",
+    "R36S克隆 种类2带功放": "R36S Clone Type2 with Amp",
+    "R36S克隆 种类2不带功放": "R36S Clone Type2 without Amp",
+    "R36S克隆 种类3屏幕1": "R36S Clone Type3 Panel1",
+    "R36S克隆 种类3屏幕2": "R36S Clone Type3 Panel2",
+    "R36S克隆 种类4": "R36S Clone Type4",
+
+    # R36s酱油
+    "R36S酱油 屏幕1": "R36S Sauce Panel1",
+    "R36S酱油 屏幕2": "R36S Sauce Panel2",
+    "R36S酱油 屏幕3": "R36S Sauce Panel3",
+    "R36S酱油 屏幕4": "R36S Sauce Panel4",
+
+    # K36系列
+    "K36 原始版本": "K36 Original",
+
+    # AISLPC
+    "AISLPC K36s": "AISLPC K36s",
+    "AISLPC R36T": "AISLPC R36T",
+    "AISLPC R36TMax": "AISLPC R36TMax",
+
+    # 其他
+    "T16Max": "T16Max",
+    "U8": "U8",
+    "U8 P2屏幕": "U8 P2 Screen",
+    "RX6H": "RX6H",
+    "HG36/HG3506": "HG36/HG3506",
+    "R36 Ultra": "R36 Ultra",
+    "XGB36": "XGB36",
+    "R40S": "R40S",
+    "R39S": "R39S",
+
+    # GameConsole
+    "Game Console R33s": "Game Console R33s",
+    "Game Console R36s P1屏幕": "Game Console R36s P1 Screen",
+    "Game Console R36s P2屏幕": "Game Console R36s P2 Screen",
+    "Game Console R36s P3屏幕": "Game Console R36s P3 Screen",
+    "Game Console R36s P4屏幕": "Game Console R36s P4 Screen",
+    "Game Console R36xx": "Game Console R36xx",
+    "Game Console R36H": "Game Console R36H",
+    "Game Console O30S": "Game Console O30S",
+    "Game Console R50S": "Game Console R50S",
+    "Game Console R36sPlus": "Game Console R36sPlus",
+    "Game Console R36H ProMax": "Game Console R36H ProMax",
+    "Game Console R40XX": "Game Console R40XX",
+    "Game Console R40XX ProMax": "Game Console R40XX ProMax",
+    "Game Console R45H": "Game Console R45H",
+    "Game Console R46H": "Game Console R46H",
+
+    # 稀范科技
+    "稀范科技 MyMini": "Xifan MyMini",
+    "稀范科技 Mini40": "Xifan Mini40",
+    "稀范科技 XF35H": "Xifan XF35H",
+    "稀范科技 R36Max": "Xifan R36Max",
+    "稀范科技 R36Pro": "Xifan R36Pro",
+    "稀范科技 XF40H": "Xifan XF40H",
+    "稀范科技 XF40V": "Xifan XF40V",
+    "稀范科技 XF28": "Xifan XF28",
+    "稀范科技 DC35V": "Xifan DC35V",
+    "稀范科技 DC40V": "Xifan DC40V",
+    "稀范科技 R36Max2": "Xifan R36Max2",
+
+    # 安伯尼克
+    "安伯尼克 RG351M": "Anbernic RG351M",
+    "安伯尼克 RG351V": "Anbernic RG351V",
+    "安伯尼克 RG351V P2屏幕": "Anbernic RG351V P2 Screen",
+    "安伯尼克 RG351MP": "Anbernic RG351MP",
+
+    # 亿米创
+    "YMC A10mini": "YMC A10mini",
+    "YMC A10mini V4": "YMC A10mini V4",
+
+    # 迪优米
+    "Diium D-R28S": "Diium D-R28S",
+
+    # Magicx
+    "Magicx Xu10": "Magicx Xu10",
+    "Magicx Xu Mini M": "Magicx Xu Mini M",
+
+    # 泡机堂
+    "PowKiddy RGB10": "PowKiddy RGB10",
+    "PowKiddy RGB10X": "PowKiddy RGB10X",
+    "PowKiddy RGB10S": "PowKiddy RGB10S",
+    "PowKiddy RGB2OS": "PowKiddy RGB2OS",
+
+    # GAMEMT
+    "GAMEMT E6": "GAMEMT E6",
+
+    # Odroid
+    "Odroid Go2": "Odroid Go2",
+    "Odroid Go2 v11屏幕": "Odroid Go2 v11 Screen",
+    "Odroid Go3": "Odroid Go3",
+
+    # Batlexp
+    "Batlexp G350": "Batlexp G350",
+}
+
+def get_device_name(zh_name: str) -> str:
+    """根据当前语言获取设备名称"""
+    if LANG == "en":
+        return DEVICE_TRANSLATIONS.get(zh_name, zh_name)
+    return zh_name
+
+def get_category_name(zh_name: str) -> str:
+    """根据当前语言获取厂商分类名称"""
+    if LANG == "en":
+        return CATEGORY_TRANSLATIONS.get(zh_name, zh_name)
+    return zh_name
+
 # ==== 可见宽度 & UI ====
 def visible_width(s: str) -> int:
     return _wlen(ANSI_RE.sub('', s))
@@ -249,7 +482,9 @@ def print_header(title: str, *, no_color=False, ascii_border=False):
     print(color(center_disp(title, tw), bg=True, enable=not no_color))
     print(color(pad_disp(bar, tw), bg=True, enable=not no_color))
 
-def render_single_column_menu(items: List[str], *, prompt="请选择：", no_color=False, ascii_border=False):
+def render_single_column_menu(items: List[str], *, prompt=None, no_color=False, ascii_border=False):
+    if prompt is None:
+        prompt = t("input_number")
     for i, name in enumerate(items, 1):
         print(f"{i:>2}. {name}")
     tw = term_width()
@@ -259,12 +494,12 @@ def render_single_column_menu(items: List[str], *, prompt="请选择：", no_col
 
 def choose_index(count: int) -> int:
     while True:
-        s = input("输入编号：").strip()
+        s = input(t("input_number")).strip()
         if s.isdigit():
             n = int(s)
             if 1 <= n <= count:
                 return n - 1
-        print("无效编号，请重试。")
+        print(t("invalid_number"))
 
 # ==== TTY 解析 ====
 def _to_tty_name(v):
@@ -378,12 +613,12 @@ def atomic_replace_dir(src_dir: str, dst_dir: str):
 # ==== 生成 extlinux.conf / overlays ====
 def build_extlinux_conf(dtb_file: str, tty_value, overlay_dir: Optional[str], *, no_color=False):
     if not os.path.isdir(CONFIG_DIR):
-        print("错误：缺少 config 目录 →", CONFIG_DIR)
+        print(t("error_missing_config"), "→", CONFIG_DIR)
         return False
 
     tpath = os.path.join(CONFIG_DIR, "extlinux.conf")
     if not os.path.isfile(tpath):
-        print("错误：缺少模板 →", tpath)
+        print(t("error_missing_template"), "→", tpath)
         return False
 
     base = _boot_write_root()
@@ -401,14 +636,14 @@ def build_extlinux_conf(dtb_file: str, tty_value, overlay_dir: Optional[str], *,
 
         out_path = os.path.join(base, "extlinux", "extlinux.conf")
         atomic_write_text(out_path, content)
-        print(color("已生成 extlinux.conf", bg=True, enable=not no_color), f"（DTB={dtb_file}）\n  → {out_path}")
+        print(color(t("generated_extlinux"), bg=True, enable=not no_color), f"（DTB={dtb_file}）\n  → {out_path}")
 
         overlays_path = os.path.join(base, "overlays")
 
         if overlay_dir:
             src = os.path.join(CONFIG_DIR, overlay_dir)
             if not os.path.isdir(src):
-                print("错误：缺少 overlays 源目录 →", src)
+                print(t("error_missing_overlays"), "→", src)
                 ok = False
             else:
                 tmp = os.path.join(tempfile.gettempdir(), "rk3326-dtb-select-overlays.tmp")
@@ -417,11 +652,11 @@ def build_extlinux_conf(dtb_file: str, tty_value, overlay_dir: Optional[str], *,
 
                 shutil.copytree(src, tmp)
                 atomic_replace_dir(tmp, overlays_path)
-                print("已部署 overlays →", overlay_dir)
+                print(t("deployed_overlays"), "→", overlay_dir)
         else:
             if os.path.exists(overlays_path):
                 shutil.rmtree(overlays_path, ignore_errors=True)
-                print("已删除 overlays（当前机型无需 overlays）\n  →", overlays_path)
+                print(t("deleted_overlays"), "\n  →", overlays_path)
     finally:
         if remount:
             sbin_sync = "/usr/bin/sync"
@@ -433,25 +668,37 @@ def build_extlinux_conf(dtb_file: str, tty_value, overlay_dir: Optional[str], *,
 
 # ==== 主逻辑 ====
 def main():
+    global LANG
     clear_screen()
+
+    # 语言选择菜单
+    print_header(t("title_lang_select"), no_color=False)
+    print(f"1. {t('lang_zh')}")
+    print(f"2. {t('lang_en')}")
+    print("────────────────────────────────────────────")
+    lang_choice = input(t("input_number")).strip()
+
+    if lang_choice == "2":
+        LANG = "en"
 
     while True:
         clear_screen()
-        print_header("请选择厂商 / 机型分类", no_color=False)
+        print_header(t("title_select_vendor"), no_color=False)
         categories = list(CATEGORIES.keys())
         for i, cat in enumerate(categories, 1):
             count = len(CATEGORIES[cat])
-            print(f"{i:2}. {cat}（{count} 台设备）")
-        print(f"{len(categories) + 1:2}. 退出程序")
+            display_cat = get_category_name(cat)
+            print(f"{i:2}. {display_cat}（{t('devices_count', count)}）")
+        print(f"{len(categories) + 1:2}. {t('exit')}")
         print("────────────────────────────────────────────")
-        choice = input("输入编号：").strip()
+        choice = input(t("input_number")).strip()
 
         if not choice.isdigit():
             continue
         choice = int(choice)
         if choice == len(categories) + 1:
             clear_screen()
-            print_header("感谢使用，再见！", no_color=False)
+            print_header(t("thank_you"), no_color=False)
             break
         if not (1 <= choice <= len(categories)):
             continue
@@ -461,14 +708,16 @@ def main():
         # 二级菜单
         while True:
             clear_screen()
-            print_header(f"当前分类：{selected_cat}", no_color=False)
+            display_cat = get_category_name(selected_cat)
+            print_header(f"{display_cat}", no_color=False)
             models = list(CATEGORIES[selected_cat].keys())
 
             for i, name in enumerate(models, 1):
-                print(f"{i:2}. {name}")
-            print(f"{len(models) + 1:2}. 返回上一级")
+                display_name = get_device_name(name)
+                print(f"{i:2}. {display_name}")
+            print(f"{len(models) + 1:2}. {t('back')}")
             print("────────────────────────────────────────────")
-            sub_choice = input("输入编号：").strip()
+            sub_choice = input(t("input_number")).strip()
 
             if not sub_choice.isdigit():
                 continue
@@ -483,20 +732,21 @@ def main():
             tty_value = entry.tty
 
             clear_screen()
-            print_header("正在应用配置", no_color=False)
-            print(f"机型：{selected_name}\n")
+            print_header(t("applying_config"), no_color=False)
+            display_name = get_device_name(selected_name)
+            print(f"{t('model')}：{display_name}\n")
             s, v, d = _parse_tty_spec(tty_value)
             print(f"  DTB     = {entry.dtb}")
-            print(f"  SERIAL  = {s or '（不改）'}")
-            print(f"  VT      = {v or '（不改）'}")
-            print(f"  DEBUG   = {d or '（不改）'}")
+            print(f"  {t('serial')}  = {s or t('no_change')}")
+            print(f"  {t('vt')}      = {v or t('no_change')}")
+            print(f"  {t('debug')}   = {d or t('no_change')}")
             if entry.overlay:
-                print(f"  OVERLAY = {entry.overlay}")
+                print(f"  {t('overlay')} = {entry.overlay}")
 
             ok = build_extlinux_conf(entry.dtb, tty_value, entry.overlay)
-            print("\n" + ("配置完成！" if ok else "配置失败，请检查 config 文件夹"))
+            print("\n" + (t("config_complete") if ok else t("config_failed")))
 
-            wait_anykey("\n按任意键返回厂商列表...")
+            wait_anykey(t("press_any_key"))
             break
 
 if __name__ == "__main__":

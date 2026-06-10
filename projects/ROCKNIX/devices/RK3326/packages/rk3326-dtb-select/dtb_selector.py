@@ -212,6 +212,7 @@ ALL_DEVICES: Dict[str, DtbEntry] = {
     "HG36/HG3506": DtbEntry("rk3326-gameconsole-hg36.dtb", 202),
     "R36 Ultra": DtbEntry("rk3326-gameconsole-r36ultra.dtb", 101),
     "XGB36": DtbEntry("rk3326-gameconsole-xgb36.dtb", 202),
+    "RG36": DtbEntry("rk3326-gameconsole-rg36.dtb", 202),
     "R40S": DtbEntry("rk3326-gameconsole-r40s.dtb", 202,),
     "R39S": DtbEntry("rk3326-gameconsole-r40s.dtb", 202,),
 
@@ -257,7 +258,7 @@ ALL_DEVICES: Dict[str, DtbEntry] = {
 
     # 迪优米
     "Diium D-R28S": DtbEntry("rk3326-diium-dr28s.dtb", 101),
-    # "Diium D007(Plus)": DtbEntry("rk3326-diium-d007.dtb", 101),
+    "Diium D007(Plus)": DtbEntry("rk3326-diium-d007.dtb", 101),
 
     # Magicx
     "Magicx Xu10": DtbEntry("rk3326-magicx-xu10.dtb", 202),

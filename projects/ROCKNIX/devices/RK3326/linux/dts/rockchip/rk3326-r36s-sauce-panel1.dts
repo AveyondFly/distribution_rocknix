@@ -25,7 +25,6 @@
 	
 	backlight: backlight {
 		compatible = "pwm-backlight";
-		power-supply = <&vcc_bl>;
 		pwms = <&pwm1 0 40000 0>;
 		brightness-levels = <
 		0   1   2   3   4   5   6   7
@@ -386,18 +385,7 @@
 		panel_description =
 		"G size=71,71 delays=100,50,20,200,20 format=rgb888 lanes=4 flags=0xe03",
 		
-		"M clock=40760 horizontal=640,120,139,120 vertical=480,17,5,13 default=1",
-		"M clock=27650 horizontal=640,188,9,190 vertical=480,13,41,5",
-		"M clock=25500 horizontal=640,188,2,190 vertical=480,13,2,5",
-		"M clock=23930 horizontal=640,87,39,87 vertical=480,13,63,5",
-		"M clock=23460 horizontal=640,87,2,87 vertical=480,13,2,5",
-		"M clock=26600 horizontal=640,87,20,87 vertical=480,13,36,5",
-		"M clock=24840 horizontal=640,87,5,87 vertical=480,13,8,5",
-		"# failed to find mode for fps=60.000000 c=30600 h=816 v=500",
-		"M clock=30620 horizontal=640,87,38,87 vertical=480,13,100,5",
-		"M clock=43580 horizontal=640,120,168,120 vertical=480,17,41,13",
-		"M clock=46350 horizontal=640,120,120,120 vertical=480,17,5,13",
-		"M clock=61800 horizontal=640,120,120,120 vertical=480,17,5,13",
+		"M clock=31263 horizontal=640,120,139,91 vertical=480,17,5,24 default=1",
 		
 		"I seq=b9f11283",
 		"I seq=ba338105f90e0e2000000000000000442500910a0000024fd1000037",
@@ -721,7 +709,7 @@
 	sd-uhs-sdr50;
 	sd-uhs-sdr104;
 	vmmc-supply = <&vcc_sd>;
-	vqmmc-supply = <&vccio_sd>;
+	vqmmc-supply = <&vcc_bl>;
 	status = "okay";
 };
 

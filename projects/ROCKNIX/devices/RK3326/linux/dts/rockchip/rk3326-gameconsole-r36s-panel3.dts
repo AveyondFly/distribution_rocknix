@@ -11,23 +11,19 @@
 	compatible = "gameconsole,r35s", "gameconsole,r36s", "rockchip,rk3326";
 };
 
+&cru {
+	assigned-clock-rates = <1189000000>,
+	<200000000>, <200000000>,
+	<150000000>, <150000000>,
+	<100000000>, <200000000>;
+};
+
 &internal_display {
 	compatible = "rocknix,generic-dsi";
 	panel_description = 
 	"G size=52,70 delays=20,150,20,120,20 format=rgb888 lanes=4 flags=0xe03",
 
 	"M clock=29000 horizontal=640,150,4,150 vertical=480,16,2,14 default=1",
-	"M clock=29200 horizontal=640,150,9,150 vertical=480,16,106,14",
-	"M clock=29010 horizontal=640,150,27,150 vertical=480,16,90,14",
-	"M clock=29990 horizontal=640,150,48,150 vertical=480,16,97,14",
-	"M clock=30360 horizontal=640,150,20,150 vertical=480,16,40,14",
-	"M clock=33320 horizontal=640,150,37,150 vertical=480,16,61,14",
-	"M clock=31500 horizontal=640,150,35,150 vertical=480,16,29,14",
-	"M clock=29640 horizontal=640,150,10,150 vertical=480,16,10,14",
-	"M clock=22920 horizontal=640,46,2,44 vertical=480,16,11,14",
-	"M clock=35310 horizontal=640,46,32,44 vertical=480,16,104,14",
-	"M clock=34560 horizontal=640,46,20,44 vertical=480,16,2,14",
-	"M clock=46080 horizontal=640,46,20,44 vertical=480,16,2,14",
 	
 	"I seq=ff30",
 	"I seq=ff52",

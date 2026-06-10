@@ -177,13 +177,20 @@
 	};
 };
 
+&cru {
+	assigned-clock-rates = <1190000000>,
+	<200000000>, <200000000>,
+	<150000000>, <150000000>,
+	<100000000>, <200000000>;
+};
+
 &internal_display {
 	compatible = "rocknix,generic-dsi";
 	rotation = <270>;
 	panel_description =
 	"G size=42,82 delays=2,1,20,120,20 format=rgb888 lanes=2 flags=0xa03",
 	
-	"M clock=28000 horizontal=480,25,30,25 vertical=800,20,11,30 default=1",
+	"M clock=28333 horizontal=480,25,30,25 vertical=800,20,11,12 default=1",
 	
 	"I seq=20",
 	"I seq=29",

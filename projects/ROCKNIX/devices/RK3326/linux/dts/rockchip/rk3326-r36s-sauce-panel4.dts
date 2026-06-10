@@ -25,7 +25,6 @@
 	
 	backlight: backlight {
 		compatible = "pwm-backlight";
-		power-supply = <&vcc_bl>;
 		pwms = <&pwm1 0 40000 0>;
 		brightness-levels = <
 		0   1   2   3   4   5   6   7
@@ -386,18 +385,7 @@
 		panel_description =
 		"G size=71,71 delays=100,50,20,200,50 format=rgb888 lanes=4 flags=0xe03",
 		
-		"M clock=40000 horizontal=640,46,2,44 vertical=480,16,2,14 default=1",
-		"M clock=19950 horizontal=640,46,11,44 vertical=480,16,29,14",
-		"M clock=19110 horizontal=640,46,5,44 vertical=480,16,10,14",
-		"M clock=19650 horizontal=640,46,33,44 vertical=480,16,5,14",
-		"M clock=22080 horizontal=640,46,20,44 vertical=480,16,2,14",
-		"M clock=26740 horizontal=640,46,10,44 vertical=480,16,95,14",
-		"M clock=23940 horizontal=640,46,11,44 vertical=480,16,29,14",
-		"M clock=23040 horizontal=640,46,20,44 vertical=480,16,2,14",
-		"M clock=22920 horizontal=640,46,2,44 vertical=480,16,11,14",
-		"M clock=35310 horizontal=640,46,32,44 vertical=480,16,104,14",
-		"M clock=40230 horizontal=640,46,20,44 vertical=480,16,86,14",
-		"M clock=46080 horizontal=640,46,20,44 vertical=480,16,2,14",
+		"M clock=23760 horizontal=640,46,2,62 vertical=480,16,2,30 default=1",
 		
 		"I seq=ff30", "I seq=ff52", "I seq=ff01",
 		"I seq=e300",
@@ -770,7 +758,7 @@
 	sd-uhs-sdr50;
 	sd-uhs-sdr104;
 	vmmc-supply = <&vcc_sd>;
-	vqmmc-supply = <&vccio_sd>;
+	vqmmc-supply = <&vcc_bl>;
 	status = "okay";
 };
 

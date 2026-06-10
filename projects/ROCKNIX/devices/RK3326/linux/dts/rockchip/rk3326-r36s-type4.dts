@@ -404,19 +404,7 @@
 		pinctrl-0 = <&lcd_rst>;
 		panel_description =
 		"G size=153,85 delays=20,20,20,120,20 format=rgb888 lanes=4 flags=0xe03",
-		
-		"M clock=32000 horizontal=640,150,120,120 vertical=480,20,6,12 default=1",
-		"M clock=32000 horizontal=640,150,130,120 vertical=480,20,104,12",
-		"M clock=32010 horizontal=640,150,157,120 vertical=480,20,88,12",
-		"M clock=32130 horizontal=640,150,152,120 vertical=480,20,93,12",
-		"M clock=32890 horizontal=640,150,130,120 vertical=480,20,38,12",
-		"M clock=38050 horizontal=640,150,150,120 vertical=480,20,89,12",
-		"M clock=33600 horizontal=640,150,168,120 vertical=480,20,8,12",
-		"M clock=32760 horizontal=640,150,140,120 vertical=480,20,8,12",
-		"M clock=32750 horizontal=640,150,126,120 vertical=480,20,14,12",
-		"M clock=43580 horizontal=640,150,138,120 vertical=480,20,39,12",
-		"M clock=49140 horizontal=640,150,140,120 vertical=480,20,8,12",
-		"M clock=64890 horizontal=640,150,120,120 vertical=480,20,13,12",
+		"M clock=29700 horizontal=640,150,50,150 vertical=480,15,3,2 default=1",
 		
 		"I seq=b9f11287",
 		"I seq=b2780470",

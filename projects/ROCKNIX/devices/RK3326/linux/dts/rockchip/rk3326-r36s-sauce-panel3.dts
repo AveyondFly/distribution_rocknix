@@ -25,7 +25,6 @@
 	
 	backlight: backlight {
 		compatible = "pwm-backlight";
-		power-supply = <&vcc_bl>;
 		pwms = <&pwm1 0 40000 0>;
 		brightness-levels = <
 		0   1   2   3   4   5   6   7
@@ -385,7 +384,7 @@
 		panel_description =
 		"G size=71,71 delays=100,50,20,200,20 format=rgb888 lanes=4 flags=0xa03",
 		
-		"M clock=24180 horizontal=640,60,15,60 vertical=480,20,6,14 default=1",
+		"M clock=24245 horizontal=640,60,15,61 vertical=480,20,6,15 default=1",
 		
 		"I seq=f0aa55970800",
 		"I seq=ba01",
@@ -724,7 +723,7 @@
 	sd-uhs-sdr50;
 	sd-uhs-sdr104;
 	vmmc-supply = <&vcc_sd>;
-	vqmmc-supply = <&vccio_sd>;
+	vqmmc-supply = <&vcc_bl>;
 	status = "okay";
 };
 

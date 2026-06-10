@@ -110,13 +110,13 @@
 		start-key {
 			label = "start";
 			linux,code = <KEY_ENTER>;
-			press-threshold-microvolt = <1310000>;//<987000>;
+			press-threshold-microvolt = <987000>;//<987000>;
 		};
 		
 		fn-key {
 			label = "esc/FN";
 			linux,code = <KEY_ESC>;
-			press-threshold-microvolt = <987000>;//<1310000>;
+			press-threshold-microvolt = <1310000>;//<1310000>;
 		};
 	};
 	
@@ -444,18 +444,7 @@
 		panel_description = 
         "G size=64,48 delays=120,200,20,20,20 format=rgb888 lanes=4 flags=0xa03",
 
-		"M clock=33000 horizontal=640,120,2,120 vertical=480,18,2,20 default=1",
-		"M clock=23800 horizontal=640,120,4,120 vertical=480,18,21,20",
-		"M clock=23010 horizontal=640,120,5,120 vertical=480,18,2,20",
-		"M clock=28580 horizontal=640,120,13,120 vertical=480,18,122,20",
-		"M clock=26910 horizontal=640,120,20,120 vertical=480,18,2,20",
-		"M clock=34070 horizontal=640,120,24,120 vertical=480,18,113,20",
-		"M clock=33000 horizontal=640,120,30,120 vertical=480,18,87,20",
-		"M clock=33120 horizontal=640,120,40,120 vertical=480,18,82,20",
-		"M clock=34170 horizontal=640,120,46,120 vertical=480,18,96,20",
-		"M clock=40240 horizontal=640,120,33,120 vertical=480,18,66,20",
-		"M clock=42120 horizontal=640,120,20,120 vertical=480,18,2,20",
-		"M clock=56070 horizontal=640,120,10,120 vertical=480,18,7,20",
+		"M clock=29700 horizontal=640,150,50,150 vertical=480,15,3,2 default=1",
         
 		"I seq=ff30",
 		"I seq=ff52",

@@ -373,6 +373,46 @@
 	};
 };
 
+&cpu_thermal {
+	cooling-maps {
+		/delete-node/ map0;
+
+		map0 {
+			trip = <&cpu_alert0>;
+			cooling-device =
+				<&cpu0 1 4>,
+				<&cpu1 1 4>,
+				<&cpu2 1 4>,
+				<&cpu3 1 4>;
+		};
+
+		map1 {
+			trip = <&cpu_alert1>;
+			cooling-device =
+				<&cpu0 5 THERMAL_NO_LIMIT>,
+				<&cpu1 5 THERMAL_NO_LIMIT>,
+				<&cpu2 5 THERMAL_NO_LIMIT>,
+				<&cpu3 5 THERMAL_NO_LIMIT>;
+		};
+	};
+};
+
+&gpu_thermal {
+	cooling-maps {
+		/delete-node/ map0;
+
+		map0 {
+			trip = <&gpu_threshold>;
+			cooling-device = <&gpu 1 2>;
+		};
+
+		map1 {
+			trip = <&gpu_target>;
+			cooling-device = <&gpu 3 THERMAL_NO_LIMIT>;
+		};
+	};
+};
+
 &combphy1 {
 	status = "okay";
 };

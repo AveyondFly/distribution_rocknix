@@ -24,5 +24,12 @@ make_target() {
 
 makeinstall_target() {
   mkdir -p $INSTALL/usr/share/bootloader
-  cp -av ${PKG_BUILD}/full_uboot.bin $INSTALL/usr/share/bootloader/uboot.bin
+
+  # full_uboot.bin is a Rockchip full-disk style loader: RKNS metadata starts at
+  # sector 0, while the BootROM idbloader entry is at sector 64. The common
+  # image writer writes uboot.bin to disk sector 64, so normalize the loader
+  # layout here before packaging it.
+  rm -f $INSTALL/usr/share/bootloader/uboot.bin
+  dd if=${PKG_BUILD}/full_uboot.bin of=$INSTALL/usr/share/bootloader/uboot.bin bs=512 skip=64 count=16256 conv=fsync,notrunc status=none
+  dd if=${PKG_BUILD}/full_uboot.bin of=$INSTALL/usr/share/bootloader/uboot.bin bs=512 skip=16320 seek=16320 conv=fsync,notrunc status=none
 }

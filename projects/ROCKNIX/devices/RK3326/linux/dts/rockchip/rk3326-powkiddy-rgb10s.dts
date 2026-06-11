@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+* # Copyright (C) 2022-26 AURKNIX (https://github.com/AveyondFly)
+*/
+
+/dts-v1/;
+#include "rk3326-powkiddy-rgb10.dts"
+
+/ {
+	model = "Powkiddy RGB10S";
+	compatible = "powkiddy,rgb10s", "rockchip,rk3326";
+};
+
+&joypad {
+	invert-absx;
+	invert-absy;
+};

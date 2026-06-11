@@ -269,14 +269,15 @@ ALL_DEVICES: Dict[str, DtbEntry] = {
     "PowKiddy RGB10X": DtbEntry("rk3326-powkiddy-rgb10x.dtb", 101),
     "PowKiddy RGB10S": DtbEntry("rk3326-powkiddy-rgb10s.dtb", 101),
     "PowKiddy RGB2OS": DtbEntry("rk3326-powkiddy-rgb20s.dtb", 202),
+    "PowKiddy RGB10Max1": DtbEntry("rk3326-powkiddy-rgb10max1.dtb", 101),
 
     # GAMEMT
     "GAMEMT E6": DtbEntry("rk3326-gamemt-e6.dtb", 101),
 
     # Odroid
-    "Odroid Go2": DtbEntry("rk3326-odroid-go2.dtb", 101),
-    "Odroid Go2 v11屏幕": DtbEntry("rk3326-odroid-go2-v11.dtb", 101),
-    "Odroid Go3": DtbEntry("rk3326-odroid-go3.dtb", 101),
+    "ODROID-GO Advance": DtbEntry("rk3326-odroid-go2.dtb", 101),
+    "ODROID-GO Advance 1.1": DtbEntry("rk3326-odroid-go2-v11.dtb", 101),
+    "Odroid Go Super": DtbEntry("rk3326-odroid-go3.dtb", 101),
 
     # Batlexp
     "Batlexp G350": DtbEntry("rk3326-batlexp-g350.dtb", 202),
@@ -418,14 +419,15 @@ DEVICE_TRANSLATIONS = {
     "PowKiddy RGB10X": "PowKiddy RGB10X",
     "PowKiddy RGB10S": "PowKiddy RGB10S",
     "PowKiddy RGB2OS": "PowKiddy RGB2OS",
+    "PowKiddy RGB10Max1": "PowKiddy RGB10Max1",
 
     # GAMEMT
     "GAMEMT E6": "GAMEMT E6",
 
     # Odroid
-    "Odroid Go2": "Odroid Go2",
-    "Odroid Go2 v11屏幕": "Odroid Go2 v11 Screen",
-    "Odroid Go3": "Odroid Go3",
+    "ODROID-GO Advance": "ODROID-GO Advance",
+    "ODROID-GO Advance 1.1": "ODROID-GO Advance Black Edition",
+    "Odroid Go Super": "Odroid Go Super",
 
     # Batlexp
     "Batlexp G350": "Batlexp G350",

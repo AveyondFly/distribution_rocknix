@@ -44,10 +44,10 @@
 		rumble-boost-weak = <0x0000>;
 		rumble-boost-strong = <0x0000>;
 		
-		joypad-name = "r36s_Gamepad";
-		joypad-product = <0x1188>;
-		joypad-revision = <0x0188>;
-		joypad-vendor = <0x0001>;
+		joypad-name = "retrogame_joypad";
+		joypad-product = <0x1101>;
+		joypad-revision = <0x0100>;
+		joypad-vendor = <0x484B>;
 		
 		status = "okay";
 		

@@ -209,6 +209,10 @@ fi
 
 unzip -oq /usr/share/misc/datas.zip -d /storage
 
+if [ "$UPDATE_MODE" != "device_change" ] && [ "$HW_DEVICE" = "RK3566" ] && [ -f "/usr/config/modules/MOD_TOOLS/FixShutdown.sh" ]; then
+  bash "/usr/config/modules/MOD_TOOLS/FixShutdown.sh"
+fi
+
 if [ -f "/usr/config/modules/MOD_TOOLS/Reset Drastic Cfg.sh" ]; then
   bash "/usr/config/modules/MOD_TOOLS/Reset Drastic Cfg.sh"
 fi

@@ -108,12 +108,12 @@ Guides for this fork live in [`documentation/user_man/`](documentation/user_man/
 
 <table>
   <tr>
-    <td><img src="https://rocknix.org/_inc/images/screenshots/system-view.png"/></td>
-    <td><img src="https://rocknix.org/_inc/images/screenshots/menu.png"/></td>
+    <td><img src="snapshots/nds.png"/></td>
+    <td><img src="snapshots/music_player.png"/></td>
   </tr>
   <tr>
-    <td><img src="https://rocknix.org/_inc/images/screenshots/gamelist-view-metadata-immersive.png"/></td>
-    <td><img src="https://rocknix.org/_inc/images/screenshots/gamelist-view-no-metadata-immersive.png"/></td>
+    <td><img src="snapshots/ebook.png"/></td>
+    <td><img src="snapshots/aveyond3c3.png"/></td>
   </tr>
 </table>
 

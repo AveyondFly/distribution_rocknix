@@ -1,0 +1,329 @@
+diff --git a/arch/arm64/boot/dts/rockchip/rk356x-base.dtsi b/arch/arm64/boot/dts/rockchip/rk356x-base.dtsi
+index d13908c..d4eddca 100644
+--- a/arch/arm64/boot/dts/rockchip/rk356x-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk356x-base.dtsi
+@@ -140,6 +140,12 @@
+ 		cache-sets = <512>;
+ 	};
+ 
++	cpuinfo {
++		compatible = "rockchip,cpuinfo";
++		nvmem-cells = <&performance>;
++		nvmem-cell-names = "performance";
++	};
++
+ 	display_subsystem: display-subsystem {
+ 		compatible = "rockchip,display-subsystem";
+ 		ports = <&vop_out>;
+@@ -859,6 +865,11 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 
++		performance: performance@22 {
++			reg = <0x22 0x1>;
++			bits = <0 4>;
++		};
++
+ 		cpu_code: cpu-code@2 {
+ 			reg = <0x02 0x2>;
+ 		};
+diff --git a/drivers/cpufreq/cpufreq-dt.c b/drivers/cpufreq/cpufreq-dt.c
+index 7d5079fd1688..1ebcdaec5edd 100644
+--- a/drivers/cpufreq/cpufreq-dt.c
++++ b/drivers/cpufreq/cpufreq-dt.c
+@@ -21,6 +21,7 @@
+ #include <linux/regulator/consumer.h>
+ #include <linux/slab.h>
+ #include <linux/thermal.h>
++#include <soc/rockchip/rk3566t.h>
+ 
+ #include "cpufreq-dt.h"
+ 
+@@ -222,6 +223,8 @@ static int dt_cpufreq_early_init(struct device *dev, int cpu)
+ 	ret = dev_pm_opp_of_cpumask_add_table(priv->cpus);
+ 	if (!ret) {
+ 		priv->have_static_opps = true;
++		if (IS_ENABLED(CONFIG_ROCKCHIP_RK3566T))
++			rockchip_rk3566t_adjust_cpu_opps(cpu_dev);
+ 	} else if (ret == -EPROBE_DEFER) {
+ 		goto out;
+ 	}
+diff --git a/drivers/soc/rockchip/Kconfig b/drivers/soc/rockchip/Kconfig
+index 785f60c6f3ad..9ed87389c30a 100644
+--- a/drivers/soc/rockchip/Kconfig
++++ b/drivers/soc/rockchip/Kconfig
+@@ -30,4 +30,16 @@ config ROCKCHIP_DTPM
+ 	  on this platform. That will create all the power capping capable
+ 	  devices.
+ 
++config ROCKCHIP_RK3566T
++	bool "Rockchip RK3566T automatic OPP limiting"
++	default y if ARCH_ROCKCHIP
++	depends on ARCH_ROCKCHIP || COMPILE_TEST
++	depends on NVMEM
++	depends on PM_OPP
++	help
++	  Detect the RK3566T SoC variant via the OTP "performance" field and
++	  remove CPU/GPU OPPs above the RK3566T silicon limits (1416 MHz CPU,
++	  700 MHz GPU). This allows a single rk3566.dtsi OPP table to be shared
++	  across standard RK3566 and RK3566T boards.
++
+ endif
+diff --git a/drivers/soc/rockchip/Makefile b/drivers/soc/rockchip/Makefile
+index 23d414433c8c..8e91c5d4fbb1 100644
+--- a/drivers/soc/rockchip/Makefile
++++ b/drivers/soc/rockchip/Makefile
+@@ -5,3 +5,4 @@
+ obj-$(CONFIG_ROCKCHIP_GRF) += grf.o
+ obj-$(CONFIG_ROCKCHIP_IODOMAIN) += io-domain.o
+ obj-$(CONFIG_ROCKCHIP_DTPM) += dtpm.o
++obj-$(CONFIG_ROCKCHIP_RK3566T) += rk3566t.o
+diff --git a/drivers/soc/rockchip/rk3566t.c b/drivers/soc/rockchip/rk3566t.c
+new file mode 100644
+index 000000000000..e7d714aca202
+--- /dev/null
++++ b/drivers/soc/rockchip/rk3566t.c
+@@ -0,0 +1,211 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * RK3566T SoC variant detection and OPP limiting.
++ *
++ * Detects the RK3566T variant via the OTP "performance" field, following
++ * the approach used in Radxa's downstream kernel and U-Boot.
++ */
++
++#include <linux/device.h>
++#include <linux/module.h>
++#include <linux/notifier.h>
++#include <linux/nvmem-consumer.h>
++#include <linux/of.h>
++#include <linux/pm_opp.h>
++#include <linux/platform_device.h>
++#include <linux/workqueue.h>
++#include <soc/rockchip/rk3566t.h>
++
++static bool soc_is_rk3566t;
++static bool soc_detected;
++static bool gpu_opps_adjusted;
++static bool gpu_notifier_registered;
++static struct delayed_work rk3566t_gpu_work;
++static struct notifier_block rk3566t_gpu_nb;
++static int rk3566t_gpu_retries;
++
++static void rk3566t_detect_once(void)
++{
++	struct device_node *np __free(device_node) =
++		of_find_compatible_node(NULL, NULL, "rockchip,cpuinfo");
++	struct nvmem_cell *cell;
++	u8 *buf;
++	size_t len;
++
++	if (soc_detected)
++		return;
++	soc_detected = true;
++
++	if (!of_machine_is_compatible("rockchip,rk3566"))
++		return;
++
++	if (!np)
++		return;
++
++	cell = of_nvmem_cell_get(np, "performance");
++	if (IS_ERR(cell))
++		return;
++
++	buf = nvmem_cell_read(cell, &len);
++	nvmem_cell_put(cell);
++	if (IS_ERR(buf))
++		return;
++
++	if (len >= 1 && (buf[0] & 0x0f))
++		soc_is_rk3566t = true;
++
++	pr_info("rockchip-cpuinfo: performance=0x%02x, RK3566T=%s\n",
++		len ? buf[0] : 0, soc_is_rk3566t ? "yes" : "no");
++
++	kfree(buf);
++}
++
++bool rockchip_soc_is_rk3566t(void)
++{
++	rk3566t_detect_once();
++	return soc_is_rk3566t;
++}
++EXPORT_SYMBOL_GPL(rockchip_soc_is_rk3566t);
++
++void rockchip_rk3566t_adjust_cpu_opps(struct device *cpu_dev)
++{
++	if (!cpu_dev)
++		return;
++
++	rk3566t_detect_once();
++	if (!soc_is_rk3566t)
++		return;
++
++	dev_pm_opp_remove(cpu_dev, 1608000000);
++	dev_pm_opp_remove(cpu_dev, 1800000000);
++
++	dev_info(cpu_dev, "RK3566T: CPU OPPs limited to 1416 MHz\n");
++}
++EXPORT_SYMBOL_GPL(rockchip_rk3566t_adjust_cpu_opps);
++
++void rockchip_rk3566t_adjust_gpu_opps(struct device *gpu_dev)
++{
++	if (!gpu_dev || gpu_opps_adjusted || !soc_is_rk3566t)
++		return;
++
++	if (dev_pm_opp_get_opp_count(gpu_dev) <= 0)
++		return;
++
++	dev_pm_opp_remove(gpu_dev, 800000000);
++	gpu_opps_adjusted = true;
++
++	dev_info(gpu_dev, "RK3566T: GPU OPPs limited to 700 MHz\n");
++}
++EXPORT_SYMBOL_GPL(rockchip_rk3566t_adjust_gpu_opps);
++
++static void rk3566t_gpu_work_fn(struct work_struct *work)
++{
++	struct device *dev;
++
++	dev = bus_find_device_by_name(&platform_bus_type, NULL, "fde60000.gpu");
++	if (!dev) {
++		struct device_node *np __free(device_node) =
++			of_find_compatible_node(NULL, NULL, "rockchip,rk3568-mali");
++
++		if (np)
++			dev = bus_find_device_by_of_node(&platform_bus_type, np);
++	}
++
++	if (dev) {
++		rockchip_rk3566t_adjust_gpu_opps(dev);
++		put_device(dev);
++	}
++
++	if (!gpu_opps_adjusted && ++rk3566t_gpu_retries < 40)
++		schedule_delayed_work(&rk3566t_gpu_work, msecs_to_jiffies(500));
++}
++
++static int rk3566t_gpu_bus_notifier(struct notifier_block *nb,
++				    unsigned long action, void *data)
++{
++	struct device *dev = data;
++
++	if (action != BUS_NOTIFY_BOUND_DRIVER)
++		return NOTIFY_OK;
++
++	if (!dev->of_node ||
++	    !of_device_is_compatible(dev->of_node, "rockchip,rk3568-mali"))
++		return NOTIFY_OK;
++
++	if (gpu_opps_adjusted)
++		return NOTIFY_OK;
++
++	rk3566t_gpu_retries = 0;
++	schedule_delayed_work(&rk3566t_gpu_work, msecs_to_jiffies(100));
++
++	return NOTIFY_OK;
++}
++
++static int rk3566t_match_gpu(struct device *dev, const void *data)
++{
++	return dev->of_node &&
++	       of_device_is_compatible(dev->of_node, "rockchip,rk3568-mali");
++}
++
++static void rk3566t_scan_gpu(void)
++{
++	struct device *dev;
++
++	dev = bus_find_device(&platform_bus_type, NULL, NULL, rk3566t_match_gpu);
++	if (!dev)
++		return;
++
++	if (dev->driver && !gpu_opps_adjusted) {
++		rk3566t_gpu_retries = 0;
++		schedule_delayed_work(&rk3566t_gpu_work, msecs_to_jiffies(100));
++	}
++
++	put_device(dev);
++}
++
++static int rk3566t_register_gpu_notifier(void)
++{
++	int ret;
++
++	if (gpu_notifier_registered || !soc_is_rk3566t)
++		return 0;
++
++	rk3566t_gpu_nb.notifier_call = rk3566t_gpu_bus_notifier;
++	ret = bus_register_notifier(&platform_bus_type, &rk3566t_gpu_nb);
++	if (ret)
++		return ret;
++
++	gpu_notifier_registered = true;
++	rk3566t_scan_gpu();
++	return 0;
++}
++
++static int rockchip_cpuinfo_probe(struct platform_device *pdev)
++{
++	rk3566t_detect_once();
++	return rk3566t_register_gpu_notifier();
++}
++
++static const struct of_device_id rockchip_cpuinfo_of_match[] = {
++	{ .compatible = "rockchip,cpuinfo" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, rockchip_cpuinfo_of_match);
++
++static struct platform_driver rockchip_cpuinfo_driver = {
++	.probe = rockchip_cpuinfo_probe,
++	.driver = {
++		.name = "rockchip-cpuinfo",
++		.of_match_table = rockchip_cpuinfo_of_match,
++	},
++};
++
++static int __init rockchip_rk3566t_init(void)
++{
++	INIT_DELAYED_WORK(&rk3566t_gpu_work, rk3566t_gpu_work_fn);
++	return platform_driver_register(&rockchip_cpuinfo_driver);
++}
++subsys_initcall(rockchip_rk3566t_init);
++
++MODULE_DESCRIPTION("Rockchip RK3566T variant detection");
++MODULE_LICENSE("GPL");
+diff --git a/include/soc/rockchip/rk3566t.h b/include/soc/rockchip/rk3566t.h
+new file mode 100644
+index 000000000000..a3fb90adeb2a
+--- /dev/null
++++ b/include/soc/rockchip/rk3566t.h
+@@ -0,0 +1,26 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef __SOC_ROCKCHIP_RK3566T_H
++#define __SOC_ROCKCHIP_RK3566T_H
++
++#include <linux/device.h>
++
++#if IS_ENABLED(CONFIG_ROCKCHIP_RK3566T)
++bool rockchip_soc_is_rk3566t(void);
++void rockchip_rk3566t_adjust_cpu_opps(struct device *cpu_dev);
++void rockchip_rk3566t_adjust_gpu_opps(struct device *gpu_dev);
++#else
++static inline bool rockchip_soc_is_rk3566t(void)
++{
++	return false;
++}
++
++static inline void rockchip_rk3566t_adjust_cpu_opps(struct device *cpu_dev)
++{
++}
++
++static inline void rockchip_rk3566t_adjust_gpu_opps(struct device *gpu_dev)
++{
++}
++#endif
++
++#endif

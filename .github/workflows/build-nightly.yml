@@ -80,13 +80,11 @@ on:
         type: boolean
   workflow_call:
   pull_request:
-    types: [ assigned ]
+    types: [ opened, synchronize, reopened, edited ]
 
 jobs:
   set-envs:
     if: (github.event_name != 'schedule') || (github.repository == 'AveyondFly/distribution_rocknix' && github.ref_name == 'next')
-    environment:
-      name: ${{ github.event_name == 'pull_request' && 'pr-approval' || 'auto' }}
     runs-on: ubuntu-24.04
     outputs:
       NIGHTLY: ${{ github.event_name == 'workflow_dispatch' && inputs.release == true && 'no' || 'yes' }}
@@ -94,6 +92,8 @@ jobs:
       DEBUG: ${{ github.event_name == 'workflow_dispatch' && inputs.release != true && inputs.debug == true && 'yes' || 'no' }}
       OWNER_LC: ${{ steps.set-envs.outputs.OWNER_OUTPUT }}
       matrix: ${{ steps.generate.outputs.matrix }}
+      SHOULD_BUILD: ${{ steps.generate.outputs.should_build }}
+      BUILD_DEVICES: ${{ steps.generate.outputs.build_devices }}
     steps:
       - name: Set lowercase owner name
         id: set-envs
@@ -104,7 +104,17 @@ jobs:
           OWNER: ${{ github.repository_owner }}
       - id: generate
         shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
+          ALL_DEVICES=(RK3326 RK3326S RK3399 RK3566 RK3588 S922X H700 SDM845 SM8250 SM8550 SM8650 S905 RK356X)
+          declare -A VALID_DEVICES=()
+          declare -A SEEN_DEVICES=()
+          for D in "${ALL_DEVICES[@]}"; do
+            VALID_DEVICES["$D"]=1
+          done
+
           declare -A DEVICE_INPUTS=(
             ["RK3326"]="${{ inputs.RK3326 }}"
             ["RK3326S"]="${{ inputs.RK3326S }}"
@@ -120,29 +130,77 @@ jobs:
             ["S905"]="${{ inputs.S905 }}"
             ["RK356X"]="${{ inputs.RK356X }}"
           )
-          
+
           SELECTED_MATRIX=""
-          
-          for D in "${!DEVICE_INPUTS[@]}"; do
-            VAL="${DEVICE_INPUTS[$D]}"
-            if [[ "$VAL" == "true" ]]; then
-              if [[ -n "$SELECTED_MATRIX" ]]; then
-                SELECTED_MATRIX="$SELECTED_MATRIX,"
-              fi
-              SELECTED_MATRIX="$SELECTED_MATRIX{\"device\":\"$D\",\"project\":\"ROCKNIX\"}"
+          BUILD_DEVICES=""
+          SHOULD_BUILD="yes"
+
+          add_device() {
+            local DEVICE="$1"
+            if [[ -z "${VALID_DEVICES[$DEVICE]:-}" ]]; then
+              echo "::warning::Ignoring unknown build device '${DEVICE}'"
+              return
             fi
-          done
-          
-          if [[ -z "$SELECTED_MATRIX" ]]; then
-            MATRIX='[{"device":"RK3326","project":"ROCKNIX"},{"device":"RK3326S","project":"ROCKNIX"},{"device":"RK3399","project":"ROCKNIX"},{"device":"RK3566","project":"ROCKNIX"},{"device":"RK3588","project":"ROCKNIX"},{"device":"S922X","project":"ROCKNIX"},{"device":"H700","project":"ROCKNIX"},{"device":"SDM845","project":"ROCKNIX"},{"device":"SM8250","project":"ROCKNIX"},{"device":"SM8550","project":"ROCKNIX"},{"device":"SM8650","project":"ROCKNIX"},{"device":"S905","project":"ROCKNIX"},{"device":"RK356X","project":"ROCKNIX"}]'
+            if [[ -n "${SEEN_DEVICES[$DEVICE]:-}" ]]; then
+              return
+            fi
+            SEEN_DEVICES["$DEVICE"]=1
+            if [[ -n "$SELECTED_MATRIX" ]]; then
+              SELECTED_MATRIX="$SELECTED_MATRIX,"
+              BUILD_DEVICES="$BUILD_DEVICES,"
+            fi
+            SELECTED_MATRIX="$SELECTED_MATRIX{\"device\":\"$DEVICE\",\"project\":\"ROCKNIX\"}"
+            BUILD_DEVICES="$BUILD_DEVICES$DEVICE"
+          }
+
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            BUILD_LINE="$(printf '%s\n' "$PR_BODY" | sed -nE 's/^[[:space:]]*[Bb][Uu][Ii][Ll][Dd][[:space:]]*:[[:space:]]*(.*)$/\1/p' | tail -n 1)"
+            if [[ -z "$BUILD_LINE" ]]; then
+              SHOULD_BUILD="no"
+            else
+              for RAW_DEVICE in $(printf '%s' "$BUILD_LINE" | tr ',/;|' '    '); do
+                DEVICE="${RAW_DEVICE^^}"
+                if [[ "$DEVICE" == "ALL" ]]; then
+                  for D in "${ALL_DEVICES[@]}"; do
+                    add_device "$D"
+                  done
+                else
+                  add_device "$DEVICE"
+                fi
+              done
+              if [[ -z "$SELECTED_MATRIX" ]]; then
+                SHOULD_BUILD="no"
+              fi
+            fi
           else
-            MATRIX="[$SELECTED_MATRIX]"
+            for D in "${ALL_DEVICES[@]}"; do
+              VAL="${DEVICE_INPUTS[$D]}"
+              if [[ "$VAL" == "true" ]]; then
+                add_device "$D"
+              fi
+            done
+
+            if [[ -z "$SELECTED_MATRIX" ]]; then
+              for D in "${ALL_DEVICES[@]}"; do
+                add_device "$D"
+              done
+            fi
           fi
-          
+
+          if [[ "$SHOULD_BUILD" == "yes" ]]; then
+            MATRIX="[$SELECTED_MATRIX]"
+          else
+            MATRIX="[]"
+            BUILD_DEVICES=""
+            echo "No PR build request found. Add a line like 'build:RK3326/RK3566' to the PR description to build images."
+          fi
+
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+          echo "should_build=$SHOULD_BUILD" >> $GITHUB_OUTPUT
+          echo "build_devices=$BUILD_DEVICES" >> $GITHUB_OUTPUT
 
   build-docker:
-    if: github.event_name != 'schedule' || (github.repository == 'AveyondFly/distribution_rocknix' && github.ref_name == 'next')
+    if: needs.set-envs.outputs.SHOULD_BUILD == 'yes' && (github.event_name != 'schedule' || (github.repository == 'AveyondFly/distribution_rocknix' && github.ref_name == 'next'))
     name: Docker
     needs: set-envs
     uses: ./.github/workflows/build-docker-image.yml
@@ -150,7 +208,7 @@ jobs:
       OWNER_LC: ${{ needs.set-envs.outputs.OWNER_LC }}
 
   rk3326-dtbselect-windows:
-    if: (github.event_name != 'schedule') || (github.repository == 'AveyondFly/distribution_rocknix' && github.ref_name == 'next')
+    if: needs.set-envs.outputs.SHOULD_BUILD == 'yes' && ((github.event_name != 'schedule') || (github.repository == 'AveyondFly/distribution_rocknix' && github.ref_name == 'next'))
     needs:
       - set-envs
       - build-docker
@@ -161,7 +219,7 @@ jobs:
     secrets: inherit
 
   rk3566-dtbselect-windows:
-    if: (github.event_name != 'schedule') || (github.repository == 'AveyondFly/distribution_rocknix' && github.ref_name == 'next')
+    if: needs.set-envs.outputs.SHOULD_BUILD == 'yes' && ((github.event_name != 'schedule') || (github.repository == 'AveyondFly/distribution_rocknix' && github.ref_name == 'next'))
     needs:
       - set-envs
       - build-docker
@@ -171,7 +229,7 @@ jobs:
     secrets: inherit
 
   user-manual-pdfs:
-    if: (github.event_name != 'schedule') || (github.repository == 'AveyondFly/distribution_rocknix' && github.ref_name == 'next')
+    if: needs.set-envs.outputs.SHOULD_BUILD == 'yes' && ((github.event_name != 'schedule') || (github.repository == 'AveyondFly/distribution_rocknix' && github.ref_name == 'next'))
     needs:
       - set-envs
       - build-docker
@@ -179,7 +237,7 @@ jobs:
     secrets: inherit
 
   build-devices:
-    if: (github.event_name != 'schedule') || (github.repository == 'AveyondFly/distribution_rocknix' && github.ref_name == 'next')
+    if: needs.set-envs.outputs.SHOULD_BUILD == 'yes' && ((github.event_name != 'schedule') || (github.repository == 'AveyondFly/distribution_rocknix' && github.ref_name == 'next'))
     name: Build Devices
     needs:
       - set-envs
@@ -322,7 +380,7 @@ jobs:
          done
 
   release-official:
-    if: ${{ always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && github.repository_owner == 'AveyondFly' && needs.set-envs.outputs.OFFICIAL == 'yes' }}
+    if: ${{ always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && github.repository_owner == 'AveyondFly' && needs.set-envs.outputs.OFFICIAL == 'yes' && github.event_name != 'pull_request' }}
     name: Release official
     needs:
       - build-devices

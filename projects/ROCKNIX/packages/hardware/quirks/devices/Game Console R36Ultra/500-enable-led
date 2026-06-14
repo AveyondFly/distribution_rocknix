@@ -11,6 +11,12 @@ if [ ! -n "${LED_STATE}" ]; then
   LED_STATE="off"
   set_setting "led.color" "off"
 fi
-
 # Run LED control at boot
 /usr/bin/ledcontrol ${LED_STATE}
+
+ANALOG_STICK_LED_STATE=$(get_setting "analogsticks.led.color")
+if [ ! -n "${ANALOG_STICK_LED_STATE}" ]; then
+  ANALOG_STICK_LED_STATE="flow"
+  set_setting "analogsticks.led.color" "flow"
+fi
+/usr/bin/analog_sticks_ledcontrol_single ${ANALOG_STICK_LED_STATE}

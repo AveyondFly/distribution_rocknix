@@ -1,0 +1,74 @@
+#!/bin/bash
+
+. /etc/profile
+
+COLOR=$1
+LED_PULSE="/sys/class/leds/joyled/pulse"
+
+set_led_pulse() {
+	local pulse=$1
+
+	if [ -w "${LED_PULSE}" ]; then
+		echo "${pulse}" > "${LED_PULSE}"
+	else
+		echo "Error: Unable to write to ${LED_PULSE}" >&2
+		return 1
+	fi
+}
+
+case ${COLOR} in
+	battery)
+		set_led_pulse 3
+		systemctl restart batteryledstatus.service
+		;;
+	red)
+		set_led_pulse 1
+		;;
+	yellow)
+		set_led_pulse 2
+		;;
+	green)
+		set_led_pulse 3
+		;;
+	cyan)
+		set_led_pulse 4
+		;;
+	blue)
+		set_led_pulse 5
+		;;
+	purple)
+		set_led_pulse 6
+		;;
+	white)
+		set_led_pulse 7
+		;;
+	heartbeat|breath|breath_red|breath_green|breath_blue|breath_white|breath_orange|breath_purple|breath_cyan)
+		set_led_pulse 8
+		;;
+	rainbow|flow)
+		set_led_pulse 9
+		;;
+	orange)
+		set_led_pulse 2
+		;;
+	off)
+		set_led_pulse 10
+		;;
+	list)
+		cat <<EOF
+off
+battery
+red
+yellow
+green
+cyan
+blue
+purple
+white
+orange
+heartbeat
+rainbow
+flow
+EOF
+		;;
+esac

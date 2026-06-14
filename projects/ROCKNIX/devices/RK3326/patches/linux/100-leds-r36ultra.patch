@@ -1,0 +1,427 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: lcdyk0517 <lcdyk0517@qq.com>
+Subject: [PATCH] leds: add R36Ultra RGB LED driver
+
+Add kernel driver for R36Ultra joystick RGB LED control via
+single-wire pulse protocol. Based on JoyLed project:
+https://github.com/lcdyk0517/JoyLed
+
+Enable with CONFIG_LEDS_R36ULTRA and DTS compatible "r36ultra,led".
+
+---
+diff --git a/drivers/leds/leds-r36ultra.c b/drivers/leds/leds-r36ultra.c
+new file mode 100644
+index 000000000000..111111111111
+--- /dev/null
++++ b/drivers/leds/leds-r36ultra.c
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * R36Ultra RGB LED 驱动 - 单线脉冲协议
++ * 
++ * 功能说明:
++ *   通过单线脉冲协议控制 RGB LED，脉冲数量决定 LED 模式。
++ *   支持 7 种颜色、心跳效果、彩虹循环。
++ * 
++ * 硬件连接:
++ *   - pulse-gpios: 脉冲输出 GPIO，用于发送控制信号
++ *   - irq-gpios: 中断输入 GPIO，用于接收 LED 控制器信号 (可选)
++ * 
++ * 脉冲模式:
++ *   1=红, 2=黄, 3=绿, 4=青, 5=蓝, 6=紫, 7=白, 8=心跳, 9=彩虹, 0/10+=关闭
++ * 
++ * sysfs 接口:
++ *   /sys/class/leds/joyled/brightness  - LED 亮度 (0-255 映射到模式)
++ *   /sys/class/leds/joyled/pulse       - 直接发送脉冲数
++ *   /sys/class/leds/joyled/test        - GPIO 测试 (0/1)
++ * 
++ * DTS 示例:
++ *   joyleds {
++ *       compatible = "r36ultra,led";
++ *       pulse-gpios = <&gpio0 RK_PB3 GPIO_ACTIVE_HIGH>;
++ *       irq-gpios = <&gpio0 RK_PB4 GPIO_ACTIVE_HIGH>;
++ *       status = "okay";
++ *   };
++ */
++
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/of_gpio.h>
++#include <linux/gpio.h>
++#include <linux/delay.h>
++#include <linux/leds.h>
++#include <linux/interrupt.h>
++
++#define DRIVER_NAME "r36ultra-led"
++
++/* 脉冲时序参数 - 基于逆向工程分析
++ * 原始驱动参数计算: usecs = param / 4295
++ *   - 脉冲延时: 0x418958 → 1000us
++ *   - 结束延时: 0x147aeb8 → 5000us
++ */
++#define PULSE_DELAY_US      1000
++#define PULSE_GAP_US        5000
++
++/* LED 模式 (脉冲数量编码) - 实测验证
++ * 
++ * 脉冲数 | 颜色/效果     | RGB 组成
++ * -------|--------------|----------
++ *   0    | 关闭         | 发送10脉冲实现关闭
++ *   1    | 红色         | R
++ *   2    | 黄色         | R+G
++ *   3    | 绿色         | G
++ *   4    | 青色         | G+B
++ *   5    | 蓝色         | B
++ *   6    | 紫色         | B+R
++ *   7    | 白色         | R+G+B
++ *   8    | 心跳效果     | -
++ *   9    | 彩虹循环     | -
++ *  10+   | 关闭         | 10或11均可关闭
++ */
++enum led_mode {
++    MODE_OFF      = 10,  /* 关闭 (0 也会转为 10) */
++    MODE_RED      = 1,   /* 红色 */
++    MODE_YELLOW   = 2,   /* 黄色 */
++    MODE_GREEN    = 3,   /* 绿色 */
++    MODE_CYAN     = 4,   /* 青色 */
++    MODE_BLUE     = 5,   /* 蓝色 */
++    MODE_PURPLE   = 6,   /* 紫色 */
++    MODE_WHITE    = 7,   /* 白色 */
++    MODE_HEARTBEAT = 8,  /* 心跳效果 */
++    MODE_RAINBOW  = 9,   /* 彩虹循环 */
++};
++
++/* 驱动私有数据结构 */
++struct r36ultra_led_priv {
++    int pulse_gpio;
++    int irq_gpio;
++    int irq_num;
++    struct led_classdev led;
++    int current_mode;
++};
++
++/*
++ * led_irq_handler - LED 控制器中断处理函数
++ * 
++ * 当 LED 控制器通过 irq-gpios 发送信号时触发。
++ * 可用于检测 LED 控制器状态变化。
++ */
++static irqreturn_t led_irq_handler(int irq, void *dev_id)
++{
++    struct r36ultra_led_priv *priv = dev_id;
++    
++    if (!priv)
++        return IRQ_NONE;
++    
++    dev_dbg(priv->led.dev, "LED 控制器中断触发\n");
++    return IRQ_HANDLED;
++}
++
++/*
++ * send_pulse_count - 通过单线协议发送脉冲序列
++ * @pulse_gpio: 脉冲输出 GPIO 编号
++ * @pulse_count: 脉冲数量 (决定 LED 模式)
++ * 
++ * 协议时序 (基于 Ghidra 反编译分析):
++ *   1. 拉高 GPIO，延时 7 个周期 (起始信号)
++ *   2. 拉低 GPIO，延时 1 个周期
++ *   3. 发送 pulse_count 个数据脉冲 (每个脉冲: 高→延时→低→延时)
++ *   4. 结束延时，确保低电平
++ * 
++ * 原始驱动函数地址: 0x7a8e20
++ */
++static void send_pulse_count(int pulse_gpio, int pulse_count)
++{
++    int i;
++    
++    /* 第一步: 起始信号 - 拉高并保持 7 个延时周期 */
++    gpio_set_value(pulse_gpio, 1);
++    for (i = 0; i < 7; i++) {
++        udelay(PULSE_DELAY_US);
++    }
++    
++    /* 第二步: 拉低 */
++    gpio_set_value(pulse_gpio, 0);
++    udelay(PULSE_DELAY_US);
++    
++    /* 第三步: 发送数据脉冲 */
++    for (i = 0; i < pulse_count; i++) {
++        gpio_set_value(pulse_gpio, 1);
++        udelay(PULSE_DELAY_US);
++        gpio_set_value(pulse_gpio, 0);
++        udelay(PULSE_DELAY_US);
++    }
++    
++    /* 第四步: 结束延时并确保低电平 */
++    udelay(PULSE_GAP_US);
++    gpio_set_value(pulse_gpio, 0);
++}
++
++/*
++ * r36ultra_led_set - 设置 LED 亮度 (映射到模式)
++ * @led_cdev: LED 类设备指针
++ * @brightness: 亮度值 (0-255)
++ * 
++ * 亮度值映射:
++ *   0:       关闭
++ *   1-28:    红色
++ *   29-56:   黄色
++ *   57-84:   绿色
++ *   85-112:  青色
++ *   113-140: 蓝色
++ *   141-168: 紫色
++ *   169-196: 白色
++ *   197-224: 心跳
++ *   225-255: 彩虹
++ */
++static void r36ultra_led_set(struct led_classdev *led_cdev,
++                             enum led_brightness brightness)
++{
++    struct r36ultra_led_priv *priv = container_of(led_cdev, struct r36ultra_led_priv, led);
++    int target_mode;
++    
++    if (brightness == LED_OFF) {
++        target_mode = MODE_OFF;
++    } else if (brightness <= 28) {
++        target_mode = MODE_RED;
++    } else if (brightness <= 56) {
++        target_mode = MODE_YELLOW;
++    } else if (brightness <= 84) {
++        target_mode = MODE_GREEN;
++    } else if (brightness <= 112) {
++        target_mode = MODE_CYAN;
++    } else if (brightness <= 140) {
++        target_mode = MODE_BLUE;
++    } else if (brightness <= 168) {
++        target_mode = MODE_PURPLE;
++    } else if (brightness <= 196) {
++        target_mode = MODE_WHITE;
++    } else if (brightness <= 224) {
++        target_mode = MODE_HEARTBEAT;
++    } else {
++        target_mode = MODE_RAINBOW;
++    }
++    
++    if (target_mode != priv->current_mode) {
++        send_pulse_count(priv->pulse_gpio, target_mode);
++        priv->current_mode = target_mode;
++    }
++}
++
++/* 获取当前 LED 状态 */
++static enum led_brightness r36ultra_led_get(struct led_classdev *led_cdev)
++{
++    struct r36ultra_led_priv *priv = container_of(led_cdev, struct r36ultra_led_priv, led);
++    return priv->current_mode ? LED_FULL : LED_OFF;
++}
++
++/* sysfs: 直接发送脉冲数
++ * 用法: echo <脉冲数> > /sys/class/leds/joyled/pulse
++ * 
++ * 注意: 0 会转换为 10 (关闭 LED)
++ */
++static ssize_t pulse_store(struct device *dev, struct device_attribute *attr,
++                           const char *buf, size_t count)
++{
++    struct led_classdev *led_cdev = dev_get_drvdata(dev);
++    struct r36ultra_led_priv *priv = container_of(led_cdev, struct r36ultra_led_priv, led);
++    unsigned long pulse_count;
++    int ret;
++    
++    ret = kstrtoul(buf, 10, &pulse_count);
++    if (ret)
++        return ret;
++    
++    if (pulse_count > 255)
++        return -EINVAL;
++    
++    /* 0 转换为 10 (关闭 LED) */
++    if (pulse_count == 0)
++        pulse_count = MODE_OFF;
++    
++    dev_info(dev, "发送脉冲: %lu\n", pulse_count);
++    send_pulse_count(priv->pulse_gpio, pulse_count);
++    priv->current_mode = pulse_count;
++    
++    return count;
++}
++static DEVICE_ATTR_WO(pulse);
++
++/* sysfs: GPIO 测试
++ * 用法: echo 1 > /sys/class/leds/joyled/test  (拉高)
++ *       echo 0 > /sys/class/leds/joyled/test  (拉低)
++ * 用于验证 GPIO 硬件连接是否正常
++ */
++static ssize_t test_store(struct device *dev, struct device_attribute *attr,
++                          const char *buf, size_t count)
++{
++    struct led_classdev *led_cdev = dev_get_drvdata(dev);
++    struct r36ultra_led_priv *priv = container_of(led_cdev, struct r36ultra_led_priv, led);
++    unsigned long value;
++    int ret;
++    
++    ret = kstrtoul(buf, 10, &value);
++    if (ret)
++        return ret;
++    
++    gpio_set_value(priv->pulse_gpio, value ? 1 : 0);
++    dev_info(dev, "GPIO 测试: %lu\n", value);
++    
++    return count;
++}
++static DEVICE_ATTR_WO(test);
++
++static struct attribute *r36ultra_led_attrs[] = {
++    &dev_attr_pulse.attr,
++    &dev_attr_test.attr,
++    NULL,
++};
++ATTRIBUTE_GROUPS(r36ultra_led);
++
++/*
++ * r36ultra_led_probe - 驱动探测函数
++ * 
++ * 初始化流程:
++ *   1. 分配私有数据结构
++ *   2. 获取并申请 pulse GPIO
++ *   3. 获取并申请 irq GPIO (可选)
++ *   4. 注册 LED 类设备
++ *   5. 发送初始化脉冲 (11脉冲)
++ */
++static int r36ultra_led_probe(struct platform_device *pdev)
++{
++    struct device *dev = &pdev->dev;
++    struct r36ultra_led_priv *priv;
++    int ret;
++    
++    /* 分配私有数据 */
++    priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++    if (!priv)
++        return -ENOMEM;
++    
++    priv->irq_gpio = -EINVAL;
++    priv->irq_num = -EINVAL;
++    
++    /* 获取脉冲 GPIO (必需) */
++    priv->pulse_gpio = of_get_named_gpio(dev->of_node, "pulse-gpios", 0);
++    if (!gpio_is_valid(priv->pulse_gpio)) {
++        dev_err(dev, "pulse-gpios 未找到\n");
++        return -EINVAL;
++    }
++    
++    ret = devm_gpio_request_one(dev, priv->pulse_gpio,
++                                 GPIOF_OUT_INIT_LOW, "r36ultra-led-pulse");
++    if (ret) {
++        dev_err(dev, "申请 pulse GPIO 失败\n");
++        return ret;
++    }
++    
++    /* 获取中断 GPIO (可选) */
++    priv->irq_gpio = of_get_named_gpio(dev->of_node, "irq-gpios", 0);
++    if (gpio_is_valid(priv->irq_gpio)) {
++        ret = devm_gpio_request_one(dev, priv->irq_gpio,
++                                     GPIOF_OUT_INIT_LOW, "r36ultra-led-irq");
++        if (ret) {
++            priv->irq_gpio = -EINVAL;
++        } else {
++            /* 复位延时后改为输入模式 */
++            udelay(100);
++            gpio_direction_input(priv->irq_gpio);
++            priv->irq_num = gpio_to_irq(priv->irq_gpio);
++            if (priv->irq_num >= 0) {
++                ret = devm_request_irq(dev, priv->irq_num, led_irq_handler,
++                                       IRQF_TRIGGER_RISING, "r36ultra-led-irq", priv);
++                if (ret)
++                    priv->irq_num = -EINVAL;
++            }
++        }
++    }
++    
++    /* 注册 LED 设备 */
++    priv->led.name = "joyled";
++    priv->led.brightness_set = r36ultra_led_set;
++    priv->led.brightness_get = r36ultra_led_get;
++    priv->led.max_brightness = 255;
++    priv->led.groups = r36ultra_led_groups;
++    
++    ret = devm_led_classdev_register(dev, &priv->led);
++    if (ret) {
++        dev_err(dev, "注册 LED 设备失败\n");
++        return ret;
++    }
++    
++    platform_set_drvdata(pdev, priv);
++    
++    /* 发送初始化脉冲 (11脉冲) */
++    send_pulse_count(priv->pulse_gpio, 11);
++    priv->current_mode = 11;
++    
++    dev_info(dev, "R36Ultra LED 驱动加载完成 (pulse_gpio=%d)\n", priv->pulse_gpio);
++    return 0;
++}
++
++/* 驱动卸载时关闭 LED */
++static void r36ultra_led_remove(struct platform_device *pdev)
++{
++	struct r36ultra_led_priv *priv = platform_get_drvdata(pdev);
++
++	if (priv)
++		send_pulse_count(priv->pulse_gpio, MODE_OFF);
++}
++
++/* 系统关机时关闭 LED */
++static void r36ultra_led_shutdown(struct platform_device *pdev)
++{
++    struct r36ultra_led_priv *priv = platform_get_drvdata(pdev);
++    if (priv && gpio_is_valid(priv->pulse_gpio))
++        send_pulse_count(priv->pulse_gpio, MODE_OFF);
++}
++
++static const struct of_device_id r36ultra_led_of_match[] = {
++    { .compatible = "r36ultra,led" },
++    { /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, r36ultra_led_of_match);
++
++static struct platform_driver r36ultra_led_driver = {
++    .probe    = r36ultra_led_probe,
++    .remove   = r36ultra_led_remove,
++    .shutdown = r36ultra_led_shutdown,
++    .driver = {
++        .name           = DRIVER_NAME,
++        .of_match_table = r36ultra_led_of_match,
++    },
++};
++module_platform_driver(r36ultra_led_driver);
++
++MODULE_AUTHOR("lcdyk0517@qq.com");
++MODULE_DESCRIPTION("R36Ultra RGB LED 驱动 - 单线脉冲协议");
++MODULE_LICENSE("GPL");
+diff --git a/drivers/leds/Kconfig b/drivers/leds/Kconfig
+index 222222222222..333333333333 100644
+--- a/drivers/leds/Kconfig	2026-06-14 16:48:18.652093807 +0800
++++ b/drivers/leds/Kconfig	2026-06-14 16:48:18.656092201 +0800
+@@ -627,6 +627,12 @@
+ 	help
+ 	  This option enables support for pwm driven LEDs
+ 
++config LEDS_R36ULTRA
++	tristate "R36Ultra RGB LED support"
++	depends on LEDS_CLASS && GPIOLIB && OF
++	help
++	  This option enables support for the R36Ultra RGB LED controller
++	  using a single-wire pulse protocol.
+ 
+ config LEDS_REGULATOR
+ 	tristate "REGULATOR driven LED support"
+diff --git a/drivers/leds/Makefile b/drivers/leds/Makefile
+index 222222222222..333333333333 100644
+--- a/drivers/leds/Makefile	2026-06-14 16:48:18.656092201 +0800
++++ b/drivers/leds/Makefile	2026-06-14 16:48:18.656092201 +0800
+@@ -79,6 +79,7 @@
+ obj-$(CONFIG_LEDS_PM8058)		+= leds-pm8058.o
+ obj-$(CONFIG_LEDS_POWERNV)		+= leds-powernv.o
+ obj-$(CONFIG_LEDS_PWM)			+= leds-pwm.o
++obj-$(CONFIG_LEDS_R36ULTRA)		+= leds-r36ultra.o
+ obj-$(CONFIG_LEDS_REGULATOR)		+= leds-regulator.o
+ obj-$(CONFIG_LEDS_SC27XX_BLTC)		+= leds-sc27xx-bltc.o
+ obj-$(CONFIG_LEDS_SUN50I_A100)		+= leds-sun50i-a100.o

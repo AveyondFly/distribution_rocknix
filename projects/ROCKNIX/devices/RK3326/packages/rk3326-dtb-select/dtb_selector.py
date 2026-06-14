@@ -211,6 +211,7 @@ ALL_DEVICES: Dict[str, DtbEntry] = {
     "RX6H": DtbEntry("rk3326-gameconsole-rx6h.dtb", 101),
     "HG36/HG3506": DtbEntry("rk3326-gameconsole-hg36.dtb", 202),
     "R36 Ultra": DtbEntry("rk3326-gameconsole-r36ultra.dtb", 101),
+    "R36 Ultra v2": DtbEntry("rk3326-gameconsole-r36ultra-v2.dtb", 101),
     "XGB36": DtbEntry("rk3326-gameconsole-xgb36.dtb", 202),
     "RG36": DtbEntry("rk3326-gameconsole-rg36.dtb", 202),
     "R40S": DtbEntry("rk3326-gameconsole-r40s.dtb", 202,),

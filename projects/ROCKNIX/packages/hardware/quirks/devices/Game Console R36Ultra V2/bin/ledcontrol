@@ -1,0 +1,43 @@
+#!/bin/bash
+
+. /etc/profile
+
+# 获取脚本的第一个参数，即颜色名称
+COLOR=$1
+
+if [ ! -d /sys/class/gpio/gpio0 ]; then
+  echo 0 > /sys/class/gpio/export
+  echo out > /sys/class/gpio/gpio0/direction
+fi
+if [ ! -d /sys/class/gpio/gpio17 ]; then
+  echo 17 > /sys/class/gpio/export
+  echo out > /sys/class/gpio/gpio17/direction
+fi
+
+# 根据颜色名称设置 LED 状态
+case $COLOR in
+    all_on)
+    echo 1 > /sys/class/gpio/gpio0/value
+    echo 1 > /sys/class/gpio/gpio17/value
+        ;;
+    blue_on)
+    echo 1 > /sys/class/gpio/gpio0/value
+    echo 0 > /sys/class/gpio/gpio17/value
+        ;;
+    red_on)
+    echo 0 > /sys/class/gpio/gpio0/value
+    echo 1 > /sys/class/gpio/gpio17/value
+        ;;
+    all_off)
+    echo 0 > /sys/class/gpio/gpio0/value
+    echo 0 > /sys/class/gpio/gpio17/value
+        ;;
+    list)
+cat <<EOF
+all_off
+red_on
+blue_on
+all_on
+EOF
+  ;;
+esac

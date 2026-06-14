@@ -67,8 +67,29 @@ connman_write_service_config() {
 Type=wifi
 Name=${SSID}
 Passphrase=${PSK}
-AutoConnect=true
 EOF
+}
+
+connman_scan_wifi() {
+  timeout 10 connmanctl scan wifi >/dev/null 2>&1
+}
+
+connman_restart() {
+  systemctl restart connman.service >/dev/null 2>&1
+  sleep 3
+  connmanctl enable wifi >/dev/null 2>&1
+}
+
+connman_list_wifi_services() {
+  connmanctl services 2>/dev/null | awk '/wifi_/ {
+    n=NF
+    if ($n !~ /^wifi_/) next
+    if (n >= 2 && $1 !~ /^wifi_/ && $1 !~ /^\*?[ARO]+$/) {
+      print $1
+    } else if (n >= 3 && $2 !~ /^wifi_/) {
+      print $2
+    }
+  }' | sort -u
 }
 
 wait_for_wifi() {
@@ -94,17 +115,9 @@ list_wifi() {
   wait_for_wifi
 
   if [ "${USE_CONNMAN_WIFI}" = "yes" ]; then
-    connmanctl scan wifi >/dev/null 2>&1
+    connman_scan_wifi || true
     sleep 2
-    connmanctl services 2>/dev/null | awk '/wifi_/ {
-      n=NF
-      if ($n !~ /^wifi_/) next
-      if (n >= 2 && $1 !~ /^wifi_/ && $1 !~ /^\*?[ARO]+$/) {
-        print $1
-      } else if (n >= 3 && $2 !~ /^wifi_/) {
-        print $2
-      }
-    }' | sort -u
+    connman_list_wifi_services
     return
   fi
 
@@ -115,12 +128,21 @@ connect_wifi() {
   wait_for_wifi
 
   if [ "${USE_CONNMAN_WIFI}" = "yes" ]; then
-    connmanctl scan wifi >/dev/null 2>&1
-    sleep 3
     SERVICE="$(connman_wifi_service)"
+    if [ -z "${SERVICE}" ]; then
+      connman_scan_wifi || true
+      sleep 3
+      SERVICE="$(connman_wifi_service)"
+    fi
+    if [ -z "${SERVICE}" ]; then
+      connman_restart
+      connman_scan_wifi || true
+      sleep 3
+      SERVICE="$(connman_wifi_service)"
+    fi
     [ -z "${SERVICE}" ] && return 1
     connman_write_service_config "${SERVICE}"
-    connmanctl connect "${SERVICE}" >/dev/null 2>&1
+    timeout 30 connmanctl connect "${SERVICE}" >/dev/null 2>&1
     return
   fi
 
@@ -221,18 +243,20 @@ case "${1}" in
     ;;
   scan)
     if [ "${USE_CONNMAN_WIFI}" = "yes" ]; then
-      connmanctl scan wifi >/dev/null 2>&1
+      connman_scan_wifi
     else
       iwctl station ${WIFI_DEV} scan 2>/dev/null
     fi
     ;;
   scanlist)
     if [ "${USE_CONNMAN_WIFI}" = "yes" ]; then
-      connmanctl scan wifi >/dev/null 2>&1
+      connman_scan_wifi || true
+      sleep 2
+      connman_list_wifi_services
     else
       iwctl station ${WIFI_DEV} scan 2>/dev/null
+      sleep 2
+      list_wifi
     fi
-    sleep 2
-    list_wifi
     ;;
 esac

@@ -48,6 +48,8 @@ fi
 cp ${M64PCONF} ${TMP}
 if [ "${CON}" = "custom" ]; then
     cp ${CUSTOMINP} ${TMP}/InputAutoCfg.ini
+elif [ "${CON}" = "zlswap" ]; then
+    cp ${SHARE}/zlswap.ini ${TMP}/InputAutoCfg.ini
 elif [ "${CON}" = "standard" ]; then
     cp ${SHARE}/default.ini ${TMP}/InputAutoCfg.ini
 else

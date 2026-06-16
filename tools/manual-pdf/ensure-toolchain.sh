@@ -157,6 +157,10 @@ ensure_xecjk() {
   fi
   printf '  [manual-pdf] installing LaTeX packages (xeCJK, first run may take a minute)…\n'
   "${tlmgr}" postaction install script xetex >/dev/null 2>&1 || true
+  # Bundled tlmgr can lag behind the CTAN mirror; install refuses until self-update.
+  if ! "${tlmgr}" update --self; then
+    "${tlmgr}" update --self --no-verify-downloads
+  fi
   "${tlmgr}" install xecjk
 }
 

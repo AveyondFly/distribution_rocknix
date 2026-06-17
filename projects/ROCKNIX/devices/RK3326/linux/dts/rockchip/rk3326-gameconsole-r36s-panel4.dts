@@ -11,6 +11,35 @@
 	compatible = "gameconsole,r35s", "gameconsole,r36s", "rockchip,rk3326";
 };
 
+&rk817 {
+	regulators{
+		vcc_1v0: LDO_REG1 {
+			regulator-min-microvolt = <0xf4240>;
+			regulator-max-microvolt = <0xf4240>;
+			regulator-name = "vcc_1v0";
+			regulator-always-on;
+			regulator-boot-on;
+			
+			regulator-state-mem {
+				regulator-off-in-suspend;
+				regulator-suspend-microvolt = <0xf4240>;
+			};
+		};
+		vdd3v3_wifi: LDO_REG9 {
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-name = "vdd_wifi";
+			regulator-always-on;
+			regulator-boot-on;
+			
+			regulator-state-mem {
+				regulator-off-in-suspend;
+				regulator-suspend-microvolt = <3300000>;
+			};
+		};
+	};
+};
+
 &joypad {
 	abs_x-p-tuning = <300>;
 	abs_x-n-tuning = <300>;

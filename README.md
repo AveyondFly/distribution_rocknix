@@ -42,7 +42,6 @@ Independent ports apps:
 #### RK3326 Devices (unified image)
 | Brand | Models |
 |-------|--------|
-| Anbernic | RG351M, RG351V |
 | BatleXP | G350 |
 | Clone R36s | Type 2 (with/without amplifier), Type 3, Type 4, Sauce V03/V04 |
 | Diium | D007, D-R28S |
@@ -59,7 +58,6 @@ Independent ports apps:
 #### RK3566 Devices — Generic image
 | Brand | Models |
 |-------|--------|
-| Anbernic | RG353P / RG353PS / RG353V / RG353VS, RG503, RG ARC-D / RG ARC-S |
 | Powkiddy | RGB10 Max 3, RGB20 Pro, RGB20 SX, RGB30, RK2023 |
 
 #### RK3566 Devices — Specific image

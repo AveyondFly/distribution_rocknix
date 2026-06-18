@@ -2,10 +2,10 @@
 # Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
 
 PKG_NAME="u-boot"
-PKG_VERSION="0.1"
+PKG_VERSION="aislpc-rg52mini-stock"
 PKG_LICENSE="GPL"
-PKG_SITE="https://github.com/AveyondFly/build_rocknix"
-PKG_URL="https://github.com/AveyondFly/build_rocknix/releases/download/${PKG_VERSION}/full_uboot.tar.xz"
+PKG_SITE="https://github.com/bmdhacks/aislpc-bootloader-tool"
+PKG_URL=""
 PKG_DEPENDS_TARGET="toolchain"
 PKG_LONGDESC="Das U-Boot is a cross-platform bootloader for embedded systems."
 PKG_TOOLCHAIN="manual"
@@ -13,9 +13,15 @@ PKG_TOOLCHAIN="manual"
 PKG_NEED_UNPACK="${PROJECT_DIR}/${PROJECT}/bootloader ${PROJECT_DIR}/${PROJECT}/devices/${DEVICE}/bootloader"
 PKG_NEED_UNPACK+=" ${PROJECT_DIR}/${PROJECT}/options ${PROJECT_DIR}/${PROJECT}/devices/${DEVICE}/options"
 
+# Stock RK3562 idbloader + U-Boot FIT dumps from EmuELEC on RG52 Mini (aislpc-bootloader-tool).
+PKG_AISLPC_BOOTLOADER_BASE="https://github.com/bmdhacks/aislpc-bootloader-tool/raw/main/devices/rg52mini/stock"
+
 unpack() {
   mkdir -p ${PKG_BUILD}
-  tar -xf ${SOURCES}/${PKG_NAME}/${PKG_SOURCE_NAME} -C ${PKG_BUILD}
+  curl -fsSL -o ${PKG_BUILD}/bootloader_area.img \
+    ${PKG_AISLPC_BOOTLOADER_BASE}/bootloader_area.img
+  curl -fsSL -o ${PKG_BUILD}/uboot_partition.img \
+    ${PKG_AISLPC_BOOTLOADER_BASE}/uboot_partition.img
 }
 
 make_target() {
@@ -23,13 +29,23 @@ make_target() {
 }
 
 makeinstall_target() {
-  mkdir -p $INSTALL/usr/share/bootloader
+  mkdir -p ${INSTALL}/usr/share/bootloader
 
-  # full_uboot.bin is a Rockchip full-disk style loader: RKNS metadata starts at
-  # sector 0, while the BootROM idbloader entry is at sector 64. The common
-  # image writer writes uboot.bin to disk sector 64, so normalize the loader
-  # layout here before packaging it.
-  rm -f $INSTALL/usr/share/bootloader/uboot.bin
-  dd if=${PKG_BUILD}/full_uboot.bin of=$INSTALL/usr/share/bootloader/uboot.bin bs=512 skip=64 count=16256 conv=fsync,notrunc status=none
-  dd if=${PKG_BUILD}/full_uboot.bin of=$INSTALL/usr/share/bootloader/uboot.bin bs=512 skip=16320 seek=16320 conv=fsync,notrunc status=none
+  cp ${PKG_BUILD}/bootloader_area.img ${INSTALL}/usr/share/bootloader/
+  cp ${PKG_BUILD}/uboot_partition.img ${INSTALL}/usr/share/bootloader/
+
+  # 16 MiB pre-partition blob for dd seek=64 (matches SYSTEM_PART_START=32768):
+  #   blob sector 0      -> disk sector 64     (idbloader / SPL, 8 MiB)
+  #   blob sector 16320  -> disk sector 16384  (U-Boot FIT, 4 MiB)
+  # Tail is zero padding (reserved / resource gap before FAT @ sector 32768).
+  truncate -s $((32768 * 512)) ${INSTALL}/usr/share/bootloader/Generic_uboot.bin
+  dd if=${PKG_BUILD}/bootloader_area.img \
+    of=${INSTALL}/usr/share/bootloader/Generic_uboot.bin \
+    bs=512 conv=fsync,notrunc status=none
+  dd if=${PKG_BUILD}/uboot_partition.img \
+    of=${INSTALL}/usr/share/bootloader/Generic_uboot.bin \
+    bs=512 seek=16320 conv=fsync,notrunc status=none
+
+  cp -av ${INSTALL}/usr/share/bootloader/Generic_uboot.bin \
+    ${INSTALL}/usr/share/bootloader/uboot.bin
 }

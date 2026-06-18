@@ -4,7 +4,14 @@
 . config/functions
 
 mkimage_uboot() {
-  if [ -f "${RELEASE_DIR}/3rdparty/bootloader/${SUBDEVICE}_uboot.bin" ]; then
+  if [ -f "${RELEASE_DIR}/3rdparty/bootloader/bootloader_area.img" ] && \
+     [ -f "${RELEASE_DIR}/3rdparty/bootloader/uboot_partition.img" ]; then
+    # RK3562 aislpc / EmuELEC layout: idbloader @ sector 64, FIT @ sector 16384
+    echo "image: writing bootloader_area.img to $(basename "${DISK}") @ sector 64..."
+    dd if="${RELEASE_DIR}/3rdparty/bootloader/bootloader_area.img" of="${DISK}" bs=512 seek=64 conv=sync,noerror,notrunc >"${SAVE_ERROR}" 2>&1 || show_error
+    echo "image: writing uboot_partition.img to $(basename "${DISK}") @ sector 16384..."
+    dd if="${RELEASE_DIR}/3rdparty/bootloader/uboot_partition.img" of="${DISK}" bs=512 seek=16384 conv=sync,noerror,notrunc >"${SAVE_ERROR}" 2>&1 || show_error
+  elif [ -f "${RELEASE_DIR}/3rdparty/bootloader/${SUBDEVICE}_uboot.bin" ]; then
     # RK3566-Generic and RK3566-Powkiddy_x55
     echo "image: writing ${SUBDEVICE}_uboot.bin to $(basename "${DISK}")..."
     dd if="${RELEASE_DIR}/3rdparty/bootloader/${SUBDEVICE}_uboot.bin" of="${DISK}" bs=512 seek=64 conv=sync,noerror,notrunc >"${SAVE_ERROR}" 2>&1 || show_error
@@ -44,7 +51,7 @@ mkimage_extlinux() {
     mkdir -p "${IMG_TMP}/extlinux"
 
     local boot_args="boot=LABEL=${DISTRO_BOOTLABEL} disk=LABEL=${DISTRO_DISKLABEL}"
-    if [ "${DEVICE}" = "RK3566" ]; then
+    if [ "${DEVICE}" = "RK3566" ] || [ "${DEVICE}" = "RK356X" ]; then
       boot_args="boot=UUID=${UUID_SYSTEM} disk=UUID=${UUID_STORAGE}"
     fi
 

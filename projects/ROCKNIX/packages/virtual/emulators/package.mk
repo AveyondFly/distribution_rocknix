@@ -1076,7 +1076,7 @@ makeinstall_target() {
 
   ### Sony Playstation Portable
   case "${DEVICE}" in
-    RK3566|RK3326*)
+    RK356*|RK3326*)
       add_emu_core psp ppsspp ppsspp2021-sa true
       add_emu_core psp ppsspp ppsspp-sa false
       ;;
@@ -1093,7 +1093,7 @@ makeinstall_target() {
   ### Sony Playstation Portable Minis
   add_emu_core pspminis ppsspp ppsspp-sa true
   case "${DEVICE}" in
-    RK3566|RK3326*)
+    RK356*|RK3326*)
       add_emu_core psp ppsspp ppsspp2021-sa true
       add_emu_core psp ppsspp ppsspp-sa false
       ;;

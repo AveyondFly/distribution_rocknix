@@ -190,6 +190,25 @@ mkimage_rk3566_dtb_select() {
   fi
 }
 
+# RK356X: rk356x-dtb-select on boot FAT at partition root (/flash)
+mkimage_rk356x_dtb_select() {
+  if [ ! "${DEVICE}" = "RK356X" ]; then
+    return 0
+  fi
+  if [ -f "${RELEASE_DIR}/3rdparty/bootloader/dtb_selector.py" ]; then
+    echo "image: copying rk356x-dtb-select to boot partition root (RK356X)..."
+    mcopy -o "${RELEASE_DIR}/3rdparty/bootloader/dtb_selector.py" ::/dtb_selector.py
+  fi
+  if [ -f "${RELEASE_DIR}/3rdparty/bootloader/dtbselect" ]; then
+    mcopy -o "${RELEASE_DIR}/3rdparty/bootloader/dtbselect" ::/dtbselect
+  fi
+  if [ -f "${RELEASE_DIR}/3rdparty/bootloader/DtbselectWin64.exe" ]; then
+    echo "image: copying DtbselectWin64.exe (Windows) to boot partition (RK356X)..."
+    mcopy -o "${RELEASE_DIR}/3rdparty/bootloader/DtbselectWin64.exe" ::/DtbselectWin64.exe
+  fi
+}
+
 mkimage_rk3326_dtb_select
 mkimage_rk3566_dtb_select
+mkimage_rk356x_dtb_select
 mkimage_all

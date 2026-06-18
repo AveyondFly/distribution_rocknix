@@ -78,7 +78,7 @@
     FIRMWARE="rk915-firmware"
 
   # Additional packages to install
-    ADDITIONAL_PACKAGES="libmali libmali-vulkan mcu-led"
+    ADDITIONAL_PACKAGES="libmali libmali-vulkan mcu-led rk356x-dtb-select"
     ADDITIONAL_PACKAGES_32BIT="libmali"
 
   # Debug tty path

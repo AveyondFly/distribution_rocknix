@@ -1,0 +1,3 @@
+# CI drops DtbselectWin64.exe here before image build
+*
+!.gitignore

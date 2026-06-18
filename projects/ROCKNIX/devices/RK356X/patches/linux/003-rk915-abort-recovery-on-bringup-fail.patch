@@ -1,0 +1,21 @@
+diff -Naur a/drivers/net/wireless/rockchip_wlan/rk915/src/hal.c b/drivers/net/wireless/rockchip_wlan/rk915/src/hal.c
+--- a/drivers/net/wireless/rockchip_wlan/rk915/src/hal.c	2026-06-19 06:59:31.781994430 +0800
++++ b/drivers/net/wireless/rockchip_wlan/rk915/src/hal.c	2026-06-19 06:59:34.609998066 +0800
+@@ -713,7 +713,16 @@
+ 	RPU_DEBUG_ROCOVERY("reset\n");
+ 	hpriv->fw_tear_down_func((void *)hpriv);
+ 	hpriv->hal_disabled = 1;
+-	hpriv->fw_bring_up_func((void *)hpriv);
++	if (hpriv->fw_bring_up_func((void *)hpriv) < 0) {
++		RPU_ERROR_ROCOVERY("%s: fw bring up failed, abort driver load\n",
++				   __func__);
++		hpriv->shutdown = 1;
++		hpriv->fw_error = 1;
++		hpriv->fw_error_processing = 0;
++		if (wifi)
++			wifi->params.fw_loaded = 0;
++		goto unlock_out;
++	}
+ 
+ 	// 2. recovery cmds
+ 	RPU_DEBUG_ROCOVERY("recovery cmds\n");

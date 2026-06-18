@@ -38,7 +38,7 @@ def _boot_write_root() -> str:
 
 
 def _remount_flash(rw: bool) -> None:
-    if os.environ.get("RK3566_DTB_SELECT_NO_REMOUNT"):
+    if os.environ.get("RK356X_DTB_SELECT_NO_REMOUNT"):
         return
     if _boot_write_root() != "/flash":
         return
@@ -119,16 +119,10 @@ def print_header(title: str, *, no_color=False, ascii_border=False):
     print(color(pad_disp(bar, tw), bg=True, enable=not no_color))
 
 
-# RK3566-Specific：单层列表（与 config.xml 中 Specific 的 DTB 一致）
+# RK356X：与 config.xml 中 <file> 条目一致
 ALL_DEVICES: List[Tuple[str, str]] = [
-    ("泡机堂 Powkiddy X55", "device_trees/rk3566-powkiddy-x55.dtb"),
-    ("泡机堂 Powkiddy X35S", "device_trees/rk3566-powkiddy-x35s.dtb"),
-    ("泡机堂 Powkiddy X35H", "device_trees/rk3566-powkiddy-x35h.dtb"),
-    ("漫特科技 GameMT E5P", "device_trees/rk3566-gamemt-e5p.dtb"),
-    ("迪优米 Diium D50 Plus", "device_trees/rk3566-diium-d50plus.dtb"),
-    ("漫特科技 GameMT E6P", "device_trees/rk3566-gamemt-e6p.dtb"),
-    ("MiniLoong", "device_trees/rk3566-miniloong.dtb"),
-    ("RADXA", "device_trees/rk3566-radxa-zero-3w.dtb"),
+    ("AISLPC RG52 Mini", "device_trees/rk3562-rg52mini.dtb"),
+    ("AISLPC RG52 Mini v1 (RK915 WiFi)", "device_trees/rk3562-rg52mini-v1.dtb"),
 ]
 
 
@@ -166,15 +160,13 @@ def patch_fdt_line(content: str, dtb_rel: str) -> str:
                 continue
         out.append(line)
     if not patched:
-        raise ValueError(
-            "未找到可用的 FDT 行。若为 RK3566-Generic（仅 FDTDIR），请使用 Specific 镜像后再运行本工具。"
-        )
+        raise ValueError("未找到可用的 FDT 行。")
     return "".join(out)
 
 
 def apply_fdt_to_extlinux(dtb_rel: str, *, no_color=False) -> bool:
     base = _boot_write_root()
-    remount = base == "/flash" and not os.environ.get("RK3566_DTB_SELECT_NO_REMOUNT")
+    remount = base == "/flash" and not os.environ.get("RK356X_DTB_SELECT_NO_REMOUNT")
     if remount:
         _remount_flash(True)
     path = os.path.join(base, "extlinux", "extlinux.conf")
@@ -211,7 +203,7 @@ def main():
     items = ALL_DEVICES
     while True:
         clear_screen()
-        print_header("RK3566 Specific — 请选择机型", no_color=False)
+        print_header("RK356X — 请选择机型", no_color=False)
         for i, (name, _) in enumerate(items, 1):
             print(f"{i:>2}. {name}")
         print(f"{len(items) + 1:>2}. 退出程序")

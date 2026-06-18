@@ -115,5 +115,5 @@ gpu_performance_level() {
 }
 
 get_available_gpu_governors() {
-  echo "default"; tr " " "\n" < $GPU_FREQ/available_governors | grep \[a-z\]
+  echo "default"; tr " " "\n" < $GPU_FREQ/available_governors | grep [a-z]
 }

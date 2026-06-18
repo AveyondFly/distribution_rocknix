@@ -1,0 +1,806 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2024 dArkOS Contributors
+ *
+ * Shared device tree include for dArkOS gaming handhelds based on
+ * Rockchip RK3562 with RK817 PMIC.  Included by both rk3562-rg52mini.dts
+ * (portrait 720x1280 panel) and rk3562-rg43h.dts (landscape 1024x768 panel).
+ *
+ * Per-device DTS files override:
+ *   - vcc3v3_lcd_n (gpios, enable-active-*, pinctrl-0)
+ *   - DSI panel (panel-init-sequence, display-timings, power-supply/enable-gpios, pinctrl-0)
+ *   - play_joystick node (entirely per-device)
+ */
+
+#include <dt-bindings/display/drm_mipi_dsi.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/pinctrl/rockchip.h>
+
+/ {
+	adc_keys: adc-keys {
+		compatible = "adc-keys";
+		io-channels = <&saradc0 1>;
+		io-channel-names = "buttons";
+		keyup-threshold-microvolt = <1800000>;
+		poll-interval = <100>;
+
+		vol-up-key {
+			linux,code = <KEY_VOLUMEUP>;
+			label = "volume up";
+			press-threshold-microvolt = <17000>;
+		};
+
+		vol-down-key {
+			linux,code = <KEY_VOLUMEDOWN>;
+			label = "volume down";
+			press-threshold-microvolt = <1200000>;
+		};
+	};
+
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pwm5 0 25000 0>;
+		brightness-levels = <
+			  0  20  20  21  21  22  22  23
+			 23  24  24  25  25  26  26  27
+			 27  28  28  29  29  30  30  31
+			 31  32  32  33  33  34  34  35
+			 35  36  36  37  37  38  38  39
+			 40  41  42  43  44  45  46  47
+			 48  49  50  51  52  53  54  55
+			 56  57  58  59  60  61  62  63
+			 64  65  66  67  68  69  70  71
+			 72  73  74  75  76  77  78  79
+			 80  81  82  83  84  85  86  87
+			 88  89  90  91  92  93  94  95
+			 96  97  98  99 100 101 102 103
+			104 105 106 107 108 109 110 111
+			112 113 114 115 116 117 118 119
+			120 121 122 123 124 125 126 127
+			128 129 130 131 132 133 134 135
+			136 137 138 139 140 141 142 143
+			144 145 146 147 148 149 150 151
+			152 153 154 155 156 157 158 159
+			160 161 162 163 164 165 166 167
+			168 169 170 171 172 173 174 175
+			176 177 178 179 180 181 182 183
+			184 185 186 187 188 189 190 191
+			192 193 194 195 196 197 198 199
+			200 201 202 203 204 205 206 207
+			208 209 210 211 212 213 214 215
+			216 217 218 219 220 221 222 223
+			224 225 226 227 228 229 230 231
+			232 233 234 235 236 237 238 239
+			240 241 242 243 244 245 246 247
+			248 249 250 251 252 253 254 255
+		>;
+		default-brightness-level = <200>;
+	};
+
+	pdm_codec: dummy-codec {
+		status = "okay";
+		compatible = "rockchip,dummy-codec";
+		#sound-dai-cells = <0>;
+	};
+
+	pdm_mic_array: pdm-mic-array {
+		status = "disabled";
+		compatible = "simple-audio-card";
+		simple-audio-card,name = "rockchip,pdm-mic-array";
+
+		simple-audio-card,cpu {
+			sound-dai = <&pdm>;
+		};
+
+		simple-audio-card,codec {
+			sound-dai = <&pdm_codec>;
+		};
+	};
+
+	spdif_out: spdif-out {
+		status = "disabled";
+		compatible = "linux,spdif-dit";
+		#sound-dai-cells = <0>;
+	};
+
+	spdif_sound: spdif-sound {
+		status = "disabled";
+		compatible = "simple-audio-card";
+		simple-audio-card,name = "rk-spdif-sound";
+		simple-audio-card,mclk-fs = <128>;
+
+		simple-audio-card,cpu {
+			sound-dai = <&spdif_8ch>;
+		};
+
+		simple-audio-card,codec {
+			sound-dai = <&spdif_out>;
+		};
+	};
+
+	test-power {
+		status = "okay";
+	};
+
+	/*
+	 * LCD voltage regulator skeleton.  Per-device DTS files add gpios,
+	 * enable-active-low/high, pinctrl-0, and status = "okay".
+	 */
+	vcc3v3_lcd_n: vcc3v3-lcd0-n {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc3v3_lcd_n";
+		regulator-boot-on;
+
+		regulator-state-mem {
+			regulator-off-in-suspend;
+		};
+	};
+
+	rk817_sound: rk817-sound {
+		status = "okay";
+		compatible = "rockchip,multicodecs-card";
+		rockchip,card-name = "rockchip-rk817";
+		hp-det-gpio = <&gpio0 RK_PA7 GPIO_ACTIVE_HIGH>;
+		io-channels = <&saradc0 4>;
+		io-channel-names = "adc-detect";
+		keyup-threshold-microvolt = <1800000>;
+		poll-interval = <100>;
+		rockchip,format = "i2s";
+		rockchip,mclk-fs = <256>;
+		rockchip,cpu = <&sai0>;
+		rockchip,codec = <&rk817_codec>;
+		pinctrl-names = "default";
+		spk-con-gpios = <&gpio3 RK_PC3 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&hp_det &hp_con>;
+		rockchip,audio-routing =
+			"Headphone", "HPOL",
+			"Headphone", "HPOR",
+			"Speaker", "HPOL",
+			"Speaker", "HPOR";
+
+		play-pause-key {
+			label = "playpause";
+			linux,code = <KEY_PLAYPAUSE>;
+			press-threshold-microvolt = <2000>;
+		};
+	};
+
+	rk628_sound: rk628-sound {
+		compatible = "simple-audio-card";
+		simple-audio-card,format = "i2s";
+		simple-audio-card,mclk-fs = <128>;
+		simple-audio-card,name = "rockchip,hdmi-rk628";
+		status = "okay";
+
+		simple-audio-card,cpu {
+			sound-dai = <&sai1>;
+		};
+
+		simple-audio-card,codec {
+			sound-dai = <&i2c4_rk628>;
+		};
+	};
+
+	sdio_pwrseq: sdio-pwrseq {
+		compatible = "mmc-pwrseq-simple";
+		clocks = <&rk817 1>;
+		clock-names = "ext_clock";
+		pinctrl-names = "default";
+		pinctrl-0 = <&wifi_enable_h>;
+		post-power-on-delay-ms = <200>;
+		reset-gpios = <&gpio0 RK_PB3 GPIO_ACTIVE_LOW>;
+	};
+
+	vbat_3v8: vbat-3v8 {
+		compatible = "regulator-fixed";
+		regulator-name = "vbat_3v8";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <3800000>;
+		regulator-max-microvolt = <3800000>;
+	};
+
+	vcc_sd: vcc-sd {
+		compatible = "regulator-gpio";
+		enable-active-low;
+		regulator-boot-on;
+		gpios = <&gpio0 RK_PA5 GPIO_ACTIVE_LOW>;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&vcc_sd_h>;
+		regulator-name = "vcc_sd";
+		states = <0 0x0
+			  3300000 0x1>;
+	};
+
+	vcc_sys: vcc-sys {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_sys";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <3800000>;
+		regulator-max-microvolt = <3800000>;
+	};
+
+	vdd_gpu: vdd-gpu {
+		compatible = "pwm-regulator";
+		pwms = <&pwm7 0 5000 1>;
+		regulator-name = "vdd_gpu";
+		regulator-min-microvolt = <800000>;
+		regulator-max-microvolt = <1100000>;
+		regulator-init-microvolt = <900000>;
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-settling-time-up-us = <250>;
+		pwm-supply = <&vcc_sys>;
+		status = "okay";
+	};
+
+	vdd_npu: vdd-npu {
+		compatible = "pwm-regulator";
+		pwms = <&pwm6 0 5000 1>;
+		regulator-name = "vdd_npu";
+		regulator-min-microvolt = <800000>;
+		regulator-max-microvolt = <1100000>;
+		regulator-init-microvolt = <900000>;
+		regulator-settling-time-up-us = <250>;
+		pwm-supply = <&vcc_sys>;
+		status = "disabled";
+	};
+
+	led_vcc: led-vcc {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc-led";
+		pinctrl-0 = <&led_en_gpio>;
+		pinctrl-names = "default";
+		gpios = <&gpio0 RK_PC7 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+	wireless-wlan {
+		compatible = "wlan-platdata";
+		rockchip,grf = <&sys_grf>;
+		/* Rev A is RK915, rev B is AIC8800D80. rfkill is the only consumer
+		 * and only prefix-matches "rtl..."; aic8800 binds by SDIO vendor ID.
+		 * "aic8800D80" matches the silicon (fmacfw_8800d80_h_u02.bin). */
+		wifi_chip_type = "aic8800D80";
+		pinctrl-names = "default";
+		pinctrl-0 = <&wifi_host_wake_irq &wifi_poweren_gpio>;
+		WIFI,host_wake_irq = <&gpio0 RK_PB4 GPIO_ACTIVE_HIGH>;
+		WIFI,poweren_gpio = <&gpio0 RK_PA6 GPIO_ACTIVE_LOW>;
+		sdio_vref = <1800>;
+		status = "okay";
+	};
+
+	wireless-bluetooth {
+		compatible = "bluetooth-platdata";
+		status = "disabled";
+	};
+
+	charge-animation {
+		compatible = "rockchip,uboot-charge";
+		rockchip,uboot-charge-on = <1>;
+		rockchip,android-charge-on = <0>;
+		rockchip,uboot-low-power-voltage = <3450>;
+		rockchip,screen-on-voltage = <3500>;
+		status = "okay";
+	};
+
+	rockchip_suspend: rockchip-suspend {
+		compatible = "rockchip,pm-rk3562";
+		status = "disabled";
+		rockchip,sleep-debug-en = <1>;
+		rockchip,sleep-mode-config = <0x5e2>;
+		rockchip,wakeup-config = <0x10>;
+	};
+};
+
+/* ---- SoC peripheral enables ------------------------------------------- */
+
+&cpu0 {
+	cpu-supply = <&vdd_cpu>;
+};
+
+&combphy_pu {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&dfi {
+	status = "okay";
+};
+
+&display_subsystem {
+	status = "okay";
+};
+
+&dmc {
+	center-supply = <&vdd_logic>;
+	status = "okay";
+};
+
+&dsi {
+	status = "okay";
+
+	dsi_panel: panel@0 {
+		status = "okay";
+		compatible = "simple-panel-dsi";
+		reg = <0>;
+		backlight = <&backlight>;
+		reset-delay-ms = <20>;
+		enable-delay-ms = <120>;
+		prepare-delay-ms = <20>;
+		unprepare-delay-ms = <20>;
+		disable-delay-ms = <20>;
+		init-delay-ms = <20>;
+		width-mm = <68>;
+		height-mm = <121>;
+		dsi,flags = <(MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
+			MIPI_DSI_MODE_LPM | MIPI_DSI_MODE_EOT_PACKET)>;
+		dsi,format = <MIPI_DSI_FMT_RGB888>;
+		dsi,lanes = <4>;
+		reset-gpios = <&gpio0 RK_PC4 GPIO_ACTIVE_LOW>;
+
+		/*
+		 * panel-init-sequence, power-supply / enable-gpios, and
+		 * pinctrl-0 are set per-device.
+		 */
+
+		panel-exit-sequence = [
+			05 00 01 28
+			05 00 01 10
+		];
+
+		disp_timings0: display-timings {
+			native-mode = <&dsi_timing0>;
+
+			/* Defaults from RG52 Mini; overridden per-device */
+			dsi_timing0: timing0 {
+				clock-frequency = <76800000>;
+				hactive = <720>;
+				vactive = <1280>;
+				hfront-porch = <100>;
+				hsync-len = <33>;
+				hback-porch = <100>;
+				vfront-porch = <20>;
+				vsync-len = <2>;
+				vback-porch = <30>;
+				hsync-active = <0>;
+				vsync-active = <0>;
+				de-active = <0>;
+				pixelclk-active = <1>;
+			};
+		};
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+
+				panel_in_dsi: endpoint {
+					remote-endpoint = <&dsi_out_panel>;
+				};
+			};
+		};
+	};
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@1 {
+			reg = <1>;
+
+			dsi_out_panel: endpoint {
+				remote-endpoint = <&panel_in_dsi>;
+			};
+		};
+	};
+};
+
+&dsi_in_vp0 {
+	status = "okay";
+};
+
+&rgb_in_vp0 {
+	status = "okay";
+};
+
+&gpu {
+	status = "okay";
+	mali-supply = <&vdd_gpu>;
+};
+
+&i2c4 {
+	status = "okay";
+
+	i2c4_rk628: rk628@50 {
+		status = "okay";
+		compatible = "rockchip,rk628";
+		reg = <0x50>;
+		#sound-dai-cells = <0>;
+		interrupt-parent = <&gpio3>;
+		interrupts = <RK_PC2 IRQ_TYPE_LEVEL_HIGH>;
+		enable-gpios = <&gpio3 RK_PC0 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio3 RK_PC1 GPIO_ACTIVE_LOW>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&rk628_reset &refclk_pins>;
+		assigned-clocks = <&cru CLK_PMU1_WIFI>;
+		assigned-clock-rates = <24000000>;
+		clocks = <&cru CLK_PMU1_WIFI>;
+		clock-names = "soc_24M";
+		rk628-rgb-in;
+		rk628-hdmi-out;
+
+		port {
+			rgb_in_hdmi: endpoint {
+				remote-endpoint = <&rgb_out_hdmi>;
+			};
+		};
+	};
+};
+
+&jpegd {
+	status = "okay";
+};
+
+&jpegd_mmu {
+	status = "okay";
+};
+
+&mpp_srv {
+	status = "okay";
+};
+
+/* pwm4 is enabled per-device -- only the RG52 Mini uses it (chassis fan).
+ * RG43H Pro has no fan, so we don't claim GPIO1_D1 there. */
+
+&pwm5 {
+	status = "okay";
+};
+
+/* pwm6 left disabled — drives vdd_npu, NPU is unused */
+
+&pwm7 {
+	status = "okay";
+};
+
+/* uart1 (ttyS1) -- TX-only serial link to the analog-stick RGB LED MCU.
+ * Enabled on both devices; the LED feature itself is OFF by default (the
+ * vcc-led rail stays down until the user turns it on from Options > LED
+ * Settings). Only uart1_tx is muxed (see mcu_uart_tx) so the RG52 Mini fan
+ * keeps GPIO1_D1. /usr/local/bin/ledctl drives it at 9600 8N1. */
+&uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mcu_uart_tx>;
+	status = "okay";
+};
+
+&rga2 {
+	status = "okay";
+};
+
+&rga2_mmu {
+	status = "okay";
+};
+
+/* rknpu + rknpu_mmu left disabled — NPU is unused, saves power */
+
+&rkvdec {
+	status = "okay";
+};
+
+&rkvdec_mmu {
+	status = "okay";
+};
+
+&rkvenc {
+	status = "okay";
+};
+
+&rkvenc_mmu {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&route_dsi {
+	status = "okay";
+};
+
+&route_rgb {
+	status = "okay";
+};
+
+&rgb {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&rgb666_pins>;
+
+	ports {
+		port@1 {
+			reg = <1>;
+
+			rgb_out_hdmi: endpoint {
+				remote-endpoint = <&rgb_in_hdmi>;
+			};
+		};
+	};
+};
+
+&sai0 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2s0m0_lrck
+		     &i2s0m0_sclk
+		     &i2s0m0_sdi0
+		     &i2s0m0_sdo0>;
+};
+
+&sai1 {
+	status = "okay";
+	/* i2s1m1: HDMI I2S to rk628 — i2s1m0 pins overlap rgb666 to rk628 */
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2s1m1_mclk
+		     &i2s1m1_sclk
+		     &i2s1m1_lrck
+		     &i2s1m1_sdo0>;
+};
+
+&saradc0 {
+	status = "okay";
+	vref-supply = <&vcc_1v8>;
+};
+
+&saradc1 {
+	status = "okay";
+	vref-supply = <&vcc_1v8>;
+};
+
+&sdhci {
+	bus-width = <8>;
+	no-sdio;
+	no-sd;
+	non-removable;
+	max-frequency = <200000000>;
+	mmc-hs400-1_8v;
+	mmc-hs400-enhanced-strobe;
+	full-pwr-cycle-in-suspend;
+	status = "okay";
+};
+
+&sdmmc0 {
+	no-sdio;
+	no-mmc;
+	bus-width = <4>;
+	cap-mmc-highspeed;
+	cap-sd-highspeed;
+	disable-wp;
+	sd-uhs-sdr104;
+	vmmc-supply = <&vcc_sd>;
+	vqmmc-supply = <&vccio_sd>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdmmc0_bus4 &sdmmc0_clk &sdmmc0_cmd &sdmmc0_det>;
+	status = "okay";
+};
+
+&sdmmc1 {
+	no-sd;
+	no-mmc;
+	bus-width = <4>;
+	disable-wp;
+	cap-sd-highspeed;
+	cap-sdio-irq;
+	keep-power-in-suspend;
+	mmc-pwrseq = <&sdio_pwrseq>;
+	broken-cd;
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdmmc1_bus4 &sdmmc1_cmd &sdmmc1_clk>;
+	sd-uhs-sdr104;
+	supports-sdio;
+	supports-rk912;
+	status = "okay";
+};
+
+&tsadc {
+	status = "okay";
+};
+
+&u2phy {
+	status = "okay";
+};
+
+&u2phy_host {
+	status = "disabled";
+};
+
+&u2phy_otg {
+	status = "okay";
+};
+
+&usb_host0_ehci {
+	status = "disabled";
+};
+
+&usb_host0_ohci {
+	status = "disabled";
+};
+
+&usbdrd30 {
+	status = "okay";
+};
+
+&usbdrd_dwc3 {
+	status = "okay";
+	dr_mode = "otg";
+	extcon = <&u2phy>;
+	maximum-speed = "high-speed";
+	phys = <&u2phy_otg>;
+	phy-names = "usb2-phy";
+	snps,dis_u2_susphy_quirk;
+	snps,usb2-lpm-disable;
+};
+
+&video_phy {
+	status = "okay";
+};
+
+&vop {
+	status = "okay";
+};
+
+&vop_mmu {
+	status = "okay";
+};
+
+/* VOP port@0 — DSI connector: set plane-mask for all dArkOS devices */
+&vp0 {
+	rockchip,plane-mask = <0x30c>;
+	rockchip,primary-plane = <0x02>;
+};
+
+/* ---- RK817 overrides -------------------------------------------------- */
+
+&rk817_codec {
+	use-ext-amplifier;
+	hp2extamplifier;
+	hp-mute-delay-ms = <100>;
+};
+
+/* Add gpio_ts pin configs (temperature sensor pin on the RK817 PMIC itself) */
+&pinctrl_rk8xx {
+	rk817_ts_gpio1: rk817_ts_gpio1 {
+		pins = "gpio_ts";
+		function = "pin_fun1";
+	};
+
+	rk817_pin_ts: rk817_pin_ts {
+		pins = "gpio_ts";
+		function = "pin_fun0";
+	};
+};
+
+/* ---- Pin control ------------------------------------------------------ */
+
+&pinctrl {
+	headphone {
+		hp_det: hp-det {
+			rockchip,pins = <0 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+	hp2extspeaker {
+		hp_con: hp-con {
+			rockchip,pins = <3 RK_PC3 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+	lcd {
+		lcd_rst_gpio: lcd-rst-gpio {
+			rockchip,pins = <0 RK_PC4 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	sdio-pwrseq {
+		wifi_enable_h: wifi-enable-h {
+			rockchip,pins = <0 RK_PB3 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	vcc_sd {
+		vcc_sd_h: vcc-sd-h {
+			rockchip,pins = <0 RK_PA5 RK_FUNC_GPIO &pcfg_pull_down>;
+		};
+	};
+
+	wireless-wlan {
+		wifi_host_wake_irq: wifi-host-wake-irq {
+			rockchip,pins = <0 RK_PB4 RK_FUNC_GPIO &pcfg_pull_down>;
+		};
+
+		wifi_poweren_gpio: wifi-poweren-gpio {
+			rockchip,pins = <0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+	rk628 {
+		rk628_reset: rk628-reset {
+			rockchip,pins = <3 RK_PC1 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+
+		refclk_pins: refclk-pins {
+			rockchip,pins = <0 RK_PA0 1 &pcfg_pull_none>;
+		};
+	};
+
+	vcc-led {
+		led_en_gpio: led-en-gpio {
+			rockchip,pins = <0 RK_PC7 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+	stick-led-mcu {
+		/* uart1_tx_m0 (GPIO1_D2) ONLY. The stick-RGB LED MCU is a
+		 * write-only target (the mcu_led protocol never reads), so we
+		 * deliberately do NOT mux uart1_rx_m0 (GPIO1_D1). That leaves
+		 * GPIO1_D1 free for the RG52 Mini chassis fan (pwm4_m1), so the
+		 * fan and the LED MCU coexist on one UART pin pair. */
+		mcu_uart_tx: mcu-uart-tx {
+			rockchip,pins = <1 RK_PD2 1 &pcfg_pull_up>;
+		};
+	};
+
+	fan {
+		fan_vcc_en_gpio: fan-vcc-en-gpio {
+			rockchip,pins = <0 RK_PC3 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+
+		fan_det_gpio: fan-det-gpio {
+			rockchip,pins = <2 RK_PA1 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+	charge-led {
+		charge_led_gpio: charge-led-gpio {
+			rockchip,pins =
+				<3 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PA1 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+	buttons {
+		/*
+		 * All 10 button GPIOs are listed here (RG52 Mini has 10,
+		 * RG43H Pro has 9).  The joystick driver node is per-device
+		 * and references only the pins it needs via key-gpios.
+		 */
+		gpio_key_pin: gpio-key-pin {
+			rockchip,pins =
+				<1 RK_PC7 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PD0 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PD5 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PD6 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PD3 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PD7 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PD4 RK_FUNC_GPIO &pcfg_pull_up>,
+				<2 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>,
+				<0 RK_PC5 RK_FUNC_GPIO &pcfg_pull_up>,
+				<0 RK_PC6 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+
+		moto_gpio: moto-gpio {
+			rockchip,pins =
+				<3 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PB0 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+};

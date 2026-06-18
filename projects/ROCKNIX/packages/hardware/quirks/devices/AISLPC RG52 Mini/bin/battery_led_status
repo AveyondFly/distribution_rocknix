@@ -1,0 +1,97 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+
+# Watch battery status and drive the RG52 Mini power LED (gpio96/97):
+#   96 97 | color
+#   0  0  | off
+#   0  1  | red
+#   1  0  | green
+#   1  1  | blue
+#
+# Charging: red while below ~95%, green when full.
+# On battery: low charge warnings, otherwise honor led.color from ES.
+
+. /etc/profile.d/001-functions
+
+GPIO_GREEN=96
+GPIO_RED=97
+
+gpio_export() {
+  for gpio in ${GPIO_GREEN} ${GPIO_RED}; do
+    if [ ! -d "/sys/class/gpio/gpio${gpio}" ]; then
+      echo ${gpio} > /sys/class/gpio/export 2>/dev/null
+    fi
+    echo out > /sys/class/gpio/gpio${gpio}/direction 2>/dev/null
+  done
+}
+
+set_gpio_pair() {
+  echo "$1" > /sys/class/gpio/gpio${GPIO_GREEN}/value
+  echo "$2" > /sys/class/gpio/gpio${GPIO_RED}/value
+}
+
+apply_color() {
+  case ${1} in
+    off)
+      set_gpio_pair 0 0
+      ;;
+    red)
+      set_gpio_pair 0 1
+      ;;
+    green|default)
+      set_gpio_pair 1 0
+      ;;
+    blue|amber)
+      set_gpio_pair 1 1
+      ;;
+    *)
+      set_gpio_pair 1 0
+      ;;
+  esac
+}
+
+blink_red() {
+  for _ in 1 2 3 4 5; do
+    set_gpio_pair 0 0
+    sleep 0.5
+    set_gpio_pair 0 1
+    sleep 0.5
+  done
+}
+
+gpio_export
+
+while true; do
+  CAP=$(cat /sys/class/power_supply/battery/capacity 2>/dev/null)
+  STAT=$(cat /sys/class/power_supply/battery/status 2>/dev/null)
+  ISDISABLED=$(get_setting powerled.disabled)
+  LED_COLOR=$(get_setting led.color)
+
+  if [ "${ISDISABLED}" = "1" ]; then
+    apply_color off
+    sleep 15
+    continue
+  fi
+
+  if [[ ${STAT} == "Discharging" ]]; then
+    if [ "${LED_COLOR}" = "off" ]; then
+      apply_color off
+    elif (( ${CAP} <= 10 )); then
+      blink_red
+      continue
+    elif (( ${CAP} <= 20 )); then
+      apply_color red
+    elif [ -n "${LED_COLOR}" ]; then
+      apply_color ${LED_COLOR}
+    else
+      apply_color green
+    fi
+  elif (( ${CAP} >= 95 )); then
+    apply_color green
+  else
+    apply_color red
+  fi
+
+  sleep 15
+done

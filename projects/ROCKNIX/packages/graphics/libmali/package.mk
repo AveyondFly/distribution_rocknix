@@ -25,10 +25,10 @@ case "${DEVICE}" in
   S905)
     DRIVER_VERSION="g24p0"
   ;;
-  RK3588|RK356X)
+  RK3588)
     DRIVER_VERSION="g13p0"
   ;;
-  *) # RK3326 and RK3566
+  *) # RK3326, RK3566, and RK356X
     DRIVER_VERSION="g24p0"
   ;;
 esac

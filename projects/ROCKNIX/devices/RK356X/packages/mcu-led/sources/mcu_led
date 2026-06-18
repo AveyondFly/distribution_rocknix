@@ -1,0 +1,78 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# AISLPC stick RGB MCU UART control -- CLI compatible with the stock mcu_led
+# binary used on RK3326 AISLPC handhelds (mcu_led DEV chgmode MODE [REPEAT]).
+#
+# Wire format reverse-engineered from bmdhacks/dArkOS_rg52mini ledctl.sh:
+#   9600 8N1 raw, write-only, CLOCAL; each byte sent REPEAT times (~10ms apart).
+#   init byte = 0x20 + ledcount/4 - 1  (12 LEDs -> 0x22)
+#   chgmode N -> byte N (1=G 2=B 3=R 7=rainbow 8=scroll 9=OFF 17-24=breathing)
+
+LED_DEV="${1:?device}"
+CMD="${2:?command}"
+
+LEDCOUNT="${AISLPC_LED_COUNT:-12}"
+DEFAULT_REPEAT=6
+
+send_repeat() {
+	local byte="$1"
+	local count="$2"
+	local oct i=0
+
+	oct=$(printf '%03o' "$byte")
+	while [ "$i" -lt "$count" ]; do
+		printf "\\$oct" >&9
+		sleep 0.01
+		i=$((i + 1))
+	done
+}
+
+init_byte() {
+	case "$LEDCOUNT" in
+		''|*[!0-9]*) return 1 ;;
+	esac
+	[ "$LEDCOUNT" -ge 4 ] || return 1
+	echo $((0x20 + LEDCOUNT / 4 - 1))
+}
+
+open_uart() {
+	stty -F "$LED_DEV" 9600 cs8 -cstopb -parenb clocal -crtscts -ixon raw -echo 2>/dev/null
+	exec 9>"$LED_DEV"
+}
+
+close_uart() {
+	exec 9>&- 2>/dev/null
+}
+
+case "$CMD" in
+init)
+	LEDCOUNT="${3:-$LEDCOUNT}"
+	REPEAT="${4:-$DEFAULT_REPEAT}"
+	ib=$(init_byte) || exit 1
+	open_uart || exit 1
+	send_repeat "$ib" "$REPEAT"
+	close_uart
+	;;
+chgmode)
+	MODE="$3"
+	REPEAT="${4:-$DEFAULT_REPEAT}"
+	[ -n "$MODE" ] || exit 2
+	open_uart || exit 1
+	if ib=$(init_byte); then
+		send_repeat "$ib" "$REPEAT"
+		sleep 0.1
+	fi
+	send_repeat "$MODE" "$REPEAT"
+	close_uart
+	;;
+off)
+	REPEAT="${3:-$DEFAULT_REPEAT}"
+	open_uart || exit 1
+	send_repeat 9 "$REPEAT"
+	close_uart
+	;;
+*)
+	echo "usage: mcu_led DEVICE {chgmode MODE [REPEAT]|init [COUNT [REPEAT]]|off [REPEAT]}" >&2
+	exit 2
+	;;
+esac

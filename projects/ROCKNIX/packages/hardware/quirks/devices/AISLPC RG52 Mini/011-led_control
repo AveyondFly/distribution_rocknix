@@ -1,0 +1,9 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+
+# battery_led_status owns charge/battery indication; disable powerstate
+# ledcontrol charging/discharging toggles that would fight it.
+cat <<EOF >/storage/.config/profile.d/011-led_control
+DEVICE_LED_CHARGING="false"
+EOF

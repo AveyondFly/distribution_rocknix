@@ -1,0 +1,88 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+
+# AISLPC RG52 Mini power LED — dual GPIO (GPIO3_A0/A1 = gpio96/97):
+#   96 97 | color
+#   0  0  | off
+#   0  1  | red
+#   1  0  | green
+#   1  1  | blue
+
+. /etc/profile.d/001-functions
+
+GPIO_GREEN=96
+GPIO_RED=97
+DEFAULT=green
+LED_STATUS=$(get_setting led.color)
+
+gpio_export() {
+  for gpio in ${GPIO_GREEN} ${GPIO_RED}; do
+    if [ ! -d "/sys/class/gpio/gpio${gpio}" ]; then
+      echo ${gpio} > /sys/class/gpio/export 2>/dev/null
+    fi
+    echo out > /sys/class/gpio/gpio${gpio}/direction 2>/dev/null
+  done
+}
+
+set_gpio_pair() {
+  echo "$1" > /sys/class/gpio/gpio${GPIO_GREEN}/value
+  echo "$2" > /sys/class/gpio/gpio${GPIO_RED}/value
+}
+
+apply_color() {
+  case ${1} in
+    off)
+      set_gpio_pair 0 0
+      ;;
+    red)
+      set_gpio_pair 0 1
+      ;;
+    green|default)
+      set_gpio_pair 1 0
+      ;;
+    blue|amber)
+      set_gpio_pair 1 1
+      ;;
+    *)
+      set_gpio_pair 1 0
+      ;;
+  esac
+}
+
+gpio_export
+
+case ${1} in
+  default)
+    del_setting led.color
+    apply_color ${DEFAULT}
+    ;;
+  green|red|blue|amber|off)
+    apply_color ${1}
+    set_setting led.color ${1}
+    ;;
+  discharging)
+    apply_color ${LED_STATUS:-${DEFAULT}}
+    ;;
+  charging)
+    if [ "${LED_STATUS}" != "off" ]; then
+      apply_color red
+    fi
+    ;;
+  poweroff)
+    apply_color off
+    ;;
+  brightness|"")
+    apply_color ${LED_STATUS:-${DEFAULT}}
+    ;;
+  list)
+    cat <<EOF
+default
+off
+green
+red
+blue
+amber
+EOF
+    ;;
+esac

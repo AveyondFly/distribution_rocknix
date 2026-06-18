@@ -1,0 +1,13 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+
+cat <<EOF >/storage/.config/profile.d/001-device_config
+# Device Features
+DEVICE_FAKE_JACKSENSE="true"
+DEVICE_BATTERY_LED_STATUS="true"
+DEVICE_HAS_HDMI="true"
+DEVICE_LED_CONTROL="true"
+DEVICE_ANALOG_STICKS_LED_SINGLE="true"
+ALSA_PRIMARY_CARD=0
+EOF

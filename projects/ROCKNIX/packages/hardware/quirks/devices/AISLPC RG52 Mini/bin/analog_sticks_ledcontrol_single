@@ -1,0 +1,113 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+
+. /etc/profile
+
+COLOR=$1
+UART_DEV=/dev/ttyS1
+LED_PWR="/sys/kernel/debug/regulator/vcc-led/enable"
+
+stick_led_pwr() {
+	if [ -w "${LED_PWR}" ]; then
+		echo "$1" > "${LED_PWR}"
+		return
+	fi
+
+	local reg name
+	for reg in /sys/class/regulator/regulator.*; do
+		name=$(cat "${reg}/name" 2>/dev/null) || continue
+		[ "${name}" = "vcc-led" ] || continue
+		if [ -w "${reg}/state" ]; then
+			[ "$1" = "1" ] && echo enabled > "${reg}/state" || echo disabled > "${reg}/state"
+		elif [ -w "${reg}/enable" ]; then
+			echo "$1" > "${reg}/enable"
+		fi
+		return
+	done
+}
+
+if [ "$1" != "off" -a "$1" != "list" ]; then
+	stick_led_pwr 1
+fi
+
+case $COLOR in
+	battery)
+		mcu_led "$UART_DEV" chgmode 3 1
+		systemctl restart batteryledstatus.service
+		;;
+	red)
+		mcu_led "$UART_DEV" chgmode 3 1
+		;;
+	green)
+		mcu_led "$UART_DEV" chgmode 1 1
+		;;
+	blue)
+		mcu_led "$UART_DEV" chgmode 2 1
+		;;
+	white)
+		mcu_led "$UART_DEV" chgmode 7 1
+		;;
+	orange)
+		mcu_led "$UART_DEV" chgmode 5 1
+		;;
+	purple)
+		mcu_led "$UART_DEV" chgmode 6 1
+		;;
+	cyan)
+		mcu_led "$UART_DEV" chgmode 4 1
+		;;
+	breath_red)
+		mcu_led "$UART_DEV" chgmode 19 1
+		;;
+	breath_green)
+		mcu_led "$UART_DEV" chgmode 17 1
+		;;
+	breath_blue)
+		mcu_led "$UART_DEV" chgmode 18 1
+		;;
+	breath_white)
+		mcu_led "$UART_DEV" chgmode 23 1
+		;;
+	breath_orange)
+		mcu_led "$UART_DEV" chgmode 21 1
+		;;
+	breath_purple)
+		mcu_led "$UART_DEV" chgmode 22 1
+		;;
+	breath_cyan)
+		mcu_led "$UART_DEV" chgmode 20 1
+		;;
+	breath)
+		mcu_led "$UART_DEV" chgmode 24 1
+		;;
+	flow)
+		mcu_led "$UART_DEV" chgmode 8 1
+		;;
+	off)
+		mcu_led "$UART_DEV" chgmode 9 1
+		stick_led_pwr 0
+		;;
+	list)
+cat <<EOF
+off
+battery
+red
+green
+blue
+orange
+purple
+cyan
+white
+breath_red
+breath_green
+breath_blue
+breath_orange
+breath_purple
+breath_cyan
+breath_white
+breath
+flow
+EOF
+		;;
+esac

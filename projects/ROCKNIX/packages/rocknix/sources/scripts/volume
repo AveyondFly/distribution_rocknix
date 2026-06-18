@@ -8,6 +8,9 @@
 # to ensure as much performance as possible.
 . /etc/profile.d/001-functions
 
+### pipewire-pulse listens on TCP; pactl needs this when dbus registration fails
+export PULSE_SERVER="${PULSE_SERVER:-127.0.0.1:4713}"
+
 VOLUME=$(get_setting "audio.volume")
 MAX_VOLUME=100
 MIN_VOLUME=0

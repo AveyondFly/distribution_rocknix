@@ -1,0 +1,10 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+
+### Run after platform 050-audio (which always sets SPK on rk817 devices)
+cat <<'EOF' >/storage/.config/autostart/051-hdmi-speaker
+#!/bin/sh
+/usr/lib/autostart/quirks/bin/hdmi-speaker
+EOF
+chmod 755 /storage/.config/autostart/051-hdmi-speaker

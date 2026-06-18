@@ -22,11 +22,17 @@ PKG_PATCH_DIRS="${LINUX} mainline ${DEVICE} default"
 [[ "${DEVICE}" == SM* || "${BUILD_ANDROID_BOOTIMG}" == "yes" ]] && PKG_DEPENDS_TARGET+=" mkbootimg:host"
 
 case ${DEVICE} in
-  RK3326S|RK356X)
+  RK3326S)
     PKG_VERSION="1ba51b059f25533c5529b7f68186190b47d6a7b3"
     PKG_URL="https://github.com/rockchip-linux/kernel/archive/${PKG_VERSION}.tar.gz"
     PKG_GIT_CLONE_BRANCH="develop-6.6"
     PKG_PATCH_DIRS="${LINUX} ${DEVICE} default"
+    ;;
+  RK356X)
+    PKG_VERSION="0c1ad27d20bb8d84a41cd8ac913829a7bd934329"
+    PKG_URL="https://github.com/bmdhacks/kernel_rk3562/archive/${PKG_VERSION}.tar.gz"
+    PKG_GIT_CLONE_BRANCH="master"
+    PKG_PATCH_DIRS="${DEVICE} default"
     ;;
   RK3588)
     PKG_VERSION="b8e62bed74766b6c8c423a767b35495e78b64caf"
@@ -222,8 +228,8 @@ make_host() {
 }
 
 makeinstall_host() {
-  # Vendor Amlogic 5.15 headers must not replace the sysroot UAPI used by glibc.
-  if [ "${DEVICE}" = "S905" ]; then
+  # Vendor BSP headers must not replace the mainline sysroot UAPI used by glibc.
+  if [ "${DEVICE}" = "S905" -o "${DEVICE}" = "RK356X" ]; then
     return 0
   fi
   make \

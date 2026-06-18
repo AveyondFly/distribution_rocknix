@@ -7,7 +7,7 @@ PKG_VERSION="1.4.347"
 PKG_LICENSE="Apache-2.0"
 PKG_SITE="https://github.com/KhronosGroup/Vulkan-Tools"
 PKG_URL="https://github.com/KhronosGroup/Vulkan-tools/archive/v${PKG_VERSION}.tar.gz"
-PKG_DEPENDS_TARGET="toolchain vulkan-loader glslang:host Python3:host volk wayland"
+PKG_DEPENDS_TARGET="toolchain ${VULKAN} glslang:host Python3:host volk wayland"
 PKG_LONGDESC="This project provides Khronos official Vulkan Tools and Utilities."
 
 configure_package() {

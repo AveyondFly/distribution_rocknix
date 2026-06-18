@@ -1,0 +1,20 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+
+. /etc/profile
+
+LED_STATE=$(get_setting "led.color")
+if [ ! -n "${LED_STATE}" ]; then
+  LED_STATE="green"
+  set_setting "led.color" "green"
+fi
+/usr/bin/ledcontrol ${LED_STATE}
+
+ANALOG_STICK_LED_STATE=$(get_setting "analogsticks.led.color")
+if [ ! -n "${ANALOG_STICK_LED_STATE}" ]; then
+	ANALOG_STICK_LED_STATE="off"
+	set_setting "analogsticks.led.color" "off"
+fi
+
+/usr/bin/analog_sticks_ledcontrol_single ${ANALOG_STICK_LED_STATE}

@@ -48,11 +48,13 @@
   # For maximum cross compatbility
     PREFER_GLES="yes"
 
+    ROCKNIX_JOYPAD="no"
+
   # VULKAN_SUPPORT
-    VULKAN_SUPPORT="no"
+    VULKAN_SUPPORT="yes"
 
   # Vulkan implementation to use (vulkan-loader / no)
-  # VULKAN="vulkan-loader"
+    VULKAN="vulkan-loader"
 
   # Displayserver to use (wl / no)
     DISPLAYSERVER="wl"
@@ -67,16 +69,17 @@
   # for a list of additional drivers see packages/linux-drivers
   # Space separated list is supported,
   # e.g. ADDITIONAL_DRIVERS="DRIVER1 DRIVER2"
-  # RK3562 uses ARM official r52p0 bifrost DDK
-    ADDITIONAL_DRIVERS="rk3562-joystick rk915 RTL8812AU RTL8814AU RTL8821AU RTL8821CU RTL88x2BU RTL8851BU"
+  # RK3562 joystick and RK915 are provided by the dArkOS 5.10 kernel tree.
+    ADDITIONAL_DRIVERS="RTL8812AU RTL8814AU RTL8821AU RTL8821CU RTL88x2BU RTL8851BU"
 
   # Additional Firmware to use ( )
   # Space separated list is supported,
   # e.g. FIRMWARE=""
-    FIRMWARE=""
+    FIRMWARE="rk915-firmware"
 
   # Additional packages to install
-    ADDITIONAL_PACKAGES="libmali"
+    ADDITIONAL_PACKAGES="libmali libmali-vulkan mcu-led"
+    ADDITIONAL_PACKAGES_32BIT="libmali"
 
   # Debug tty path
     DEBUG_TTY="/dev/ttyS2"

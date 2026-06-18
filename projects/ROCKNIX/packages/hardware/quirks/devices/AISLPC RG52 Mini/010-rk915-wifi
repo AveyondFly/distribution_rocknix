@@ -1,0 +1,11 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+#
+# Load the in-tree RK915 driver when the active DTB declares rk915 WiFi.
+# Rev B (AIC8800) uses wifi_chip_type = "aic8800D80" and binds without this.
+
+CHIP=$(tr -d '\0' </proc/device-tree/wireless-wlan/wifi_chip_type 2>/dev/null)
+if [ "$CHIP" = "rk915" ]; then
+  modprobe rk915
+fi

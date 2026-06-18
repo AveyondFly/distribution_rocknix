@@ -23,8 +23,37 @@ then
   exit 1
 fi
 
+useConnectorPaneladj() {
+  [ "${HW_DEVICE}" = "RK356X" ]
+}
+
 log() {
   $DEBUG && echo "Info: ${*}" >>/var/log/display.log
+}
+
+getActiveConnector() {
+  modetest -M rockchip -c 2>/dev/null | awk '
+    $3 == "connected" && $4 ~ /^DSI/ { print $1; exit }
+  '
+}
+
+getConnectorValue() {
+  local prop="${1}"
+  local conn
+
+  conn="$(getActiveConnector)"
+  if [ -z "${conn}" ]
+  then
+    echo 50
+    return
+  fi
+
+  modetest -M rockchip -c -p 2>/dev/null | awk -v conn="${conn}" -v prop="${prop}" '
+    $1 == conn { active = 1; next }
+    active && /^[0-9]+/ && $1 != conn { exit }
+    active && $2 == prop ":" { found = 1; next }
+    active && found && $1 == "value:" { print $2; exit }
+  '
 }
 
 getValue() {
@@ -44,10 +73,15 @@ getValue() {
     fi
     echo ${MYVAL}
   else
-    MYVAL=$(modetest 2>/dev/null | awk -v prop="${1}" '
-      $2 == prop ":" { found = 1; next }
-      found && $1 == "value:" { print $2; exit }
-    ')
+    if useConnectorPaneladj
+    then
+      MYVAL=$(getConnectorValue "${1}")
+    else
+      MYVAL=$(modetest 2>/dev/null | awk -v prop="${1}" '
+        $2 == prop ":" { found = 1; next }
+        found && $1 == "value:" { print $2; exit }
+      ')
+    fi
     echo ${MYVAL:-50}
   fi
 }
@@ -61,6 +95,8 @@ getActiveCrtc() {
 }
 
 setViaSway() {
+  local response
+
   if ! command -v swaymsg >/dev/null 2>&1
   then
     return 1
@@ -76,22 +112,46 @@ setViaSway() {
     fi
   fi
 
-  swaymsg "paneladj * ${1} ${2}" >/dev/null 2>&1
+  response="$(swaymsg "paneladj * ${1} ${2}" 2>/dev/null)"
+  echo "${response}" | grep -Eq '"success"[[:space:]]*:[[:space:]]*true'
 }
 
-setViaModetest() {
-  CRTC=$(getActiveCrtc)
-  if [ -z "${CRTC}" ]
+setViaModetestConnector() {
+  local conn
+
+  conn="$(getActiveConnector)"
+  if [ -z "${conn}" ]
   then
     return 1
   fi
 
-  modetest -w "${CRTC}:${1}:${2}" >/dev/null 2>&1
+  modetest -M rockchip -w "${conn}:${1}:${2}" >/dev/null 2>&1
+}
+
+setViaModetestCrtc() {
+  local crtc
+
+  crtc="$(getActiveCrtc)"
+  if [ -z "${crtc}" ]
+  then
+    return 1
+  fi
+
+  modetest -w "${crtc}:${1}:${2}" >/dev/null 2>&1
 }
 
 setValue() {
   log "Set (${1}: ${2})"
-  if setViaSway "${1}" "${2}" || setViaModetest "${1}" "${2}"
+  if useConnectorPaneladj
+  then
+    if setViaModetestConnector "${1}" "${2}"
+    then
+      set_setting display.${1} ${2}
+    else
+      echo "ERROR: Failed to set ${1} to ${2} on DSI connector."
+      exit 1
+    fi
+  elif setViaSway "${1}" "${2}" || setViaModetestCrtc "${1}" "${2}"
   then
     set_setting display.${1} ${2}
   else

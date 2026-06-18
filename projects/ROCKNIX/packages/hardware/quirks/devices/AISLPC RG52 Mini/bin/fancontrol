@@ -1,0 +1,80 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+
+# RG52 Mini chassis fan: kernel manages speed via rockchip,temp-trips when
+# cooling.profile is auto. Other profiles take manual control via pwm1.
+
+. /etc/profile
+
+DEBUG=false
+COOLING_PROFILE=$(get_setting "cooling.profile")
+
+find_pwm_fan() {
+  for h in /sys/class/hwmon/hwmon*; do
+    [ "$(cat "${h}/name" 2>/dev/null)" = "pwmfan" ] || continue
+    echo "${h}/pwm1"
+    return 0
+  done
+  return 1
+}
+
+FAN_PWM="${DEVICE_PWM_FAN}"
+if [ -z "${FAN_PWM}" ] || [ ! -e "${FAN_PWM}" ]; then
+  FAN_PWM=$(find_pwm_fan)
+fi
+
+log $0 "Setting profile to ${COOLING_PROFILE}"
+
+if [ -z "${FAN_PWM}" ] || [ ! -e "${FAN_PWM}" ]; then
+  log $0 "pwm-fan hwmon not found, exiting."
+  exit 0
+fi
+
+if [ -e "/storage/.config/fancontrol.conf" ] && [ "${COOLING_PROFILE}" = "custom" ]; then
+  log $0 "Loading configuration file" 2>/dev/null
+  # shellcheck source=/dev/null
+  source /storage/.config/fancontrol.conf
+  if [ ! $? = 0 ]; then
+    WARN="Custom fan profile could not be loaded, defaulting to auto."
+    log $0 "${WARN}"
+    COOLING_PROFILE="auto"
+    set_setting cooling.profile auto
+  fi
+fi
+
+if [ ! "${COOLING_PROFILE}" = "custom" ]; then
+  if [ "${COOLING_PROFILE}" = "aggressive" ]; then
+    SPEEDS=(255 225 195)
+    TEMPS=(55000 45000 0)
+  elif [ "${COOLING_PROFILE}" = "moderate" ]; then
+    SPEEDS=(255 192 128 96)
+    TEMPS=(65000 55000 45000 0)
+  elif [ "${COOLING_PROFILE}" = "quiet" ]; then
+    SPEEDS=(255 192 128 96 64 48 32)
+    TEMPS=(70000 60000 55000 50000 49000 47000 0)
+  else
+    # auto: leave thermal management to the kernel pwm-fan driver
+    exit 0
+  fi
+fi
+
+log $0 "Enabling userspace fan control on ${FAN_PWM}."
+LASTSPEED=
+
+while true; do
+  INDEX=0
+  CPU_TEMP=$(awk '{total += $1; count++} END {printf "%d", total/count}' ${DEVICE_TEMP_SENSOR})
+  $DEBUG && log $0 "CPU TEMP: ${CPU_TEMP}" 2>/dev/null
+  for TEMP in "${TEMPS[@]}"; do
+    if (( "${CPU_TEMP}" > "${TEMP}" )) && \
+       [ ! "${LASTSPEED}" = "${SPEEDS[${INDEX}]}" ]; then
+      $DEBUG && log $0 "Setting PWM FAN to ${SPEEDS[${INDEX}]} (${TEMP})" 2>/dev/null
+      echo ${SPEEDS[${INDEX}]} >"${FAN_PWM}"
+      LASTSPEED=${SPEEDS[${INDEX}]}
+      break
+    fi
+    INDEX=$(( INDEX + 1 ))
+  done
+  sleep 2
+done

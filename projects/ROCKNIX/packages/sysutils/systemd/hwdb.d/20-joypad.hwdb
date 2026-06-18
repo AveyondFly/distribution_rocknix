@@ -7,7 +7,7 @@
 # odroidgo2_v11_joypad
 # odroidgo3_joypad
 # retrogame_joypad
-# retrogame_joypad
+# rk3562-joystick
 # ROCKNIX Gamepad
 # XU10 Gamepad
 # r33s_joypad
@@ -19,5 +19,6 @@
 
 evdev:name:*joypad*
 evdev:name:*Gamepad*
+evdev:name:*rk3562-joystick*
  ID_INPUT_TABLET=1
  ID_INPUT_TABLET_PAD=1

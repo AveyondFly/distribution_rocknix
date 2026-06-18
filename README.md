@@ -18,7 +18,7 @@ This is an **unofficial** fork of ROCKNIX that provides support for additional d
 - **mkxp-z**: RPG Maker XP
 - **mrp** (mrp-sa): MRP Games (feature phone game format)
 - **ONScripter** (onscripter-lr / onscripter-sa): Visual novel engine (libretro + standalone)
-- **ppsspp2021-sa**: PPSSPP 2021 standalone (default PSP on RK3326 / RK3566)
+- **ppsspp2021-sa**: PPSSPP 2021 standalone (default PSP on RK3326 / RK3566 / RK356X)
 - **PyMO/cpymo**: PyMO AVG game engine in C
 - **free-j2me**: J2ME SDL2 frontend standalone
 - **OpenBOR-ff**: OpenBOR-ff variant
@@ -74,10 +74,10 @@ Independent ports apps:
 | Skyworth | E900V22C(S905L3A) |
 | GameBox | X10(S905X4) |
 
-#### RK356X Devices (WIP)
-| Brand | Models |
-|-------|--------|
-| RO520C | LP3X-V10 |
+#### RK356X Devices
+| Brand | Models | Notes |
+|-------|--------|-------|
+| AISLPC | RG52 Mini | Single image; use `/flash/dtbselect` (Linux) or `DtbselectWin64.exe` (Windows) to pick the device tree. **RG52 Mini v1** is for the **RK915 WiFi** hardware revision; the default **RG52 Mini** entry is for other WiFi variants. |
 
 #### RK3326S Devices (6.6 BSP Kernel)
 | Brand | Models |
@@ -96,7 +96,7 @@ Independent ports apps:
 * Device to device and device to cloud sync with Syncthing and rclone.
 * VPN support with Wireguard, Tailscale, and ZeroTier.
 * Includes built-in support for scraping and retroachievements.
-* Screen color adjustment (brightness / contrast / saturation / hue) on RK3326 and RK3566 devices.
+* Screen color adjustment (brightness / contrast / saturation / hue) on RK3326, RK3566, and RK356X devices.
 
 ## User manuals
 

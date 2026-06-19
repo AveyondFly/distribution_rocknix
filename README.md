@@ -77,7 +77,7 @@ Independent ports apps:
 #### RK356X Devices
 | Brand | Models | Notes |
 |-------|--------|-------|
-| AISLPC | RG52 Mini | Single image; use `/flash/dtbselect` (Linux) or `DtbselectWin64.exe` (Windows) to pick the device tree. **RG52 Mini v1** is for the **RK915 WiFi** hardware revision; the default **RG52 Mini** entry is for other WiFi variants. |
+| AISLPC | RG52 Mini, RG43H Pro, RG43V Pro | Single image; use `/flash/dtbselect` (Linux) or `DtbselectWin64.exe` (Windows) to pick the device tree. **v1** entries (**RG52 Mini v1**, **RG43H Pro v1**, **RG43V Pro v1**) are for the **RK915 WiFi** hardware revision; the default entries are for other WiFi variants (AIC8800D80). |
 
 #### RK3326S Devices (6.6 BSP Kernel)
 | Brand | Models |

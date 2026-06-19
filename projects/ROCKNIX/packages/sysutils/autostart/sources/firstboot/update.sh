@@ -209,7 +209,7 @@ fi
 
 unzip -oq /usr/share/misc/datas.zip -d /storage
 
-if [ "$UPDATE_MODE" != "device_change" ] && [ "$HW_DEVICE" = "RK3566" ] && [ -f "/usr/config/modules/MOD_TOOLS/FixShutdown.sh" ]; then
+if [ "$UPDATE_MODE" != "device_change" ] && { [ "$HW_DEVICE" = "RK3566" ] || [ "$HW_DEVICE" = "RK356X" ]; } && [ -f "/usr/config/modules/MOD_TOOLS/FixShutdown.sh" ]; then
   bash "/usr/config/modules/MOD_TOOLS/FixShutdown.sh"
 fi
 

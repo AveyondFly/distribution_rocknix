@@ -46,8 +46,8 @@ find_rk817() {
   return 1
 }
 
-if ! dt_compatible | grep -q 'rockchip,rk3566'; then
-  log "This shutdown fix is only intended for RK3566 devices."
+if ! dt_compatible | grep -qE 'rockchip,rk3566|rockchip,rk3562'; then
+  log "This shutdown fix is only intended for RK3566/RK356X devices."
   log "Model: $(dt_model)"
   exit 1
 fi

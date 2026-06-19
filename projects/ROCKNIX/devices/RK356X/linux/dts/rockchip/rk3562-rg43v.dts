@@ -1,0 +1,11 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * AISLPC RG43V Pro — vertical shell variant, same board as RG43H Pro.
+ */
+
+#include "rk3562-rg43h.dts"
+
+/ {
+	model = "AISLPC RG43V Pro";
+	compatible = "aislpc,rg43v-pro", "aislpc,rg43h-pro", "rockchip,rk3562";
+};

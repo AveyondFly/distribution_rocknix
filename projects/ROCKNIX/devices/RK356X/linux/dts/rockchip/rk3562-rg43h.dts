@@ -1,0 +1,354 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2024 dArkOS Contributors
+ *
+ * AISLPC RG43H Pro — RK3562 gaming handheld with landscape 1024x768 DSI panel
+ */
+
+/dts-v1/;
+
+#include "rk3562.dtsi"
+#include "rk3562-linux.dtsi"
+#include "rk3562-rk817.dtsi"
+#include "rk3562-darkos.dtsi"
+
+/ {
+	model = "AISLPC RG43H Pro";
+	compatible = "aislpc,rg43h-pro", "rockchip,rk3562";
+
+	play_joystick {
+		compatible = "play_joystick";
+		io-channels = <&saradc0 2>, <&saradc0 3>,
+			      <&saradc0 5>, <&saradc0 6>,
+			      <&saradc1 1>, <&saradc1 4>,
+			      <&saradc1 0>, <&saradc1 2>,
+			      <&saradc1 3>, <&saradc1 5>,
+			      <&saradc1 6>, <&saradc1 7>;
+		io-channel-names = "button0", "button1",
+				   "button2", "button3",
+				   "l2-abs", "r2-abs",
+				   "left-key", "right-key",
+				   "down-key", "b-key",
+				   "x-key", "y-key";
+		joysticks_numbers = <2>;
+		left-stick-invert;
+		axis-min-value-mv = <250>;
+		axis-max-value-mv = <1550>;
+		axis-dead-zone-l = <790>;
+		axis-dead-zone-h = <1010>;
+		axis-division-value = <60>;
+		keyup-threshold-microvolt = <1800000>;
+		poll-interval = <16>;
+		debounce-interval = <100>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&gpio_key_pin &moto_gpio>;
+		moto-gpio = <&gpio3 RK_PA7 GPIO_ACTIVE_HIGH>;
+		moto-r-gpio = <&gpio3 RK_PB0 GPIO_ACTIVE_HIGH>;
+		gpio-key-num = <10>;
+		key-gpios = <&gpio1 RK_PC7 GPIO_ACTIVE_LOW>,
+			    <&gpio1 RK_PD0 GPIO_ACTIVE_LOW>,
+			    <&gpio1 RK_PD5 GPIO_ACTIVE_LOW>,
+			    <&gpio1 RK_PD6 GPIO_ACTIVE_LOW>,
+			    <&gpio1 RK_PD3 GPIO_ACTIVE_LOW>,
+			    <&gpio1 RK_PD7 GPIO_ACTIVE_LOW>,
+			    <&gpio1 RK_PD4 GPIO_ACTIVE_LOW>,
+			    <&gpio0 RK_PC5 GPIO_ACTIVE_LOW>,
+			    <&gpio0 RK_PC6 GPIO_ACTIVE_LOW>;
+		key-gpios-map = <0x136 0x220 0x137 0x131
+				 0x13a 0x13b 0x66  0x13d
+				 0x13e>;
+		l2-r2-min-value-mv = <50>;
+		l2-r2-max-value-mv = <800>;
+		l2-r2-division-value-mv = <75>;
+		l2_r2_abs;
+
+		left-key {
+			label = "left-key";
+			adc-chan = <0>;
+			linux,code = <0x222>;
+			press-threshold-microvolt = <600000>;
+		};
+
+		right-key {
+			label = "right-key";
+			adc-chan = <2>;
+			linux,code = <0x223>;
+			press-threshold-microvolt = <600000>;
+		};
+
+		down-key {
+			label = "down-key";
+			adc-chan = <3>;
+			linux,code = <0x221>;
+			press-threshold-microvolt = <600000>;
+		};
+
+		b-key {
+			label = "b-key";
+			adc-chan = <5>;
+			linux,code = <0x130>;
+			press-threshold-microvolt = <600000>;
+		};
+
+		x-key {
+			label = "x-key";
+			adc-chan = <6>;
+			linux,code = <0x133>;
+			press-threshold-microvolt = <600000>;
+		};
+
+		y-key {
+			label = "y-key";
+			adc-chan = <7>;
+			linux,code = <0x134>;
+			press-threshold-microvolt = <600000>;
+		};
+	};
+};
+
+/* ---- Per-device overrides ------------------------------------------------ */
+
+/* DSI panel — 1024x768 landscape init sequence */
+&dsi_panel {
+	pinctrl-names = "default";
+	pinctrl-0 = <&lcd_rst_gpio &lcd_powerctrl_gpio>;
+	enable-gpios = <&gpio0 RK_PB0 GPIO_ACTIVE_HIGH>;
+
+	panel-init-sequence = [
+		15 00 02 ee 01
+		15 00 02 ea 07
+		15 00 02 eb 12
+		15 00 02 0a 5e
+		15 00 02 13 14
+		15 00 02 17 35
+		15 00 02 1d 33
+		15 00 02 21 01
+		15 00 02 28 28
+		15 00 02 29 18
+		15 00 02 2a 63
+		15 00 02 2f f3
+		15 00 02 ee 02
+		15 00 02 39 a9
+		15 00 02 00 00
+		15 00 02 01 0d
+		15 00 02 02 12
+		15 00 02 03 08
+		15 00 02 04 0e
+		15 00 02 05 30
+		15 00 02 06 0b
+		15 00 02 07 0e
+		15 00 02 08 0f
+		15 00 02 09 0e
+		15 00 02 0a 11
+		15 00 02 0b 4e
+		15 00 02 0c 14
+		15 00 02 0d 1a
+		15 00 02 0e 2f
+		15 00 02 0f 36
+		15 00 02 10 3f
+		15 00 02 20 00
+		15 00 02 21 0d
+		15 00 02 22 12
+		15 00 02 23 08
+		15 00 02 24 0e
+		15 00 02 25 30
+		15 00 02 26 0b
+		15 00 02 27 0e
+		15 00 02 28 0f
+		15 00 02 29 0e
+		15 00 02 2a 11
+		15 00 02 2b 4e
+		15 00 02 2c 14
+		15 00 02 2d 1a
+		15 00 02 2e 2f
+		15 00 02 2f 36
+		15 00 02 30 3f
+		15 00 02 ee 04
+		15 00 02 00 05
+		15 00 02 01 01
+		15 00 02 02 80
+		15 00 02 03 04
+		15 00 02 04 00
+		15 00 02 06 06
+		15 00 02 07 05
+		15 00 02 08 1a
+		15 00 02 09 20
+		15 00 02 0a 0e
+		15 00 02 0b 00
+		15 00 02 20 40
+		15 00 02 24 08
+		15 00 02 ee 05
+		15 00 02 00 01
+		15 00 02 01 09
+		15 00 02 02 05
+		15 00 02 03 05
+		15 00 02 07 05
+		15 00 02 08 0d
+		15 00 02 09 00
+		15 00 02 0a 12
+		15 00 02 0b 14
+		15 00 02 0c 66
+		15 00 02 10 03
+		15 00 02 11 07
+		15 00 02 12 05
+		15 00 02 13 05
+		15 00 02 19 12
+		15 00 02 1a f6
+		15 00 02 40 55
+		15 00 02 41 00
+		15 00 02 43 03
+		15 00 02 44 01
+		15 00 02 45 81
+		15 00 02 46 06
+		15 00 02 47 00
+		15 00 02 ee 06
+		15 00 02 00 45
+		15 00 02 02 01
+		15 00 02 04 88
+		15 00 02 06 cd
+		15 00 02 08 ef
+		15 00 02 09 cd
+		15 00 02 0a ab
+		15 00 02 0b 89
+		15 00 02 0c 67
+		15 00 02 0d 45
+		15 00 02 0e 23
+		15 00 02 0f 01
+		15 00 02 ee 07
+		15 00 02 00 3c
+		15 00 02 01 3c
+		15 00 02 02 3c
+		15 00 02 03 3c
+		15 00 02 04 0d
+		15 00 02 05 3c
+		15 00 02 06 3c
+		15 00 02 07 3c
+		15 00 02 08 08
+		15 00 02 09 10
+		15 00 02 0a 12
+		15 00 02 0b 14
+		15 00 02 0c 16
+		15 00 02 0d 18
+		15 00 02 0e 1a
+		15 00 02 0f 1c
+		15 00 02 10 1e
+		15 00 02 11 04
+		15 00 02 12 00
+		15 00 02 13 3c
+		15 00 02 14 0c
+		15 00 02 15 3c
+		15 00 02 20 3c
+		15 00 02 21 3c
+		15 00 02 22 3c
+		15 00 02 23 3c
+		15 00 02 24 0d
+		15 00 02 25 3c
+		15 00 02 26 3c
+		15 00 02 27 3c
+		15 00 02 28 08
+		15 00 02 29 11
+		15 00 02 2a 13
+		15 00 02 2b 15
+		15 00 02 2c 17
+		15 00 02 2d 19
+		15 00 02 2e 1b
+		15 00 02 2f 1d
+		15 00 02 30 1f
+		15 00 02 31 05
+		15 00 02 32 01
+		15 00 02 33 3c
+		15 00 02 34 0c
+		15 00 02 35 3c
+		15 00 02 ee 08
+		15 00 02 10 00
+		15 00 02 12 dc
+		15 00 02 13 1c
+		15 00 02 17 23
+		15 00 02 18 20
+		15 00 02 20 80
+		15 00 02 ee 0f
+		15 00 02 00 01
+		15 00 02 01 00
+		15 00 02 ee 00
+		15 00 02 ea 00
+		15 00 02 eb 00
+		15 00 02 36 00
+		05 c8 01 11
+		05 14 01 29
+	];
+};
+
+/* Display timing — 1024x768 landscape at ~61 Hz */
+&dsi_timing0 {
+	clock-frequency = <61152000>;
+	hactive = <1024>;
+	vactive = <768>;
+	hfront-porch = <90>;
+	hsync-len = <80>;
+	hback-porch = <80>;
+	vfront-porch = <16>;
+	vsync-len = <8>;
+	vback-porch = <8>;
+	hsync-active = <0>;
+	vsync-active = <0>;
+	de-active = <0>;
+	pixelclk-active = <0>;
+};
+
+/* RK817 codec — RG43H uses higher headphone volume */
+&rk817_codec {
+	hp-volume = <60>;
+};
+
+/* RK817 PMIC — battery and charger parameters */
+&rk817 {
+	battery {
+		compatible = "rk817,battery";
+		ocv_table = <3500 3529 3570 3605 3644 3687 3738 3789
+			     3823 3847 3871 3903 3926 3957 3999 4027
+			     4036 4041 4054 4090 4175>;
+		design_capacity = <2906>;
+		design_qmax = <3197>;
+		bat_res = <102>;
+		sleep_enter_current = <300>;
+		sleep_exit_current = <300>;
+		sleep_filter_current = <100>;
+		power_off_thresd = <3500>;
+		zero_algorithm_vol = <3850>;
+		max_soc_offset = <60>;
+		monitor_sec = <5>;
+		sample_res = <10>;
+		virtual_power = <0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&charge_led_gpio>;
+		charge_red_gpio = <&gpio3 RK_PA1 GPIO_ACTIVE_HIGH>;
+		charge_green_gpio = <&gpio3 RK_PA0 GPIO_ACTIVE_HIGH>;
+		moto_gpio = <&gpio3 RK_PA7 GPIO_ACTIVE_HIGH>;
+		moto_r_gpio = <&gpio3 RK_PB0 GPIO_ACTIVE_HIGH>;
+	};
+
+	charger {
+		compatible = "rk817,charger";
+		min_input_voltage = <4500>;
+		max_input_current = <1500>;
+		max_chrg_current = <1500>;
+		max_chrg_voltage = <4280>;
+		chrg_term_mode = <0>;
+		chrg_finish_cur = <300>;
+		virtual_power = <0>;
+		dc_det_adc = <0>;
+		otg5v_suspend_enable = <1>;
+		extcon = <&u2phy>;
+		gate_function_disable = <1>;
+	};
+};
+
+/* ---- Per-device pinctrl additions ---------------------------------------- */
+
+&pinctrl {
+	lcd {
+		lcd_powerctrl_gpio: lcd-powerctrl-gpio {
+			rockchip,pins = <0 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+};

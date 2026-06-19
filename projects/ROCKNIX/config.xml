@@ -118,6 +118,10 @@
   <RK356X mkimage_options="dtb,extlinux,uboot" fdt="device_trees/rk3562-rg52mini.dtb" fdt_type="fdt" dtb_prefix="rockchip">
     <file>rk3562-rg52mini</file>
     <file>rk3562-rg52mini-v1</file>
+    <file>rk3562-rg43h</file>
+    <file>rk3562-rg43h-v1</file>
+    <file>rk3562-rg43v</file>
+    <file>rk3562-rg43v-v1</file>
   </RK356X>
   <RK3588 mkimage_options="dtb,extlinux,uboot" fdt="device_trees/rk3588s-gameforce-ace.dtb" fdt_type="fdt" dtb_prefix="rockchip">
     <file>rk3588s-gameforce-ace</file>

@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 /*
  * AISLPC RG43V Pro — vertical shell variant, same board as RG43H Pro.
+ *
+ * Left stick wiring matches RG43H, but landscape-oriented left-stick-invert
+ * is wrong for the vertical shell; drop it here so ABS_X/ABS_Y polarity
+ * matches user expectation on RG43V.
  */
 
 #include "rk3562-rg43h.dts"
@@ -8,4 +12,8 @@
 / {
 	model = "AISLPC RG43V Pro";
 	compatible = "aislpc,rg43v-pro", "aislpc,rg43h-pro", "rockchip,rk3562";
+
+	play_joystick {
+		/delete-property/ left-stick-invert;
+	};
 };

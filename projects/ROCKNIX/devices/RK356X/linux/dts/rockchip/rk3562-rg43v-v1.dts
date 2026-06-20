@@ -2,12 +2,15 @@
 /*
  * AISLPC RG43V Pro v1 - RK915 WiFi variant (vertical shell).
  *
- * Same board as RG43H Pro v1; inherits WiFi override from rg43h-v1.
+ * Inherits RG43V stick overrides (no left-stick-invert) and RK915 WiFi.
  */
 
-#include "rk3562-rg43h-v1.dts"
+#include "rk3562-rg43v.dts"
 
 / {
-	model = "AISLPC RG43V Pro";
 	compatible = "aislpc,rg43v-pro-v1", "aislpc,rg43v-pro", "aislpc,rg43h-pro", "rockchip,rk3562";
+};
+
+&{/wireless-wlan} {
+	wifi_chip_type = "rk915";
 };

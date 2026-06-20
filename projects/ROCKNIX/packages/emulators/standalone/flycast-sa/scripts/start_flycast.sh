@@ -64,12 +64,10 @@ else
 fi
 
   #Graphics Renderer
-        if [ "$GRENDERER" = "opengl" ]; then
-                sed -i '/^pvr.rend =/c\pvr.rend = 0' "${CONF_DIR}/${FLYCAST_INI}"
-        elif [ "$GRENDERER" = "vulkan" ]; then
+        if [ "$GRENDERER" = "vulkan" ]; then
                 sed -i '/^pvr.rend =/c\pvr.rend = 4' "${CONF_DIR}/${FLYCAST_INI}"
         else
-		sed -i '/^pvr.rend =/c\pvr.rend = @GRENDERER@' "${CONF_DIR}/${FLYCAST_INI}"
+                sed -i '/^pvr.rend =/c\pvr.rend = 0' "${CONF_DIR}/${FLYCAST_INI}"
 	fi
 
 #Retroachievements

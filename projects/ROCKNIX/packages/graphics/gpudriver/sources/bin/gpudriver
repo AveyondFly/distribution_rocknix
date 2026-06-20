@@ -52,7 +52,7 @@ load_driver() {
 
 case "$1" in
   "--options")
-    echo "panfrost libmali"
+    echo "@GPU_OPTIONS@"
     ;;
   "--start")
     get_current_driver

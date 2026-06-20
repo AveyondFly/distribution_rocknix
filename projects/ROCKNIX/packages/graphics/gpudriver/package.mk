@@ -13,27 +13,37 @@ PKG_LONGDESC="GPU driver util for switching between panfrost / panthor and libma
 post_makeinstall_target() {
   mkdir -p "${INSTALL}/usr/bin/"
   cp -v "${PKG_BUILD}/bin/gpudriver" "${INSTALL}/usr/bin/"
-  
+
   # set the correct mesa pan kernel driver module based on device
   case ${DEVICE} in
     RK3588)
       PAN="panthor"
+      GPU_OPTIONS="panfrost libmali"
       DTB_OVERLAY_LOAD="\/usr\/bin\/dtb_overlay set driver-gpu driver-gpu-panthor.dtbo"
       DTB_OVERLAY_UNLOAD="\/usr\/bin\/dtb_overlay set driver-gpu None"
     ;;
     S922X)
       PAN="panfrost"
+      GPU_OPTIONS="panfrost libmali"
       DTB_OVERLAY_LOAD="\/usr\/bin\/dtb_overlay set driver-gpu driver-gpu-panfrost.dtbo"
       DTB_OVERLAY_UNLOAD="\/usr\/bin\/dtb_overlay set driver-gpu None"
     ;;
+    RK356X)
+      PAN="panfrost"
+      GPU_OPTIONS="libmali"
+      DTB_OVERLAY_LOAD=""
+      DTB_OVERLAY_UNLOAD=""
+    ;;
     *)
       PAN="panfrost"
-      DTB_OVERLAY=""
+      GPU_OPTIONS="panfrost libmali"
+      DTB_OVERLAY_LOAD=""
       DTB_OVERLAY_UNLOAD=""
     ;;
   esac
-  
+
   sed -e "s/@PAN@/${PAN}/g" \
+      -e "s/@GPU_OPTIONS@/${GPU_OPTIONS}/g" \
       -i  ${INSTALL}/usr/bin/gpudriver
 
   sed -e "s/@DTB_OVERLAY_LOAD@/${DTB_OVERLAY_LOAD}/g" \

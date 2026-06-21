@@ -129,7 +129,7 @@
 		button-adc-scale = <2>;
 
 		/* adc deadzone range (minimum should be around 12%) */
-		button-adc-deadzone = <206>;
+		button-adc-deadzone = <64>;
 
 		/* specifies fuzz value that is used to filter noise from
 		   the event stream. (around 3%) */

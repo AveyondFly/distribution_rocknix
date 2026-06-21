@@ -245,7 +245,12 @@ ALL_DEVICES: Dict[str, DtbEntry] = {
     "稀范科技 XF28": DtbEntry("rk3326-xifan-xf28.dtb", 101),
     "稀范科技 DC35V": DtbEntry("rk3326-xifan-dc35v.dtb", 101),
     "稀范科技 DC40V": DtbEntry("rk3326-xifan-dc40v.dtb", 101),
+    "稀范科技 DC45V": DtbEntry("rk3326-xifan-dc45v.dtb", 202),
     "稀范科技 R36Max2": DtbEntry("rk3326-xifan-r36max2.dtb", 202),
+    "稀范科技 RF35H": DtbEntry("rk3326-xifan-rf35h.dtb", 101),
+    "稀范科技 RF40H": DtbEntry("rk3326-xifan-rf40h.dtb", 101),
+    "稀范科技 RF45V": DtbEntry("rk3326-xifan-rf45v.dtb", 202),
+    "稀范科技 XF45V": DtbEntry("rk3326-xifan-xf45v.dtb", 202),
 
     # 安伯尼克
     "安伯尼克 RG351M": DtbEntry("rk3326-anbernic-rg351m.dtb", 101),
@@ -398,7 +403,12 @@ DEVICE_TRANSLATIONS = {
     "稀范科技 XF28": "Xifan XF28",
     "稀范科技 DC35V": "Xifan DC35V",
     "稀范科技 DC40V": "Xifan DC40V",
+    "稀范科技 DC45V": "Xifan DC45V",
     "稀范科技 R36Max2": "Xifan R36Max2",
+    "稀范科技 RF35H": "Xifan RF35H",
+    "稀范科技 RF40H": "Xifan RF40H",
+    "稀范科技 RF45V": "Xifan RF45V",
+    "稀范科技 XF45V": "Xifan XF45V",
 
     # 安伯尼克
     "安伯尼克 RG351M": "Anbernic RG351M",

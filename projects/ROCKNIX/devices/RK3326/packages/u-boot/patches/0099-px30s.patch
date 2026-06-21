@@ -1,0 +1,1069 @@
+From 1ca0cb53010dd157cbf36089726c47d80940630e Mon Sep 17 00:00:00 2001
+From: root <root@ubuntu.com>
+Date: Wed, 8 Apr 2026 20:45:51 +0800
+Subject: [PATCH] rockchip: port PX30S support from next-dev
+
+Add Rockchip SoC identification (cpu.h/cpu.c) with soc_is_px30s() based on
+DDR GRF chip ID. Extend px30 board code for VCCIO6, eMMC drive strength,
+USB2PHY GRF tuning, and FDT fixups (OPP tables, SCMI clocks, regulators)
+when CONFIG_OF_BOARD_FIXUP is enabled.
+
+Implement PX30S OTP clock programming in clk_px30 and RK3308BS-style OTP read
+path in rockchip-otp, plus rockchip,px30s-otp compatible string.
+
+Made-with: Cursor
+---
+ arch/arm/include/asm/arch-rockchip/cpu.h      | 123 +++++
+ arch/arm/include/asm/arch-rockchip/cru_px30.h |  12 +
+ arch/arm/mach-rockchip/Makefile               |   2 +
+ arch/arm/mach-rockchip/cpu.c                  |  18 +
+ arch/arm/mach-rockchip/px30/px30.c            | 486 ++++++++++++++++++
+ drivers/clk/rockchip/clk_px30.c               |  86 ++++
+ drivers/misc/rockchip-otp.c                   | 151 ++++++
+ 7 files changed, 878 insertions(+)
+ create mode 100644 arch/arm/include/asm/arch-rockchip/cpu.h
+ create mode 100644 arch/arm/mach-rockchip/cpu.c
+
+diff --git a/arch/arm/include/asm/arch-rockchip/cpu.h b/arch/arm/include/asm/arch-rockchip/cpu.h
+new file mode 100644
+index 00000000000..89629170312
+--- /dev/null
++++ b/arch/arm/include/asm/arch-rockchip/cpu.h
+@@ -0,0 +1,123 @@
++/* SPDX-License-Identifier: GPL-2.0+  */
++/*
++ * Rockchip Electronics Co., Ltd.
++ */
++
++#ifndef __ASM_ARCH_ROCKCHIP_CPU_H
++#define __ASM_ARCH_ROCKCHIP_CPU_H
++
++#include <asm/io.h>
++#include <dm/device.h>
++
++#define ROCKCHIP_CPU_MASK       0xffff0000
++#define ROCKCHIP_CPU_PX30	0x33260000
++#define ROCKCHIP_CPU_RK312X     0x31260000
++#define ROCKCHIP_CPU_RK3288     0x32880000
++#define ROCKCHIP_CPU_RK3308	0x33080000
++#define ROCKCHIP_CPU_RK3566	0x35660000
++#define ROCKCHIP_CPU_RK3568	0x35680000
++
++#define ROCKCHIP_SOC_MASK	(ROCKCHIP_CPU_MASK | 0xff)
++#define ROCKCHIP_SOC_PX30	(ROCKCHIP_CPU_PX30 | 0x00)
++#define ROCKCHIP_SOC_PX30S	(ROCKCHIP_CPU_PX30 | 0x01)
++#define ROCKCHIP_SOC_RK3126     (ROCKCHIP_CPU_RK312X | 0x00)
++#define ROCKCHIP_SOC_RK3126B    (ROCKCHIP_CPU_RK312X | 0x10)
++#define ROCKCHIP_SOC_RK3126C    (ROCKCHIP_CPU_RK312X | 0x20)
++#define ROCKCHIP_SOC_RK3128     (ROCKCHIP_CPU_RK312X | 0x01)
++#define ROCKCHIP_SOC_RK3288     (ROCKCHIP_CPU_RK3288 | 0x00)
++#define ROCKCHIP_SOC_RK3288W    (ROCKCHIP_CPU_RK3288 | 0x01)
++#define ROCKCHIP_SOC_RK3308	(ROCKCHIP_CPU_RK3308 | 0x00)
++#define ROCKCHIP_SOC_RK3308B	(ROCKCHIP_CPU_RK3308 | 0x01)
++#define ROCKCHIP_SOC_RK3308BS	(ROCKCHIP_CPU_RK3308 | 0x02)
++#define ROCKCHIP_SOC_RK3566	(ROCKCHIP_CPU_RK3566 | 0x00)
++#define ROCKCHIP_SOC_RK3566PRO	(ROCKCHIP_CPU_RK3566 | 0x01)
++#define ROCKCHIP_SOC_RK3568	(ROCKCHIP_CPU_RK3568 | 0x00)
++
++static inline unsigned long rockchip_get_cpu_version(void)
++{
++#if defined(CONFIG_ROCKCHIP_RK3568)
++#define PMUGRF_SOC_CON15	0xfdc20100
++	if (readl(PMUGRF_SOC_CON15) & GENMASK(15, 14))
++		return 1;
++	else
++		return 0;
++#else
++	return 0;
++#endif
++}
++
++static inline int rockchip_soc_id(void)
++{
++#if defined(CONFIG_ROCKCHIP_PX30)
++	u32 v = readl(0xFF630004);
++
++	/* The CHIP_ID is stored in DDRGRF CON1[15:14]
++	 * PX30:  0x00
++	 * PX30S: 0x03
++	 */
++	if (((v >> 14) & 0x03) == 0x03)
++		return ROCKCHIP_SOC_PX30S;
++	else
++		return ROCKCHIP_SOC_PX30;
++#elif defined(CONFIG_ROCKCHIP_RK3288)
++	/* RK3288W HDMI Revision ID is 0x1A */
++	if (readl(0xFF980004) == 0x1A)
++		return ROCKCHIP_SOC_RK3288W;
++	else
++		return ROCKCHIP_SOC_RK3288;
++#elif defined(CONFIG_ROCKCHIP_RK3308)
++	/*
++	 * The CHIP_ID is stored in GRF_CHIP_ID:
++	 * RK3308:  0xcea (3306 in decimal)
++	 * RK3308B: 0x3308
++	 * RK3308BS: 0x3308c
++	 */
++	u32 v = readl(0xFF000800);
++
++	if (v == 3306)
++		return ROCKCHIP_SOC_RK3308;
++	else if (v == 0x3308c)
++		return ROCKCHIP_SOC_RK3308BS;
++	else
++		return ROCKCHIP_SOC_RK3308B;
++#elif defined(CONFIG_ROCKCHIP_RK3568)
++	if (of_machine_is_compatible("rockchip,rk3566"))
++		return ROCKCHIP_SOC_RK3566;
++	else
++		return ROCKCHIP_SOC_RK3568;
++#else
++	return 0;
++#endif
++}
++
++int board_soc_id(void);
++void board_soc_id_init(int id);
++
++#define ROCKCHIP_SOC(id, ID) \
++static inline bool soc_is_##id(void) \
++{ \
++	int soc_id = rockchip_soc_id(); \
++	int bsoc_id = board_soc_id(); \
++	if (bsoc_id) \
++		return ((bsoc_id & ROCKCHIP_SOC_MASK) == ROCKCHIP_SOC_ ##ID); \
++	if (soc_id) \
++		return ((soc_id & ROCKCHIP_SOC_MASK) == ROCKCHIP_SOC_ ##ID); \
++	return false; \
++}
++
++ROCKCHIP_SOC(px30, PX30)
++ROCKCHIP_SOC(px30s, PX30S)
++ROCKCHIP_SOC(rk3126, RK3126)
++ROCKCHIP_SOC(rk3126b, RK3126B)
++ROCKCHIP_SOC(rk3126c, RK3126C)
++ROCKCHIP_SOC(rk3128, RK3128)
++ROCKCHIP_SOC(rk3288, RK3288)
++ROCKCHIP_SOC(rk3288w, RK3288W)
++ROCKCHIP_SOC(rk3308, RK3308)
++ROCKCHIP_SOC(rk3308b, RK3308B)
++ROCKCHIP_SOC(rk3308bs, RK3308BS)
++ROCKCHIP_SOC(rk3566, RK3566)
++ROCKCHIP_SOC(rk3566pro, RK3566PRO)
++ROCKCHIP_SOC(rk3568, RK3568)
++
++#endif
+diff --git a/arch/arm/include/asm/arch-rockchip/cru_px30.h b/arch/arm/include/asm/arch-rockchip/cru_px30.h
+index 408fdd66635..202e97c7b18 100644
+--- a/arch/arm/include/asm/arch-rockchip/cru_px30.h
++++ b/arch/arm/include/asm/arch-rockchip/cru_px30.h
+@@ -433,6 +433,18 @@ enum {
+ 	CLK_SARADC_DIV_CON_SHIFT	= 0,
+ 	CLK_SARADC_DIV_CON_MASK		= 0x7ff,
+ 
++	/* CRU_CLK_SEL56_CON */
++	CLK_OTP_USR_DIV_CON_SHIFT	= 4,
++	CLK_OTP_USR_DIV_CON_MASK	= 0x3 << CLK_OTP_USR_DIV_CON_SHIFT,
++	CLK_OTP_DIV_CON_SHIFT		= 0,
++	CLK_OTP_DIV_CON_MASK		= 0x7,
++	CLK_OTP_S_SEL_SHIFT		= 8,
++	CLK_OTP_S_SEL_MASK		= 1 << CLK_OTP_S_SEL_SHIFT,
++	CLK_OTP_S_SEL_XIN24M		= 0,
++	CLK_OTP_S_SEL_GPLL,
++	CLK_OTP_S_DIV_CON_SHIFT		= 0,
++	CLK_OTP_S_DIV_CON_MASK		= 0x1FF,
++
+ 	/* CRU_CLK_GATE10_CON */
+ 	CLK_I2S1_OUT_MCLK_PAD_MASK	= 0x1 << 9,
+ 	CLK_I2S1_OUT_MCLK_PAD_ENABLE	= 0x1 << 9,
+diff --git a/arch/arm/mach-rockchip/Makefile b/arch/arm/mach-rockchip/Makefile
+index ae15a9f8a2d..46684ae3cf7 100644
+--- a/arch/arm/mach-rockchip/Makefile
++++ b/arch/arm/mach-rockchip/Makefile
+@@ -15,6 +15,8 @@ obj-tpl-$(CONFIG_ROCKCHIP_PX30) += px30-board-tpl.o
+ 
+ obj-spl-$(CONFIG_ROCKCHIP_RK3036) += rk3036-board-spl.o
+ 
++obj-y += cpu.o
++
+ ifeq ($(CONFIG_XPL_BUILD)$(CONFIG_TPL_BUILD),)
+ 
+ # Always include boot_mode.o, as we bypass it (i.e. turn it off)
+diff --git a/arch/arm/mach-rockchip/cpu.c b/arch/arm/mach-rockchip/cpu.c
+new file mode 100644
+index 00000000000..90730271369
+--- /dev/null
++++ b/arch/arm/mach-rockchip/cpu.c
+@@ -0,0 +1,18 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * (C) Copyright 2025 Rockchip Electronics Co., Ltd
++ */
++
++#include <asm/arch-rockchip/cpu.h>
++
++static int bsoc_id;
++
++void board_soc_id_init(int id)
++{
++	bsoc_id = id;
++}
++
++int board_soc_id(void)
++{
++	return bsoc_id;
++}
+diff --git a/arch/arm/mach-rockchip/px30/px30.c b/arch/arm/mach-rockchip/px30/px30.c
+index 5a5c119328f..38ff0f65509 100644
+--- a/arch/arm/mach-rockchip/px30/px30.c
++++ b/arch/arm/mach-rockchip/px30/px30.c
+@@ -17,9 +17,14 @@
+ #include <asm/arch-rockchip/hardware.h>
+ #include <asm/arch-rockchip/uart.h>
+ #include <asm/arch-rockchip/clock.h>
++#include <asm/arch-rockchip/cpu.h>
+ #include <asm/arch-rockchip/cru_px30.h>
+ #include <dt-bindings/clock/px30-cru.h>
++#include <errno.h>
+ #include <linux/bitfield.h>
++#include <linux/bitops.h>
++#include <linux/sizes.h>
++#include <string.h>
+ 
+ const char * const boot_devices[BROM_LAST_BOOTSOURCE + 1] = {
+ 	[BROM_BOOTSOURCE_EMMC] = "/mmc@ff390000",
+@@ -55,9 +60,15 @@ struct mm_region *mem_map = px30_mem_map;
+ #define CRU_BASE			0xff2b0000
+ #define PMUCRU_BASE			0xff2bc000
+ #define VIDEO_PHY_BASE			0xff2e0000
++#define USBPHY_GRF_BASE			0xff2c0000
+ #define SERVICE_CORE_ADDR		0xff508000
+ #define DDR_FW_BASE			0xff534000
+ 
++#define GRF_GPIO1A_DS2			0x0090
++#define GRF_GPIO1B_DS2			0x0094
++#define GRF_GPIO1A_E			0x00F0
++#define GRF_GPIO1B_E			0x00F4
++
+ #define FW_DDR_CON			0x40
+ 
+ #define QOS_PRIORITY			0x08
+@@ -243,6 +254,43 @@ enum {
+ 	GPIO0C0_PMU_DEBUG3,
+ };
+ 
++enum {
++	IOVSEL6_CTRL_SHIFT	= 0,
++	IOVSEL6_CTRL_MASK	= BIT(0),
++	VCCIO6_SEL_BY_GPIO	= 0,
++	VCCIO6_SEL_BY_IOVSEL6,
++
++	IOVSEL6_SHIFT		= 1,
++	IOVSEL6_MASK		= BIT(1),
++	VCCIO6_3V3		= 0,
++	VCCIO6_1V8,
++};
++
++#define GPIO0_B6		14
++#define GPIO0_BASE		0xff040000
++#define GPIO_SWPORTA_DDR	0x4
++#define GPIO_EXT_PORTA		0x50
++
++static int grf_vccio6_vsel_init(void)
++{
++	static struct px30_grf * const grf = (void *)GRF_BASE;
++	u32 val;
++
++	val = readl(GPIO0_BASE + GPIO_SWPORTA_DDR);
++	val &= ~BIT(GPIO0_B6);
++	writel(val, GPIO0_BASE + GPIO_SWPORTA_DDR);
++
++	if (readl(GPIO0_BASE + GPIO_EXT_PORTA) & BIT(GPIO0_B6))
++		val = VCCIO6_SEL_BY_IOVSEL6 << IOVSEL6_CTRL_SHIFT |
++		      VCCIO6_1V8 << IOVSEL6_SHIFT;
++	else
++		val = VCCIO6_SEL_BY_IOVSEL6 << IOVSEL6_CTRL_SHIFT |
++		      VCCIO6_3V3 << IOVSEL6_SHIFT;
++	rk_clrsetreg(&grf->io_vsel, IOVSEL6_CTRL_MASK | IOVSEL6_MASK, val);
++
++	return 0;
++}
++
+ int arch_cpu_init(void)
+ {
+ 	static struct px30_grf * const grf = (void *)GRF_BASE;
+@@ -254,6 +302,16 @@ int arch_cpu_init(void)
+ 	/* Disable the ddr secure region setting to make it non-secure */
+ 	writel(0x0, DDR_FW_BASE + FW_DDR_CON);
+ 
++	if (soc_is_px30s()) {
++		/* set the emmc data(GPIO1A0-A7) drive strength to 14.2ma */
++		writel(0xFFFF0000, GRF_BASE + GRF_GPIO1A_DS2);
++		writel(0xFFFFFFFF, GRF_BASE + GRF_GPIO1A_E);
++		/* set the emmc clock(GPIO1B1) drive strength to 23.7ma */
++		/* set the emmc cmd(GPIO1B2) drive strength to 14.2ma */
++		writel(0x00060002, GRF_BASE + GRF_GPIO1B_DS2);
++		writel(0x003C0038, GRF_BASE + GRF_GPIO1B_E);
++	}
++
+ 	/* Set cpu qos priority */
+ 	writel(QOS_PRIORITY_LEVEL(1, 1), SERVICE_CORE_ADDR + QOS_PRIORITY);
+ 
+@@ -298,6 +356,18 @@ int arch_cpu_init(void)
+ 	/* Clear the force_jtag */
+ 	rk_clrreg(&grf->cpu_con[1], 1 << 7);
+ 
++	grf_vccio6_vsel_init();
++
++	if (soc_is_px30s()) {
++		/* set usb2phy parameter */
++		writel(0x04, USBPHY_GRF_BASE + 0x8000);
++		writel(0x46, USBPHY_GRF_BASE + 0x8004);
++		writel(0xdb, USBPHY_GRF_BASE + 0x8008);
++		writel(0x04, USBPHY_GRF_BASE + 0x8400);
++		writel(0x46, USBPHY_GRF_BASE + 0x8404);
++		writel(0xdb, USBPHY_GRF_BASE + 0x8408);
++	}
++
+ 	/* Make TSADC and WDT trigger a first global reset */
+ 	clrsetbits_le32(&cru->glb_rst_con, 0x3, 0x3);
+ 
+@@ -448,6 +518,422 @@ void board_debug_uart_init(void)
+ }
+ #endif /* CONFIG_DEBUG_UART_BOARD_INIT */
+ 
++static int fdt_fixup_cpu_opp_table(const void *blob)
++{
++	int opp_node, cpu_node, sub_node;
++	int len;
++	u32 phandle;
++	u32 *pp;
++
++	opp_node = fdt_path_offset(blob, "/px30s-cpu0-opp-table");
++	if (opp_node < 0) {
++		printf("Failed to get px30s-cpu0-opp-table node\n");
++		return -EINVAL;
++	}
++
++	phandle = fdt_get_phandle(blob, opp_node);
++	if (!phandle) {
++		printf("Failed to get cpu opp table phandle\n");
++		return -EINVAL;
++	}
++
++	cpu_node = fdt_path_offset(blob, "/cpus");
++	if (cpu_node < 0) {
++		printf("Failed to get cpus node\n");
++		return -EINVAL;
++	}
++
++	fdt_for_each_subnode(sub_node, blob, cpu_node) {
++		pp = (u32 *)fdt_getprop(blob, sub_node, "operating-points-v2",
++					&len);
++		if (!pp)
++			continue;
++		pp[0] = cpu_to_fdt32(phandle);
++	}
++
++	return 0;
++}
++
++static int fdt_fixup_dmc_opp_table(const void *blob)
++{
++	int opp_node, dmc_node;
++	int len;
++	u32 phandle;
++	u32 *pp;
++
++	opp_node = fdt_path_offset(blob, "/px30s-dmc-opp-table");
++	if (opp_node < 0) {
++		printf("Failed to get px30s-dmc-opp-table node\n");
++		return -EINVAL;
++	}
++
++	phandle = fdt_get_phandle(blob, opp_node);
++	if (!phandle) {
++		printf("Failed to get dmc opp table phandle\n");
++		return -EINVAL;
++	}
++
++	dmc_node = fdt_path_offset(blob, "/dmc");
++	if (dmc_node < 0) {
++		printf("Failed to get dmc node\n");
++		return -EINVAL;
++	}
++
++	pp = (u32 *)fdt_getprop(blob, dmc_node, "operating-points-v2", &len);
++	if (!pp)
++		return 0;
++	pp[0] = cpu_to_fdt32(phandle);
++
++	return 0;
++}
++
++static int fdt_fixup_gpu_opp_table(const void *blob)
++{
++	int opp_node, gpu_node;
++	int len;
++	u32 phandle;
++	u32 *pp;
++
++	opp_node = fdt_path_offset(blob, "/px30s-gpu-opp-table");
++	if (opp_node < 0) {
++		printf("Failed to get px30s-gpu-opp-table node\n");
++		return -EINVAL;
++	}
++
++	phandle = fdt_get_phandle(blob, opp_node);
++	if (!phandle) {
++		printf("Failed to get gpu opp table phandle\n");
++		return -EINVAL;
++	}
++
++	gpu_node = fdt_path_offset(blob, "/gpu@ff400000");
++	if (gpu_node < 0) {
++		printf("Failed to get gpu node\n");
++		return -EINVAL;
++	}
++
++	pp = (u32 *)fdt_getprop(blob, gpu_node, "operating-points-v2", &len);
++	if (!pp)
++		return 0;
++	pp[0] = cpu_to_fdt32(phandle);
++
++	return 0;
++}
++
++static void fixup_pcfg_drive_strength(const void *blob, int noffset)
++{
++	u32 *ds, *dss;
++	u32 val;
++
++	dss = (u32 *)fdt_getprop(blob, noffset, "drive-strength-s", NULL);
++	if (!dss)
++		return;
++
++	val = dss[0];
++	ds = (u32 *)fdt_getprop(blob, noffset, "drive-strength", NULL);
++	if (ds) {
++		ds[0] = val;
++	} else {
++		if (fdt_setprop((void *)blob, noffset,
++				"drive-strength", &val, 4) < 0)
++			printf("Failed to add drive-strength prop\n");
++	}
++}
++
++static int fdt_fixup_pcfg(const void *blob)
++{
++	int depth1_node;
++	int depth2_node;
++	int root_node;
++
++	root_node = fdt_path_offset(blob, "/");
++	if (root_node < 0)
++		return root_node;
++
++	fdt_for_each_subnode(depth1_node, blob, root_node) {
++		debug("depth1: %s\n", fdt_get_name(blob, depth1_node, NULL));
++		fixup_pcfg_drive_strength(blob, depth1_node);
++		fdt_for_each_subnode(depth2_node, blob, depth1_node) {
++			debug("    depth2: %s\n",
++			      fdt_get_name(blob, depth2_node, NULL));
++			fixup_pcfg_drive_strength(blob, depth2_node);
++		}
++	}
++
++	return 0;
++}
++
++static int fdt_fixup_bus_apll(const void *blob)
++{
++	char path[] = "/bus-apll";
++
++	do_fixup_by_path((void *)blob, path, "status", "disabled",
++			 sizeof("disabled"), 0);
++
++	return 0;
++}
++
++static int fdt_fixup_cpu_gpu_clk(const void *blob)
++{
++	int cpu_node, gpu_node, scmi_clk_node;
++	int len;
++	u32 phandle;
++	u32 *pp;
++
++	scmi_clk_node = fdt_path_offset(blob, "/firmware/scmi/protocol@14");
++	if (scmi_clk_node < 0) {
++		printf("Failed to get px30s scmi clk node\n");
++		return -EINVAL;
++	}
++
++	phandle = fdt_get_phandle(blob, scmi_clk_node);
++	if (!phandle)
++		return 0;
++
++	cpu_node = fdt_path_offset(blob, "/cpus/cpu@0");
++	if (cpu_node < 0) {
++		printf("Failed to get px30s cpu node\n");
++		return -EINVAL;
++	}
++
++	pp = (u32 *)fdt_getprop(blob, cpu_node, "clocks", &len);
++	if (!pp)
++		return 0;
++	if ((len / 8) >= 1) {
++		pp[0] = cpu_to_fdt32(phandle);
++		pp[1] = cpu_to_fdt32(0);
++	}
++
++	gpu_node = fdt_path_offset(blob, "/gpu@ff400000");
++	if (gpu_node < 0) {
++		printf("Failed to get px30s gpu node\n");
++		return -EINVAL;
++	}
++
++	pp = (u32 *)fdt_getprop(blob, gpu_node, "clocks", &len);
++	if (!pp)
++		return 0;
++	if ((len / 8) >= 1) {
++		pp[0] = cpu_to_fdt32(phandle);
++		pp[1] = cpu_to_fdt32(1);
++	}
++
++	return 0;
++}
++
++static int fdt_fixup_i2s_soft_reset(const void *blob)
++{
++	int node;
++	int len;
++	u32 *pp;
++
++	node = fdt_path_offset(blob, "/i2s@ff060000");
++	if (node < 0) {
++		printf("Failed to get px30s i2s node\n");
++		return -EINVAL;
++	}
++
++	pp = (u32 *)fdt_getprop(blob, node, "resets", &len);
++	if (!pp)
++		return 0;
++	if ((len / 8) >= 2)
++		pp[3] = cpu_to_fdt32(128);
++
++	return 0;
++}
++
++#define RKPM_SLP_ARMPD			BIT(0)
++#define RKPM_SLP_ARMOFF			BIT(1)
++#define RKPM_SLP_ARMOFF_DDRPD		BIT(2)
++#define RKPM_SLP_ARMOFF_LOGOFF		BIT(3)
++
++static int fdt_fixup_rockchip_suspend(const void *blob)
++{
++	int suspend_node;
++	u32 *data, mode;
++
++	suspend_node = fdt_path_offset(blob, "/rockchip-suspend");
++	if (suspend_node < 0) {
++		printf("Failed to get rockchip-suspend node\n");
++		return -EINVAL;
++	}
++
++	data = (u32 *)fdt_getprop(blob, suspend_node,
++				  "rockchip,sleep-mode-config", NULL);
++	if (!data)
++		return 0;
++
++	mode = fdt32_to_cpu(*data);
++	mode &= ~RKPM_SLP_ARMOFF_LOGOFF;
++	mode |= RKPM_SLP_ARMOFF;
++	*data = cpu_to_fdt32(mode);
++
++	if (fdt_setprop((void *)blob, suspend_node,
++			"rockchip,sleep-mode-config", data, sizeof(*data)))
++		printf("Failed to set rockchip,sleep-mode-config = 0x%x\n", mode);
++	else
++		debug("set rockchip,sleep-mode-config = 0x%x\n", mode);
++
++	return 0;
++}
++
++static void fixup_regulators_px30s(const void *blob, int reg_node)
++{
++	const char *name;
++	int mem_node;
++	u32 suspend;
++	u32 *min, *max;
++
++	min = (u32 *)fdt_getprop(blob, reg_node,
++				"regulator-min-microvolt", NULL);
++	max = (u32 *)fdt_getprop(blob, reg_node,
++				"regulator-max-microvolt", NULL);
++	if (!min || !max)
++		return;
++
++	name = fdt_getprop(blob, reg_node, "regulator-name", NULL);
++
++	debug("%s: name: %s, min %duV, max %duV\n",
++	      name, fdt_get_name(blob, reg_node, NULL),
++	      fdt32_to_cpu(min[0]), fdt32_to_cpu(max[0]));
++
++	if (*min == *max && fdt32_to_cpu(min[0]) == 1000000) {
++		mem_node = fdt_subnode_offset(blob, reg_node,
++					      "regulator-state-mem");
++		if (mem_node < 0)
++			return;
++
++		suspend = cpu_to_fdt32(900000);
++		if (fdt_setprop((void *)blob, mem_node,
++				"regulator-suspend-microvolt",
++				&suspend, sizeof(suspend)))
++			printf("Failed to set %s suspend 0.9V\n", name);
++		else
++			debug("%s: set suspend volt 0.9V\n", name);
++
++		min[0] = cpu_to_fdt32(900000);
++		max[0] = cpu_to_fdt32(900000);
++		debug("%s: min/max 1.0v => 0.9v\n",
++		      fdt_get_name(blob, reg_node, NULL));
++	}
++
++	if (name && !strcmp(name, "vdd_logic")) {
++		mem_node = fdt_subnode_offset(blob, reg_node,
++					      "regulator-state-mem");
++		if (mem_node < 0)
++			return;
++
++		suspend = cpu_to_fdt32(850000);
++		if (fdt_setprop((void *)blob, mem_node,
++				"regulator-suspend-microvolt",
++				&suspend, sizeof(suspend)))
++			printf("Failed to set vdd_logic suspend 0.85V\n");
++		else
++			debug("vdd_logic: set suspend volt 0.85V\n");
++	}
++}
++
++static void fixup_regulators_px30(const void *blob, int reg_node)
++{
++	const char *name;
++	int mem_node;
++
++	name = fdt_getprop(blob, reg_node, "regulator-name", NULL);
++	if (!name)
++		return;
++
++	if (!strcmp(name, "vdd_logic") ||
++	    !strcmp(name, "vcc_3v0") ||
++	    !strcmp(name, "vcc_1v0") ||
++	    !strcmp(name, "vccio_sd") ||
++	    !strcmp(name, "vcc_sd")) {
++		mem_node = fdt_subnode_offset(blob, reg_node,
++					      "regulator-state-mem");
++		if (mem_node < 0)
++			return;
++
++		fdt_delprop((void *)blob, mem_node, "regulator-off-in-suspend");
++		if (fdt_setprop((void *)blob, mem_node,
++				"regulator-on-in-suspend", NULL, 0))
++			printf("Failed to set regulator(%s) on in suspend\n", name);
++		else
++			debug("set regulator(%s) on in suspend\n", name);
++	}
++}
++
++static void fixup_regulators(const void *blob, int pmic_node)
++{
++	int parent_node;
++	int reg_node;
++
++	parent_node = fdt_subnode_offset(blob, pmic_node, "regulators");
++	if (parent_node < 0)
++		return;
++
++	fdt_for_each_subnode(reg_node, blob, parent_node) {
++		if (soc_is_px30s())
++			fixup_regulators_px30s(blob, reg_node);
++		else if (soc_is_px30())
++			fixup_regulators_px30(blob, reg_node);
++	}
++}
++
++static int fdt_fixup_regulator(const void *blob)
++{
++	const char *name;
++	int i2c_node;
++	int pmic_node;
++	int root_node;
++
++	root_node = fdt_path_offset(blob, "/");
++	if (root_node < 0)
++		return root_node;
++
++	fdt_for_each_subnode(i2c_node, blob, root_node) {
++		name = fdt_get_name(blob, i2c_node, NULL);
++		debug("depth1: %s\n", name);
++		if (!strncmp(name, "i2c@", 4)) {
++			fdt_for_each_subnode(pmic_node, blob, i2c_node) {
++				name = fdt_get_name(blob, pmic_node, NULL);
++				debug("depth2: %s\n", name);
++				if (!strncmp(name, "pmic@20", 7)) {
++					fixup_regulators(blob, pmic_node);
++					return 0;
++				}
++			}
++		}
++	}
++
++	return 0;
++}
++
++int rk_board_fdt_fixup(const void *blob)
++{
++	if (soc_is_px30s()) {
++		fdt_increase_size((void *)blob, SZ_8K);
++		fdt_fixup_cpu_opp_table(blob);
++		fdt_fixup_dmc_opp_table(blob);
++		fdt_fixup_gpu_opp_table(blob);
++		fdt_fixup_pcfg(blob);
++		fdt_fixup_bus_apll(blob);
++		fdt_fixup_cpu_gpu_clk(blob);
++		fdt_fixup_i2s_soft_reset(blob);
++	} else if (soc_is_px30()) {
++		fdt_fixup_rockchip_suspend(blob);
++	}
++
++	fdt_fixup_regulator(blob);
++
++	return 0;
++}
++
++#if CONFIG_IS_ENABLED(OF_BOARD_FIXUP)
++int board_fix_fdt(void *blob)
++{
++	return rk_board_fdt_fixup(blob);
++}
++#endif
++
+ #define PX30_OTP_SPECIFICATION_OFFSET		0x06
+ 
+ #define DDR_GRF_BASE_ADDR               0xff630000
+diff --git a/drivers/clk/rockchip/clk_px30.c b/drivers/clk/rockchip/clk_px30.c
+index ad7e1c0f246..138cb604522 100644
+--- a/drivers/clk/rockchip/clk_px30.c
++++ b/drivers/clk/rockchip/clk_px30.c
+@@ -11,6 +11,7 @@
+ #include <malloc.h>
+ #include <syscon.h>
+ #include <asm/arch-rockchip/clock.h>
++#include <asm/arch-rockchip/cpu.h>
+ #include <asm/arch-rockchip/cru_px30.h>
+ #include <asm/arch-rockchip/hardware.h>
+ #include <asm/global_data.h>
+@@ -990,6 +991,83 @@ static ulong px30_peri_set_clk(struct px30_clk_priv *priv, ulong clk_id,
+ }
+ 
+ #ifndef CONFIG_XPL_BUILD
++static ulong px30_otp_get_clk(struct px30_clk_priv *priv, ulong clk_id)
++{
++	struct px30_cru *cru = priv->cru;
++	u32 src, div, con, parent;
++
++	if (soc_is_px30s()) {
++		con = readl(&cru->clksel_con[56]);
++		src = (con & CLK_OTP_S_SEL_MASK) >> CLK_OTP_S_SEL_SHIFT;
++		div = (con & CLK_OTP_S_DIV_CON_MASK) >> CLK_OTP_S_DIV_CON_SHIFT;
++		if (src)
++			return DIV_TO_RATE(priv->gpll_hz, div);
++		else
++			return DIV_TO_RATE(OSC_HZ, div);
++	}
++
++	switch (clk_id) {
++	case SCLK_OTP:
++		con = readl(&cru->clksel_con[56]);
++		div = (con & CLK_OTP_DIV_CON_MASK) >> CLK_OTP_DIV_CON_SHIFT;
++		parent = OSC_HZ;
++		break;
++	case SCLK_OTP_USR:
++		con = readl(&cru->clksel_con[56]);
++		div = (con & CLK_OTP_USR_DIV_CON_MASK) >>
++		      CLK_OTP_USR_DIV_CON_SHIFT;
++		parent = px30_otp_get_clk(priv, SCLK_OTP);
++		break;
++	default:
++		return -ENOENT;
++	}
++
++	return DIV_TO_RATE(parent, div);
++}
++
++static ulong px30_otp_set_clk(struct px30_clk_priv *priv, ulong clk_id,
++			      ulong hz)
++{
++	struct px30_cru *cru = priv->cru;
++	u32 src, div, parent;
++
++	if (soc_is_px30s()) {
++		if ((OSC_HZ % hz) == 0) {
++			src = 0;
++			parent = OSC_HZ;
++		} else {
++			src = 1;
++			parent = priv->gpll_hz;
++		}
++		div = DIV_ROUND_UP(parent, hz);
++		rk_clrsetreg(&cru->clksel_con[56],
++			     CLK_OTP_S_SEL_MASK | CLK_OTP_S_DIV_CON_MASK,
++			     src << CLK_OTP_S_SEL_SHIFT |
++			     (div - 1) << CLK_OTP_S_DIV_CON_SHIFT);
++		return px30_otp_get_clk(priv, clk_id);
++	}
++
++	switch (clk_id) {
++	case SCLK_OTP:
++		div = DIV_ROUND_UP(OSC_HZ, hz);
++		rk_clrsetreg(&cru->clksel_con[56],
++			     CLK_OTP_DIV_CON_MASK,
++			     (div - 1) << CLK_OTP_DIV_CON_SHIFT);
++		break;
++	case SCLK_OTP_USR:
++		div = DIV_ROUND_UP(px30_otp_get_clk(priv, SCLK_OTP), hz);
++		rk_clrsetreg(&cru->clksel_con[56],
++			     CLK_OTP_USR_DIV_CON_MASK,
++			     (div - 1) << CLK_OTP_USR_DIV_CON_SHIFT);
++		break;
++	default:
++		printf("do not support this peri freq\n");
++		return -EINVAL;
++	}
++
++	return px30_otp_get_clk(priv, clk_id);
++}
++
+ static ulong px30_crypto_get_clk(struct px30_clk_priv *priv, ulong clk_id)
+ {
+ 	struct px30_cru *cru = priv->cru;
+@@ -1262,6 +1340,10 @@ static ulong px30_clk_get_rate(struct clk *clk)
+ 		rate = px30_peri_get_clk(priv, clk->id);
+ 		break;
+ #ifndef CONFIG_XPL_BUILD
++	case SCLK_OTP:
++	case SCLK_OTP_USR:
++		rate = px30_otp_get_clk(priv, clk->id);
++		break;
+ 	case SCLK_CRYPTO:
+ 	case SCLK_CRYPTO_APK:
+ 		rate = px30_crypto_get_clk(priv, clk->id);
+@@ -1346,6 +1428,10 @@ static ulong px30_clk_set_rate(struct clk *clk, ulong rate)
+ 		ret = px30_peri_set_clk(priv, clk->id, rate);
+ 		break;
+ #ifndef CONFIG_XPL_BUILD
++	case SCLK_OTP:
++	case SCLK_OTP_USR:
++		ret = px30_otp_set_clk(priv, clk->id, rate);
++		break;
+ 	case SCLK_CRYPTO:
+ 	case SCLK_CRYPTO_APK:
+ 		ret = px30_crypto_set_clk(priv, clk->id, rate);
+diff --git a/drivers/misc/rockchip-otp.c b/drivers/misc/rockchip-otp.c
+index 46820425a84..7d3922cc901 100644
+--- a/drivers/misc/rockchip-otp.c
++++ b/drivers/misc/rockchip-otp.c
+@@ -4,11 +4,13 @@
+  */
+ 
+ #include <asm/io.h>
++#include <asm/arch-rockchip/cpu.h>
+ #include <command.h>
+ #include <display_options.h>
+ #include <dm.h>
+ #include <linux/bitops.h>
+ #include <linux/delay.h>
++#include <linux/kernel.h>
+ #include <linux/iopoll.h>
+ #include <malloc.h>
+ #include <misc.h>
+@@ -49,6 +51,25 @@
+ 
+ #define OTPC_TIMEOUT			10000
+ 
++#define OTPC_MODE_CTRL			0x2000
++#define OTPC_IRQ_ST			0x2008
++#define OTPC_ACCESS_ADDR		0x200c
++#define OTPC_RD_DATA			0x2010
++#define OTPC_REPR_RD_TRANS_NUM		0x2020
++#define OTPC_DEEP_STANDBY		0x0
++#define OTPC_STANDBY			0x1
++#define OTPC_ACTIVE			0x2
++#define OTPC_READ_ACCESS		0x3
++#define OTPC_TRANS_NUM			0x1
++#define OTPC_RDM_IRQ_ST			BIT(0)
++#define OTPC_STB2ACT_IRQ_ST		BIT(7)
++#define OTPC_DP2STB_IRQ_ST		BIT(8)
++#define OTPC_ACT2STB_IRQ_ST		BIT(9)
++#define OTPC_STB2DP_IRQ_ST		BIT(10)
++
++#define RK3308BS_NBYTES			4
++#define RK3308BS_MAX_BYTES		0x80
++
+ #define RK3588_OTPC_AUTO_CTRL		0x0004
+ #define RK3588_ADDR_SHIFT		16
+ #define RK3588_ADDR(n)			((n) << RK3588_ADDR_SHIFT)
+@@ -183,6 +204,125 @@ read_end:
+ 	return ret;
+ }
+ 
++static int rk3308bs_otp_wait_status(struct rockchip_otp_plat *otp, u32 flag)
++{
++	int delay = OTPC_TIMEOUT;
++
++	while (!(readl(otp->base + OTPC_IRQ_ST) & flag)) {
++		udelay(1);
++		delay--;
++		if (delay <= 0) {
++			printf("%s: wait otp status timeout\n", __func__);
++			return -ETIMEDOUT;
++		}
++	}
++
++	writel(flag, otp->base + OTPC_IRQ_ST);
++
++	return 0;
++}
++
++static int rk3308bs_otp_active(struct rockchip_otp_plat *otp)
++{
++	int ret;
++	u32 mode;
++
++	mode = readl(otp->base + OTPC_MODE_CTRL);
++
++	if (mode == OTPC_DEEP_STANDBY) {
++		writel(OTPC_STANDBY, otp->base + OTPC_MODE_CTRL);
++		ret = rk3308bs_otp_wait_status(otp, OTPC_DP2STB_IRQ_ST);
++		if (ret < 0)
++			return ret;
++		mode = readl(otp->base + OTPC_MODE_CTRL);
++	}
++
++	if (mode == OTPC_STANDBY) {
++		writel(OTPC_ACTIVE, otp->base + OTPC_MODE_CTRL);
++		ret = rk3308bs_otp_wait_status(otp, OTPC_STB2ACT_IRQ_ST);
++		if (ret < 0)
++			return ret;
++	}
++
++	return 0;
++}
++
++static int rk3308bs_otp_standby(struct rockchip_otp_plat *otp)
++{
++	int ret;
++	u32 mode;
++
++	mode = readl(otp->base + OTPC_MODE_CTRL);
++
++	if (mode == OTPC_ACTIVE) {
++		writel(OTPC_STANDBY, otp->base + OTPC_MODE_CTRL);
++		ret = rk3308bs_otp_wait_status(otp, OTPC_ACT2STB_IRQ_ST);
++		if (ret < 0)
++			return ret;
++		mode = readl(otp->base + OTPC_MODE_CTRL);
++	}
++
++	if (mode == OTPC_STANDBY) {
++		writel(OTPC_DEEP_STANDBY, otp->base + OTPC_MODE_CTRL);
++		ret = rk3308bs_otp_wait_status(otp, OTPC_STB2DP_IRQ_ST);
++		if (ret < 0)
++			return ret;
++	}
++
++	return 0;
++}
++
++static int rockchip_rk3308bs_otp_read(struct udevice *dev, int offset,
++				      void *buf, int size)
++{
++	struct rockchip_otp_plat *otp = dev_get_plat(dev);
++	unsigned int addr_start, addr_end, addr_offset, addr_len;
++	u32 out_value;
++	u8 *buffer = NULL;
++	int ret = 0, i = 0;
++
++	if (offset > RK3308BS_MAX_BYTES - 1)
++		return -ENOMEM;
++	if (offset + size > RK3308BS_MAX_BYTES)
++		size = RK3308BS_MAX_BYTES - offset;
++
++	ret = rk3308bs_otp_active(otp);
++	if (ret)
++		goto out;
++
++	addr_start = rounddown(offset, RK3308BS_NBYTES) / RK3308BS_NBYTES;
++	addr_end = roundup(offset + size, RK3308BS_NBYTES) / RK3308BS_NBYTES;
++	addr_offset = offset % RK3308BS_NBYTES;
++	addr_len = addr_end - addr_start;
++
++	buffer = calloc(1, addr_len * RK3308BS_NBYTES);
++	if (!buffer) {
++		ret = -ENOMEM;
++		goto read_end;
++	}
++
++	while (addr_len--) {
++		writel(OTPC_TRANS_NUM, otp->base + OTPC_REPR_RD_TRANS_NUM);
++		writel(addr_start++, otp->base + OTPC_ACCESS_ADDR);
++		writel(OTPC_READ_ACCESS, otp->base + OTPC_MODE_CTRL);
++		ret = rk3308bs_otp_wait_status(otp, OTPC_RDM_IRQ_ST);
++		if (ret < 0) {
++			printf("timeout during wait otp read\n");
++			goto read_end;
++		}
++		out_value = readl(otp->base + OTPC_RD_DATA);
++		memcpy(&buffer[i], &out_value, RK3308BS_NBYTES);
++		i += RK3308BS_NBYTES;
++	}
++	memcpy(buf, buffer + addr_offset, size);
++
++read_end:
++	free(buffer);
++	rk3308bs_otp_standby(otp);
++out:
++	return ret;
++}
++
+ static int rockchip_rk3568_otp_read(struct udevice *dev, int offset,
+ 				    void *buf, int size)
+ {
+@@ -299,6 +439,13 @@ static int rockchip_otp_read(struct udevice *dev, int offset,
+ 
+ 	offset += data->offset;
+ 
++#if IS_ENABLED(CONFIG_ROCKCHIP_PX30)
++	if (soc_is_px30s()) {
++		ret = rockchip_rk3308bs_otp_read(dev, offset, buf, size);
++		goto done;
++	}
++#endif
++
+ 	if (data->block_size <= 1) {
+ 		ret = data->read(dev, offset, buf, size);
+ 		goto done;
+@@ -386,6 +533,10 @@ static const struct udevice_id rockchip_otp_ids[] = {
+ 		.compatible = "rockchip,px30-otp",
+ 		.data = (ulong)&px30_data,
+ 	},
++	{
++		.compatible = "rockchip,px30s-otp",
++		.data = (ulong)&px30_data,
++	},
+ 	{
+ 		.compatible = "rockchip,rk3308-otp",
+ 		.data = (ulong)&px30_data,
+-- 
+2.34.1
+

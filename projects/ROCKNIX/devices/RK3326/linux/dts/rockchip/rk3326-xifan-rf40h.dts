@@ -1,0 +1,11 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+* # Copyright (C) 2022-26 AURKNIX (https://github.com/AveyondFly)
+*/
+
+#include "rk3326-xifan-xf40h.dts"
+
+/ {
+	model = "XiFan RF40H";
+	compatible = "xifan,rf40h", "rockchip,rk3326";
+};

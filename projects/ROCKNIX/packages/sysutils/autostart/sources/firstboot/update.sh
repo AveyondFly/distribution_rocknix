@@ -689,9 +689,30 @@ case "${QUIRK_DEVICE}" in
         echo "${QUIRK_DEVICE}"
         Set_system "DC40V"
     ;;
+    "XiFan DC45V")
+        echo "${QUIRK_DEVICE}"
+        Set_system "DC45V"
+    ;;
     "XiFan R36Max2")
         echo "${QUIRK_DEVICE}"
         Set_system "R36Max2"
+    ;;
+    "XiFan RF35H")
+        echo "${QUIRK_DEVICE}"
+        Set_system "RF35H"
+        amixer -c 0 -M cset name="Playback Mux" HP
+    ;;
+    "XiFan RF40H")
+        echo "${QUIRK_DEVICE}"
+        Set_system "RF40H"
+    ;;
+    "XiFan RF45V")
+        echo "${QUIRK_DEVICE}"
+        Set_system "RF45V"
+    ;;
+    "XiFan XF45V")
+        echo "${QUIRK_DEVICE}"
+        Set_system "XF45V"
     ;;
 # 安伯尼克
     "Anbernic RG351M")

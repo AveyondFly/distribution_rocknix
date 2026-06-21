@@ -53,7 +53,7 @@ Independent ports apps:
 | ODROID-GO | Advance, Advance Black Edition, Super |
 | PortableGame | A10Mini, A10Mini-V2 |
 | Powkiddy | RGB10, RGB10X, RGB20S |
-| XiFan | DC35V, DC40V, Mini40, MyMini, R36Max, R36Max2, R36Pro, XF28, XF35H, XF40H, XF40V |
+| XiFan | DC35V, DC40V, DC45V, Mini40, MyMini, R36Max, R36Max2, R36Pro, RF35H, RF40H, RF45V, XF28, XF35H, XF40H, XF40V, XF45V |
 
 #### RK3566 Devices — Generic image
 | Brand | Models |

@@ -1,0 +1,76 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+
+# Powkiddy RK2023 power LED — dual GPIO (GPIO0_C5/C6 = gpio21/22):
+#   green:status  red:charging | color
+#        1            0       | green
+#        0            1       | red
+#        0            0       | off
+
+. /etc/profile.d/001-functions
+
+LED_GREEN=/sys/class/leds/green:status
+LED_RED=/sys/class/leds/red:charging
+DEFAULT=green
+LED_STATUS=$(get_setting led.color)
+
+led_trigger_none() {
+  echo none > "${LED_GREEN}/trigger" 2>/dev/null
+  echo none > "${LED_RED}/trigger" 2>/dev/null
+}
+
+apply_color() {
+  led_trigger_none
+  case ${1} in
+    off)
+      echo 0 > "${LED_GREEN}/brightness"
+      echo 0 > "${LED_RED}/brightness"
+      ;;
+    red)
+      echo 0 > "${LED_GREEN}/brightness"
+      echo 1 > "${LED_RED}/brightness"
+      ;;
+    green|default)
+      echo 1 > "${LED_GREEN}/brightness"
+      echo 0 > "${LED_RED}/brightness"
+      ;;
+    *)
+      echo 1 > "${LED_GREEN}/brightness"
+      echo 0 > "${LED_RED}/brightness"
+      ;;
+  esac
+}
+
+case ${1} in
+  default)
+    del_setting led.color
+    apply_color ${DEFAULT}
+    ;;
+  green|red|off)
+    apply_color ${1}
+    set_setting led.color ${1}
+    ;;
+  discharging)
+    apply_color ${LED_STATUS:-${DEFAULT}}
+    ;;
+  charging)
+    if [ "${LED_STATUS}" != "off" ]; then
+      apply_color red
+    fi
+    ;;
+  poweroff)
+    apply_color off
+    ;;
+  brightness|"")
+    apply_color ${LED_STATUS:-${DEFAULT}}
+    ;;
+  list)
+    cat <<EOF
+default
+off
+green
+red
+EOF
+    ;;
+esac

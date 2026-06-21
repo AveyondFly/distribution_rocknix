@@ -1,0 +1,87 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+
+# Watch battery status and drive the RK2023 power LED (gpio21/22):
+#   green:status  red:charging | color
+#        1            0       | green
+#        0            1       | red
+#        0            0       | off
+#
+# Charging: red while below ~95%, green when full.
+# On battery: low charge warnings, otherwise honor led.color from ES.
+
+. /etc/profile.d/001-functions
+
+LED_GREEN=/sys/class/leds/green:status
+LED_RED=/sys/class/leds/red:charging
+
+led_trigger_none() {
+  echo none > "${LED_GREEN}/trigger" 2>/dev/null
+  echo none > "${LED_RED}/trigger" 2>/dev/null
+}
+
+apply_color() {
+  led_trigger_none
+  case ${1} in
+    off)
+      echo 0 > "${LED_GREEN}/brightness"
+      echo 0 > "${LED_RED}/brightness"
+      ;;
+    red)
+      echo 0 > "${LED_GREEN}/brightness"
+      echo 1 > "${LED_RED}/brightness"
+      ;;
+    green|default)
+      echo 1 > "${LED_GREEN}/brightness"
+      echo 0 > "${LED_RED}/brightness"
+      ;;
+    *)
+      echo 1 > "${LED_GREEN}/brightness"
+      echo 0 > "${LED_RED}/brightness"
+      ;;
+  esac
+}
+
+blink_red() {
+  for _ in 1 2 3 4 5; do
+    apply_color off
+    sleep 0.5
+    apply_color red
+    sleep 0.5
+  done
+}
+
+while true; do
+  CAP=$(cat /sys/class/power_supply/battery/capacity 2>/dev/null)
+  STAT=$(cat /sys/class/power_supply/battery/status 2>/dev/null)
+  ISDISABLED=$(get_setting powerled.disabled)
+  LED_COLOR=$(get_setting led.color)
+
+  if [ "${ISDISABLED}" = "1" ]; then
+    apply_color off
+    sleep 15
+    continue
+  fi
+
+  if [[ ${STAT} == "Discharging" ]]; then
+    if [ "${LED_COLOR}" = "off" ]; then
+      apply_color off
+    elif (( ${CAP} <= 10 )); then
+      blink_red
+      continue
+    elif (( ${CAP} <= 20 )); then
+      apply_color red
+    elif [ -n "${LED_COLOR}" ]; then
+      apply_color ${LED_COLOR}
+    else
+      apply_color green
+    fi
+  elif (( ${CAP} >= 95 )); then
+    apply_color green
+  else
+    apply_color red
+  fi
+
+  sleep 15
+done

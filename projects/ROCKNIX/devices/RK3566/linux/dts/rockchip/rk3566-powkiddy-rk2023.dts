@@ -4,12 +4,35 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/linux-event-codes.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/pinctrl/rockchip.h>
 #include "rk3566-powkiddy-rk2023.dtsi"
 
 / {
 	model = "Powkiddy RK2023";
 	compatible = "powkiddy,rk2023", "rockchip,rk3566";
+
+	/delete-node/ pwm-leds;
+
+	leds: gpio-leds {
+		compatible = "gpio-leds";
+
+		led@1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio0 RK_PC5 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+			retain-state-suspended;
+		};
+
+		led@2 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_CHARGING;
+			gpios = <&gpio0 RK_PC6 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+			retain-state-suspended;
+		};
+	};
 };
 
 &cru {
@@ -64,4 +87,12 @@
 
 &pwm5 {
 	status = "okay";
+};
+
+&pwm6 {
+	status = "disabled";
+};
+
+&pwm7 {
+	status = "disabled";
 };

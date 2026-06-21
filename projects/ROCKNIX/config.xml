@@ -115,7 +115,7 @@
       <file>rk3566-radxa-zero-3w</file>
     </Specific>
   </RK3566>
-  <RK356X mkimage_options="dtb,extlinux,uboot" fdt="device_trees/rk3562-rg52mini.dtb" fdt_type="fdt" dtb_prefix="rockchip">
+  <RK356X mkimage_options="dtb,extlinux,uboot" fdt="device_trees/rk3562-rg52mini-v1.dtb" fdt_type="fdt" dtb_prefix="rockchip">
     <file>rk3562-rg52mini</file>
     <file>rk3562-rg52mini-v1</file>
     <file>rk3562-rg43h</file>

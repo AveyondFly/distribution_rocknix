@@ -4,7 +4,6 @@
 
 cat <<EOF >/storage/.config/profile.d/020-gpios
 DEVICE_WIFI="0"
-DEVICE_PWM_MOTOR="pwmchip0"
 EOF
 
 . /storage/.config/profile.d/020-gpios

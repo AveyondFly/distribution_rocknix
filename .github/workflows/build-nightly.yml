@@ -154,11 +154,16 @@ jobs:
           }
 
           if [[ "$EVENT_NAME" == "pull_request" ]]; then
-            BUILD_LINE="$(printf '%s\n' "$PR_BODY" | sed -nE 's/^[[:space:]]*[Bb][Uu][Ii][Ll][Dd][[:space:]]*:[[:space:]]*(.*)$/\1/p' | tail -n 1)"
+            BUILD_LINE="$(printf '%s\n' "$PR_BODY" | tr -d '\r' | sed -nE 's/^[[:space:]]*[Bb][Uu][Ii][Ll][Dd][[:space:]]*:[[:space:]]*(.*)$/\1/p' | tail -n 1)"
+            BUILD_LINE="${BUILD_LINE#"${BUILD_LINE%%[![:space:]]*}"}"
+            BUILD_LINE="${BUILD_LINE%"${BUILD_LINE##*[![:space:]]}"}"
             if [[ -z "$BUILD_LINE" ]]; then
               SHOULD_BUILD="no"
             else
               for RAW_DEVICE in $(printf '%s' "$BUILD_LINE" | tr ',/;|' '    '); do
+                RAW_DEVICE="${RAW_DEVICE#"${RAW_DEVICE%%[![:space:]]*}"}"
+                RAW_DEVICE="${RAW_DEVICE%"${RAW_DEVICE##*[![:space:]]}"}"
+                [[ -z "$RAW_DEVICE" ]] && continue
                 DEVICE="${RAW_DEVICE^^}"
                 if [[ "$DEVICE" == "ALL" ]]; then
                   for D in "${ALL_DEVICES[@]}"; do

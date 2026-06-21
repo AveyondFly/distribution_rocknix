@@ -1,0 +1,117 @@
+diff -Naur a/core/rend/i18n.h b/core/rend/i18n.h
+--- a/core/rend/i18n.h	2026-06-21 12:37:14.454436371 +0800
++++ b/core/rend/i18n.h	2026-06-21 12:37:14.454436371 +0800
+@@ -220,13 +220,31 @@
+     {"Full", {"Full", "完整"}},
+ };
+ 
++#if defined(__linux__)
++inline const char* getLinuxUiLocale()
++{
++	const char* locale = setlocale(LC_MESSAGES, nullptr);
++	if (locale == nullptr || locale[0] == '\0' || strcmp(locale, "C") == 0 || strcmp(locale, "POSIX") == 0)
++		locale = getenv("LANG");
++	if (locale == nullptr || locale[0] == '\0' || strcmp(locale, "C") == 0 || strcmp(locale, "POSIX") == 0)
++		locale = getenv("LANGUAGE");
++	if (locale == nullptr || locale[0] == '\0')
++		locale = setlocale(LC_ALL, nullptr);
++	return locale;
++}
++#endif
++
+ inline bool isChineseLocale() {
+     static int cached = -1;
+     if (cached == -1) {
++#if defined(__linux__)
++        const char* locale = getLinuxUiLocale();
++#else
+         setlocale(LC_ALL, "");
+         const char* locale = setlocale(LC_ALL, nullptr);
+         if (locale == nullptr || strcmp(locale, "C") == 0 || strcmp(locale, "POSIX") == 0)
+             locale = getenv("LANG");
++#endif
+         cached = (locale != nullptr && strstr(locale, "zh") != nullptr) ? 1 : 0;
+     }
+     return cached == 1;
+diff -Naur a/core/rend/gui.cpp b/core/rend/gui.cpp
+--- a/core/rend/gui.cpp	2026-06-21 12:37:14.466330420 +0800
++++ b/core/rend/gui.cpp	2026-06-21 12:37:14.466330420 +0800
+@@ -260,37 +260,54 @@
+ 
+ #elif defined(__linux__)
+     {
+-        setlocale(LC_ALL, "");
+-        const char* locale = setlocale(LC_ALL, nullptr);
+-        if (locale == nullptr || strcmp(locale, "C") == 0 || strcmp(locale, "POSIX") == 0)
+-            locale = getenv("LANG");
++        const char* locale = getLinuxUiLocale();
++        const ImWchar* glyphRanges = nullptr;
+         if (locale != nullptr) {
+-            const ImWchar* glyphRanges = nullptr;
+-            if (strstr(locale, "zh_CN") != nullptr || strstr(locale, "zh_cn") != nullptr)
+-                glyphRanges = GetGlyphRangesChineseSimplifiedOfficial();
+-            else if (strstr(locale, "zh_TW") != nullptr || strstr(locale, "zh_HK") != nullptr)
++            if (strstr(locale, "zh_TW") != nullptr || strstr(locale, "zh_HK") != nullptr || strstr(locale, "zh-Hant") != nullptr)
+                 glyphRanges = GetGlyphRangesChineseTraditionalOfficial();
++            else if (strstr(locale, "zh") != nullptr)
++                glyphRanges = GetGlyphRangesChineseSimplifiedOfficial();
+             else if (strstr(locale, "ja") != nullptr)
+                 glyphRanges = io.Fonts->GetGlyphRangesJapanese();
+             else if (strstr(locale, "ko") != nullptr)
+                 glyphRanges = io.Fonts->GetGlyphRangesKorean();
+-            if (glyphRanges != nullptr) {
+-                const float cjkFontSize = fontSize * 1.25f;
+-                ImFont* font = nullptr;
+-                const std::string userFont = get_writable_config_path("font.ttf");
+-                struct stat st;
+-                if (!userFont.empty() && stat(userFont.c_str(), &st) == 0 && S_ISREG(st.st_mode))
+-                    font = io.Fonts->AddFontFromFileTTF(userFont.c_str(), cjkFontSize, &font_cfg, glyphRanges);
+-                if (font == nullptr)
+-                    font = io.Fonts->AddFontFromFileTTF("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+-                        cjkFontSize, &font_cfg, glyphRanges);
+-                if (font == nullptr)
+-                    font = io.Fonts->AddFontFromFileTTF("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+-                        fontSize, &font_cfg, glyphRanges);
+-                if (font == nullptr)
+-                    io.Fonts->AddFontFromFileTTF("/usr/share/fonts/TTF/DejaVuSansMono.ttf",
+-                        cjkFontSize, &font_cfg, glyphRanges);
++        }
++        const std::string userFont = get_writable_config_path("font.ttf");
++        struct stat st;
++        const bool hasUserFont = !userFont.empty() && stat(userFont.c_str(), &st) == 0 && S_ISREG(st.st_mode);
++        if (hasUserFont && glyphRanges == nullptr && isChineseLocale())
++            glyphRanges = GetGlyphRangesChineseSimplifiedOfficial();
++        if (glyphRanges != nullptr) {
++            const float cjkFontSize = fontSize * 1.25f;
++            ImFont* font = nullptr;
++            const char* loadedFrom = nullptr;
++            if (hasUserFont) {
++                font = io.Fonts->AddFontFromFileTTF(userFont.c_str(), cjkFontSize, &font_cfg, glyphRanges);
++                if (font != nullptr)
++                    loadedFrom = userFont.c_str();
++            }
++            if (font == nullptr) {
++                font = io.Fonts->AddFontFromFileTTF("/usr/share/fonts/TTF/DejaVuSansMono.ttf",
++                    cjkFontSize, &font_cfg, glyphRanges);
++                if (font != nullptr)
++                    loadedFrom = "/usr/share/fonts/TTF/DejaVuSansMono.ttf";
++            }
++            if (font == nullptr) {
++                font = io.Fonts->AddFontFromFileTTF("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
++                    cjkFontSize, &font_cfg, glyphRanges);
++                if (font != nullptr)
++                    loadedFrom = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc";
++            }
++            if (font == nullptr) {
++                font = io.Fonts->AddFontFromFileTTF("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
++                    fontSize, &font_cfg, glyphRanges);
++                if (font != nullptr)
++                    loadedFrom = "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc";
+             }
++            if (font != nullptr)
++                NOTICE_LOG(RENDERER, "Loaded locale font merge from %s (locale=%s)", loadedFrom, locale ? locale : "null");
++            else
++                WARN_LOG(RENDERER, "Failed to load locale font (locale=%s, user font=%s)", locale ? locale : "null", hasUserFont ? userFont.c_str() : "none");
+         }
+     }
+ #endif

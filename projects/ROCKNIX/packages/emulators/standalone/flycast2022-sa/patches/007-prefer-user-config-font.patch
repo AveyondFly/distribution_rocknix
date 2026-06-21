@@ -1,0 +1,38 @@
+diff -Naur a/core/rend/gui.cpp b/core/rend/gui.cpp
+--- a/core/rend/gui.cpp	2026-06-21 12:09:40.939894348 +0800
++++ b/core/rend/gui.cpp	2026-06-21 12:09:40.939894348 +0800
+@@ -20,9 +20,10 @@
+ #include <mutex>
+ #include "gui.h"
+ #include "i18n.h"
+-#include "i18n.h"
+ #include "osd.h"
+ #include "cfg/cfg.h"
++#include "stdclass.h"
++#include <sys/stat.h>
+ #include "hw/maple/maple_if.h"
+ #include "hw/maple/maple_devs.h"
+ #include "hw/naomi/naomi_cart.h"
+@@ -275,11 +276,20 @@
+                 glyphRanges = io.Fonts->GetGlyphRangesKorean();
+             if (glyphRanges != nullptr) {
+                 const float cjkFontSize = fontSize * 1.25f;
+-                ImFont* font = io.Fonts->AddFontFromFileTTF("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+-                    cjkFontSize, &font_cfg, glyphRanges);
++                ImFont* font = nullptr;
++                const std::string userFont = get_writable_config_path("font.ttf");
++                struct stat st;
++                if (!userFont.empty() && stat(userFont.c_str(), &st) == 0 && S_ISREG(st.st_mode))
++                    font = io.Fonts->AddFontFromFileTTF(userFont.c_str(), cjkFontSize, &font_cfg, glyphRanges);
++                if (font == nullptr)
++                    font = io.Fonts->AddFontFromFileTTF("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
++                        cjkFontSize, &font_cfg, glyphRanges);
+                 if (font == nullptr)
+                     font = io.Fonts->AddFontFromFileTTF("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+                         fontSize, &font_cfg, glyphRanges);
++                if (font == nullptr)
++                    io.Fonts->AddFontFromFileTTF("/usr/share/fonts/TTF/DejaVuSansMono.ttf",
++                        cjkFontSize, &font_cfg, glyphRanges);
+             }
+         }
+     }

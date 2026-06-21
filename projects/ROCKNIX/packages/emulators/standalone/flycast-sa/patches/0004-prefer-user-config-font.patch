@@ -1,0 +1,70 @@
+diff -Naur a/core/ui/gui.cpp b/core/ui/gui.cpp
+--- a/core/ui/gui.cpp	2026-06-21 12:09:40.931922494 +0800
++++ b/core/ui/gui.cpp	2026-06-21 12:09:40.931922494 +0800
+@@ -25,6 +25,8 @@
+ #include "network/ice.h"
+ #include "input/gamepad_device.h"
+ #include "gui_util.h"
++#include "stdclass.h"
++#include <sys/stat.h>
+ #include "imgread/common.h"
+ #include "emulator.h"
+ #include "mainui.h"
+@@ -259,6 +261,24 @@
+ 	builder.BuildRanges(&ranges);
+ 	return ranges.Data;
+ }
++
++static bool tryAddUserConfigFont(float size, ImFontConfig& fontConfig, const ImWchar *glyphRanges)
++{
++	const std::string path = get_writable_config_path("font.ttf");
++	if (path.empty())
++		return false;
++	struct stat st;
++	if (stat(path.c_str(), &st) != 0 || !S_ISREG(st.st_mode))
++		return false;
++	return addFont(path.c_str(), size, fontConfig, glyphRanges);
++}
++
++static void addLocaleFonts(const char *path[], float size, ImFontConfig& fontConfig, const ImWchar *glyphRanges)
++{
++	if (tryAddUserConfigFont(size, fontConfig, glyphRanges))
++		return;
++	addFont(path, size, fontConfig, glyphRanges);
++}
+ #endif
+ 
+ void gui_initFonts()
+@@ -450,8 +470,8 @@
+ 				"/usr/share/fonts/google-noto-cjk/NotoSansCJK-Bold.ttc", // redhat
+ 				nullptr
+ 		};
+-		addFont(fonts, fontSize, fontConfig, io.Fonts->GetGlyphRangesJapanese());
+-		addFont(largeFonts, largeFontSize, largeFontConfig, io.Fonts->GetGlyphRangesJapanese());
++		addLocaleFonts(fonts, fontSize, fontConfig, io.Fonts->GetGlyphRangesJapanese());
++		addLocaleFonts(largeFonts, largeFontSize, largeFontConfig, io.Fonts->GetGlyphRangesJapanese());
+ 	}
+ 	else if (locale.find("ko_") == 0)		// Korean
+ 	{
+@@ -474,8 +494,8 @@
+ 				"/usr/share/fonts/google-noto-cjk/NotoSansCJK-Bold.ttc", // redhat
+ 				nullptr
+ 		};
+-		addFont(fonts, fontSize, fontConfig, io.Fonts->GetGlyphRangesKorean());
+-		addFont(largeFonts, largeFontSize, largeFontConfig, io.Fonts->GetGlyphRangesKorean());
++		addLocaleFonts(fonts, fontSize, fontConfig, io.Fonts->GetGlyphRangesKorean());
++		addLocaleFonts(largeFonts, largeFontSize, largeFontConfig, io.Fonts->GetGlyphRangesKorean());
+ 	}
+ 	else if (locale.find("zh_") == 0)		// Chinese
+ 	{
+@@ -497,8 +517,8 @@
+ 				"/usr/share/fonts/google-noto-cjk/NotoSansCJK-Bold.ttc", // redhat
+ 				nullptr
+ 		};
+-		addFont(fonts, fontSize, fontConfig, glyphRanges);
+-		addFont(largeFonts, largeFontSize, largeFontConfig, glyphRanges);
++		addLocaleFonts(fonts, fontSize, fontConfig, glyphRanges);
++		addLocaleFonts(largeFonts, largeFontSize, largeFontConfig, glyphRanges);
+ 	}
+ 
+ 	// TODO BSD, iOS, ...

@@ -1,0 +1,136 @@
+diff -Naur a/core/linux/common.cpp b/core/linux/common.cpp
+--- a/core/linux/common.cpp	2026-03-23 10:34:22.000000000 +0800
++++ b/core/linux/common.cpp	2026-06-21 12:57:25.335353846 +0800
+@@ -23,6 +23,7 @@
+ #include "hw/mem/addrspace.h"
+ #include "hw/mem/mem_watch.h"
+ #include "emulator.h"
++#include "ui/mainui.h"
+ 
+ #ifdef __SWITCH__
+ #include <ucontext.h>
+@@ -154,9 +155,9 @@
+ }
+ 
+ #if defined(__unix__) && !defined(LIBRETRO) && !defined(__ANDROID__)
+-static void sigintHandler(int)
++static void shutdownHandler(int)
+ {
+-	dc_exit();
++	flycast_request_shutdown = 1;
+ }
+ #endif
+ 
+@@ -167,8 +168,8 @@
+ 	enable_runfast();
+ 	os_InstallFaultHandler();
+ #if defined(__unix__) && !defined(LIBRETRO) && !defined(__ANDROID__)
+-	// exit cleanly on ^C
+-	signal(SIGINT, sigintHandler);
++	signal(SIGINT, shutdownHandler);
++	signal(SIGTERM, shutdownHandler);
+ #endif
+ 	
+ 	DEBUG_LOG(BOOT, "Linux paging: sysconf %ld PAGE_SIZE %ld PAGE_MASK %lX", sysconf(_SC_PAGESIZE), (unsigned long)PAGE_SIZE, (long)PAGE_MASK);
+diff -Naur a/core/nullDC.cpp b/core/nullDC.cpp
+--- a/core/nullDC.cpp	2026-03-23 10:34:22.000000000 +0800
++++ b/core/nullDC.cpp	2026-06-21 12:57:26.649784952 +0800
+@@ -108,9 +108,6 @@
+ #ifndef __ANDROID__
+ void dc_exit()
+ {
+-	try {
+-		emu.unloadGame();
+-	} catch (...) { }
+ 	mainui_stop();
+ 
+ #ifdef TARGET_UWP
+diff -Naur a/core/ui/gui_util.h b/core/ui/gui_util.h
+--- a/core/ui/gui_util.h	2026-03-23 10:34:22.000000000 +0800
++++ b/core/ui/gui_util.h	2026-06-21 12:57:27.821123646 +0800
+@@ -83,12 +83,18 @@
+ 		if (progress.cancelled)
+ 			return;
+ 		progress.cancelled = true;
+-		if (future.valid())
+-			try {
+-				future.get();
+-			} catch (const FlycastException&) {
++		if (future.valid()) {
++			if (future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
++				try {
++					future.get();
++				} catch (const FlycastException&) {
++				}
+ 			}
+-		emu.unloadGame();
++		}
++		try {
++			emu.unloadGame();
++		} catch (...) {
++		}
+ 		gui_setState(GuiState::Main);
+ 	}
+ 
+diff -Naur a/core/ui/mainui.cpp b/core/ui/mainui.cpp
+--- a/core/ui/mainui.cpp	2026-03-23 10:34:22.000000000 +0800
++++ b/core/ui/mainui.cpp	2026-06-21 12:57:29.939218585 +0800
+@@ -32,13 +32,24 @@
+ #include <thread>
+ 
+ static bool mainui_enabled;
++volatile sig_atomic_t flycast_request_shutdown = 0;
+ u32 MainFrameCount;
+ static bool forceReinit;
+ 
++static inline void mainui_poll_shutdown()
++{
++	if (flycast_request_shutdown)
++		mainui_enabled = false;
++}
++
+ bool mainui_rend_frame()
+ {
+ 	FC_PROFILE_SCOPE;
+ 
++	mainui_poll_shutdown();
++	if (!mainui_enabled)
++		return false;
++
+ 	os_DoEvents();
+ 	os_UpdateInputState();
+ 
+@@ -103,6 +114,10 @@
+ 
+ 	while (mainui_enabled)
+ 	{
++		mainui_poll_shutdown();
++		if (!mainui_enabled)
++			break;
++
+ 		fc_profiler::startThread("main");
+ 
+ 		if (mainui_rend_frame() && imguiDriver != nullptr)
+@@ -160,6 +175,8 @@
+ void mainui_stop()
+ {
+ 	mainui_enabled = false;
++	flycast_request_shutdown = 0;
++	rend_cancel_emu_wait();
+ }
+ 
+ void mainui_reinit()
+diff -Naur a/core/ui/mainui.h b/core/ui/mainui.h
+--- a/core/ui/mainui.h	2026-03-23 10:34:22.000000000 +0800
++++ b/core/ui/mainui.h	2026-06-21 12:57:25.335353846 +0800
+@@ -18,8 +18,10 @@
+ */
+ #pragma once
+ #include "types.h"
++#include <csignal>
+ 
+ extern u32 MainFrameCount;
++extern volatile sig_atomic_t flycast_request_shutdown;
+ 
+ bool mainui_rend_frame();
+ void mainui_init();

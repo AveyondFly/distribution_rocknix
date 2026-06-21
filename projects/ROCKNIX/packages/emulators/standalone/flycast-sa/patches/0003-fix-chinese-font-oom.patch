@@ -1,0 +1,127 @@
+diff -Naur a/core/ui/gui.cpp b/core/ui/gui.cpp
+--- a/core/ui/gui.cpp	2026-06-21 11:59:05.486679014 +0800
++++ b/core/ui/gui.cpp	2026-06-21 11:59:05.486679014 +0800
+@@ -208,6 +208,59 @@
+ 			break;
+ }
+ 
++#if defined(__linux__)
++// Legacy ImGui GLES backend preloads every glyph in each font source's range at
++// atlas build time. Merged CJK fonts must only declare UI translation glyphs,
++// not full ChineseOfficial/Common ranges (otherwise ~20k glyphs are rasterized).
++static void addPoTranslationGlyphs(ImFontGlyphRangesBuilder& builder, const char* poResource)
++{
++	size_t size;
++	std::unique_ptr<u8[]> data = resource::load(poResource, size);
++	if (data == nullptr)
++		return;
++	const char* text = (const char*)data.get();
++	const char* text_end = text + size;
++	for (const char* p = text; p + 8 <= text_end; p++)
++	{
++		if (strncmp(p, "msgstr \"", 8) != 0)
++			continue;
++		p += 8;
++		std::string msgstr;
++		while (p < text_end && *p != '"')
++		{
++			if (*p == '\\' && p + 1 < text_end)
++			{
++				char c = p[1];
++				if (c == 'n') msgstr += '\n';
++				else if (c == 't') msgstr += '\t';
++				else if (c == '\\') msgstr += '\\';
++				else if (c == '"') msgstr += '"';
++				p += 2;
++				continue;
++			}
++			msgstr += *p++;
++		}
++		builder.AddText(msgstr.c_str());
++	}
++}
++
++static const ImWchar* getChineseUiGlyphRanges(const std::string& locale)
++{
++	static ImVector<ImWchar> ranges;
++	ranges.clear();
++	ImFontGlyphRangesBuilder builder;
++	builder.AddRanges(ImGui::GetIO().Fonts->GetGlyphRangesDefault());
++	const char* po = "i18n/zh_CN.po";
++	if (locale.find("zh_TW") == 0)
++		po = "i18n/zh_TW.po";
++	else if (locale.find("zh_HK") == 0)
++		po = "i18n/zh_HK.po";
++	addPoTranslationGlyphs(builder, po);
++	builder.BuildRanges(&ranges);
++	return ranges.Data;
++}
++#endif
++
+ void gui_initFonts()
+ {
+ 	static float uiScale;
+@@ -242,21 +295,18 @@
+ 	if (settings.display.uiScale > 1)
+ 		ImGui::GetStyle().ScaleAllSizes(settings.display.uiScale);
+ 
+-    static const ImWchar ranges[] =
+-    {
+-    	0x0020, 0xFFFF, // All chars
+-        0,
+-    };
+-
+ 	ImGuiIO& io = ImGui::GetIO();
+ 	io.Fonts->Clear();
++	// Do not use 0x0020..0xFFFF here: legacy GLES preloads all glyphs in range,
++	// and merged CJK fonts would rasterize the entire BMP (~20k+ ideographs).
++	const ImWchar* defaultGlyphRanges = io.Fonts->GetGlyphRangesDefault();
+ 
+ 	// Regular font
+ 	const float fontSize = uiScaled(17.f);
+ 	size_t dataSize;
+ 	std::unique_ptr<u8[]> data = resource::load("fonts/Roboto-Medium.ttf", dataSize);
+ 	verify(data != nullptr);
+-	ImFont *regularFont = io.Fonts->AddFontFromMemoryTTF(data.release(), dataSize, fontSize, nullptr, ranges);
++	ImFont *regularFont = io.Fonts->AddFontFromMemoryTTF(data.release(), dataSize, fontSize, nullptr, defaultGlyphRanges);
+     ImFontConfig fontConfig;
+     fontConfig.MergeMode = true;
+     fontConfig.DstFont = regularFont;
+@@ -271,7 +321,7 @@
+     const float largeFontSize = uiScaled(21.f);
+ 	data = resource::load("fonts/Roboto-Regular.ttf", dataSize);
+ 	verify(data != nullptr);
+-	largeFont = io.Fonts->AddFontFromMemoryTTF(data.release(), dataSize, largeFontSize, nullptr, ranges);
++	largeFont = io.Fonts->AddFontFromMemoryTTF(data.release(), dataSize, largeFontSize, nullptr, defaultGlyphRanges);
+ 	ImFontConfig largeFontConfig;
+ 	largeFontConfig.MergeMode = true;
+ 	largeFontConfig.DstFont = largeFont;
+@@ -429,22 +479,23 @@
+ 	}
+ 	else if (locale.find("zh_") == 0)		// Chinese
+ 	{
+-		const ImWchar *glyphRanges = GetGlyphRangesChineseSimplifiedOfficial();
+-		if (locale.find("zh_TW") == 0 || locale.find("zh_HK") == 0)
+-			glyphRanges = GetGlyphRangesChineseTraditionalOfficial();
++		const ImWchar *glyphRanges = getChineseUiGlyphRanges(locale);
+ 		const char *fonts[] = {
++				// ROCKNIX: full CJK font shipped under this path (雅黑多国), not real DejaVu.
++				"/usr/share/fonts/TTF/DejaVuSansMono.ttf",
+ 				"/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+ 				"/usr/share/fonts/wqy-zenhei-fonts/wqy-zenhei.ttc", // redhat
+-				"/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
+ 				"/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+ 				"/usr/share/fonts/google-noto-cjk/NotoSansCJK-Regular.ttc", // redhat
++				nullptr
+ 		};
+ 		const char *largeFonts[] = {
++				"/usr/share/fonts/TTF/DejaVuSansMono.ttf",
+ 				"/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+ 				"/usr/share/fonts/wqy-zenhei-fonts/wqy-zenhei.ttc", // redhat
+-				"/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
+ 				"/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
+ 				"/usr/share/fonts/google-noto-cjk/NotoSansCJK-Bold.ttc", // redhat
++				nullptr
+ 		};
+ 		addFont(fonts, fontSize, fontConfig, glyphRanges);
+ 		addFont(largeFonts, largeFontSize, largeFontConfig, glyphRanges);

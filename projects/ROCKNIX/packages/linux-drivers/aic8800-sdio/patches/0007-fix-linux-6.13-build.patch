@@ -1,0 +1,141 @@
+From c062117922b8fcffa82a7093b4d42754aa98e92e Mon Sep 17 00:00:00 2001
+From: Mingcong Bai <jeffbai@aosc.io>
+Date: Wed, 5 Feb 2025 17:23:06 +0800
+Subject: [PATCH] rwnx: adapt to cfg80211_ops.set_monitor_channel() changes
+ since 6.13
+
+Since 9c4f83092775 ("wifi: cfg80211: pass net_device to
+.set_monitor_channel"), member function `int set_monitor_channel' of
+`struct cfg80211_ops' takes an additional `struct net_device *dev'
+parameter.
+
+Adapt to this change for kernels >= 6.13.
+
+Signed-off-by: Mingcong Bai <jeffbai@aosc.io>
+---
+ src/PCIE/driver_fw/driver/aic8800/aic8800_fdrv/rwnx_main.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+Index: aic8800/src/PCIE/driver_fw/driver/aic8800/aic8800_fdrv/rwnx_main.c
+===================================================================
+--- aic8800.orig/src/PCIE/driver_fw/driver/aic8800/aic8800_fdrv/rwnx_main.c
++++ aic8800/src/PCIE/driver_fw/driver/aic8800/aic8800_fdrv/rwnx_main.c
+@@ -3684,6 +3684,9 @@ static int rwnx_cfg80211_stop_ap(struct
+  * configured at firmware level.
+  */
+ static int rwnx_cfg80211_set_monitor_channel(struct wiphy *wiphy,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION (6, 13, 0)
++											 struct net_device *,
++#endif
+ 											 struct cfg80211_chan_def *chandef)
+ {
+ 	struct rwnx_hw *rwnx_hw = wiphy_priv(wiphy);
+@@ -3738,7 +3741,11 @@ static int rwnx_cfg80211_set_monitor_cha
+ 
+ int rwnx_cfg80211_set_monitor_channel_(struct wiphy *wiphy,
+                                              struct cfg80211_chan_def *chandef){
++#if LINUX_VERSION_CODE >= KERNEL_VERSION (6, 13, 0)
++    return rwnx_cfg80211_set_monitor_channel(wiphy, NULL, chandef);
++#else
+     return rwnx_cfg80211_set_monitor_channel(wiphy, chandef);
++#endif
+ }
+ 
+ /**
+@@ -4149,7 +4156,11 @@ static int rwnx_cfg80211_get_channel(str
+ 
+ 	if (rwnx_vif->vif_index == rwnx_hw->monitor_vif) {
+ 		//retrieve channel from firmware
++#if LINUX_VERSION_CODE >= KERNEL_VERSION (6, 13, 0)
++		rwnx_cfg80211_set_monitor_channel(wiphy, NULL, NULL);
++#else
+ 		rwnx_cfg80211_set_monitor_channel(wiphy, NULL);
++#endif
+ 	}
+ 
+ 	//Check if channel context is valid
+Index: aic8800/src/SDIO/driver_fw/driver/aic8800/aic8800_bsp/aic_bsp_driver.c
+===================================================================
+--- aic8800.orig/src/SDIO/driver_fw/driver/aic8800/aic8800_bsp/aic_bsp_driver.c
++++ aic8800/src/SDIO/driver_fw/driver/aic8800/aic8800_bsp/aic_bsp_driver.c
+@@ -476,8 +476,12 @@ void rwnx_rx_handle_msg(struct aic_sdio_
+ }
+ 
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 13, 0)
++MODULE_IMPORT_NS("VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver");
++#else
+ MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
+ #endif
++#endif
+ 
+ #define MD5(x) x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8],x[9],x[10],x[11],x[12],x[13],x[14],x[15]
+ #define MD5PINRT "file md5:%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\r\n"
+Index: aic8800/src/SDIO/driver_fw/driver/aic8800/aic8800_fdrv/rwnx_main.c
+===================================================================
+--- aic8800.orig/src/SDIO/driver_fw/driver/aic8800/aic8800_fdrv/rwnx_main.c
++++ aic8800/src/SDIO/driver_fw/driver/aic8800/aic8800_fdrv/rwnx_main.c
+@@ -3601,6 +3601,9 @@ static int rwnx_cfg80211_stop_ap(struct
+  * configured at firmware level.
+  */
+ static int rwnx_cfg80211_set_monitor_channel(struct wiphy *wiphy,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION (6, 13, 0)
++											 struct net_device *,
++#endif
+ 											 struct cfg80211_chan_def *chandef)
+ {
+ 	struct rwnx_hw *rwnx_hw = wiphy_priv(wiphy);
+@@ -3655,7 +3658,11 @@ static int rwnx_cfg80211_set_monitor_cha
+ 
+ int rwnx_cfg80211_set_monitor_channel_(struct wiphy *wiphy,
+                                              struct cfg80211_chan_def *chandef){
++#if LINUX_VERSION_CODE >= KERNEL_VERSION (6, 13, 0)
++    return rwnx_cfg80211_set_monitor_channel(wiphy, NULL, chandef);
++#else
+     return rwnx_cfg80211_set_monitor_channel(wiphy, chandef);
++#endif
+ }
+ 
+ 
+@@ -4074,7 +4081,11 @@ static int rwnx_cfg80211_get_channel(str
+ 
+ 	if (rwnx_vif->vif_index == rwnx_hw->monitor_vif) {
+ 		//retrieve channel from firmware
++#if LINUX_VERSION_CODE >= KERNEL_VERSION (6, 13, 0)
++		rwnx_cfg80211_set_monitor_channel(wiphy, NULL, NULL);
++#else
+ 		rwnx_cfg80211_set_monitor_channel(wiphy, NULL);
++#endif
+ 	}
+ 
+ 	//Check if channel context is valid
+@@ -6460,8 +6471,12 @@ static void __exit rwnx_mod_exit(void)
+ 
+ 
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 13, 0)
++MODULE_IMPORT_NS("VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver");
++#else
+ MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
+ #endif
++#endif
+ 
+ module_init(rwnx_mod_init);
+ module_exit(rwnx_mod_exit);
+Index: aic8800/src/SDIO/driver_fw/driver/aic8800/aic8800_fdrv/rwnx_platform.c
+===================================================================
+--- aic8800.orig/src/SDIO/driver_fw/driver/aic8800/aic8800_fdrv/rwnx_platform.c
++++ aic8800/src/SDIO/driver_fw/driver/aic8800/aic8800_fdrv/rwnx_platform.c
+@@ -548,8 +548,12 @@ static int rwnx_plat_tl4_fw_upload(struc
+ #endif
+ 
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 13, 0)
++MODULE_IMPORT_NS("VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver");
++#else
+ MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
+ #endif
++#endif
+ 
+ #if 0
+ /**

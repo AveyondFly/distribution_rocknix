@@ -21,7 +21,7 @@ case "${CURRENT_CORE}" in
         IS_VERTICAL=true
         ;;
     # Might not be vertical
-    mame*|fbneo|fbalpha*)
+    mame*|fbneo*|fbalpha*)
         if grep -q "id=\"${ROM_NAME}\"[^>]*vert=\"true\"" "${ARCADEROMS_XML}" 2>/dev/null; then
             IS_VERTICAL=true
         fi

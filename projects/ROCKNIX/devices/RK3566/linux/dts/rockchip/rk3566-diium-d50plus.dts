@@ -431,7 +431,7 @@
 };
 
 &combphy1 {
-	status = "okay";
+	status = "disabled";
 };
 
 &cru {
@@ -496,7 +496,7 @@
             panel_description =
                 "G size=72,128 delays=120,200,20,20,20 format=rgb888 lanes=4 flags=0xa03",
 
-                "M clock=95500 horizontal=720,432,6,18 vertical=1280,20,10,34 default=1",
+                "M clock=63200 horizontal=720,32,6,18 vertical=1280,16,2,34 default=1",
 
                 "I seq=0000",
                 "I seq=ff875601",
@@ -1081,14 +1081,15 @@
 
 &sdmmc0 {
 	bus-width = <4>;
-	cap-mmc-highspeed;
 	cap-sd-highspeed;
+	cd-gpios = <&gpio0 RK_PA4 GPIO_ACTIVE_LOW>;
 	disable-wp;
 	pinctrl-0 = <&sdmmc0_bus4>, <&sdmmc0_clk>, <&sdmmc0_cmd>,
 		    <&sdmmc0_det>;
 	pinctrl-names = "default";
 	sd-uhs-sdr104;
-	/*vqmmc-supply = <&vccio_sd>;*/
+	vmmc-supply = <&vcc_3v3>;
+	vqmmc-supply = <&vccio_sd>;
 	status = "okay";
 };
 
@@ -1118,6 +1119,7 @@
 		    <&sdmmc2m1_det>;
 	pinctrl-names = "default";
 	sd-uhs-sdr104;
+	vmmc-supply = <&vcc_3v3>;
 	vqmmc-supply = <&vcc2v8_dvp>;
 	status = "okay";
 };
@@ -1146,43 +1148,44 @@
 	status = "okay";
 };
 
+/*
+ * WiFi dongle is on usb_host0_ehci (usb2phy1_otg, Bus 005).
+ * D50Plus differs from E5Plus which uses usb_host0_xhci (Bus 001).
+ */
 &usb_host0_xhci {
-	phys = <&usb2phy0_otg>;
-	phy-names = "usb2-phy";
-	status = "okay";
+	status = "disabled";
 };
 
 &usb_host0_ohci {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb_host0_ehci {
 	status = "okay";
 };
 
-
 &usb_host1_xhci {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb_host1_ohci {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb_host1_ehci {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb2phy0 {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb2phy0_otg {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb2phy0_host {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb2phy1 {
@@ -1194,7 +1197,7 @@
 };
 
 &usb2phy1_host {
-	status = "okay";
+	status = "disabled";
 };
 
 &vop {

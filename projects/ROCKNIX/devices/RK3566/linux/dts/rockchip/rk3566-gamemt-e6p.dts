@@ -423,14 +423,14 @@
 };
 
 &combphy1 {
-	status = "okay";
+	status = "disabled";
 };
 
 &cru {
 	assigned-clocks = <&pmucru CLK_RTC_32K>, <&cru PLL_GPLL>,
 			  <&pmucru PLL_PPLL>, <&cru PLL_VPLL>;
 	assigned-clock-rates = <32768>, <1200000000>,
-			       <200000000>, <126400000>;
+			       <200000000>, <1320000000>;
 };
 
 &cpu0 {
@@ -487,18 +487,7 @@
             panel_description =
                 "G size=68,122 delays=60,60,60,120,20 format=rgb888 lanes=4 flags=0xa03",
 
-                "M clock=66000 horizontal=720,70,20,30 vertical=1280,10,4,10 default=1",
-                "M clock=66000 horizontal=720,50,38,50 vertical=1280,10,240,10",
-                "M clock=66000 horizontal=720,50,60,50 vertical=1280,10,200,10",
-                "M clock=66430 horizontal=720,50,58,50 vertical=1280,10,213,10",
-                "M clock=66010 horizontal=720,50,55,50 vertical=1280,10,12,10",
-                "M clock=68280 horizontal=720,50,52,50 vertical=1280,10,11,10",
-                "M clock=66300 horizontal=720,50,25,50 vertical=1280,10,9,10",
-                "M clock=66780 horizontal=720,50,20,50 vertical=1280,10,25,10",
-                "M clock=69040 horizontal=720,50,47,50 vertical=1280,10,25,10",
-                "M clock=97240 horizontal=720,50,43,50 vertical=1280,10,193,10",
-                "M clock=100170 horizontal=720,50,20,50 vertical=1280,10,25,10",
-                "M clock=133110 horizontal=720,50,30,50 vertical=1280,10,5,10",
+                "M clock=66000 horizontal=720,50,20,50 vertical=1280,10,4,10 default=1",
 
                 "I seq=ff988107",
                 "I seq=0320", "I seq=0406", "I seq=0500", "I seq=0601", "I seq=0700",
@@ -945,11 +934,13 @@
 	bus-width = <4>;
 	cap-mmc-highspeed;
 	cap-sd-highspeed;
+	cd-gpios = <&gpio0 RK_PA4 GPIO_ACTIVE_LOW>;
 	disable-wp;
 	pinctrl-0 = <&sdmmc0_bus4>, <&sdmmc0_clk>, <&sdmmc0_cmd>,
 		    <&sdmmc0_det>;
 	pinctrl-names = "default";
 	sd-uhs-sdr104;
+	vmmc-supply = <&vcc_3v3>;
 	vqmmc-supply = <&vccio_sd>;
 	status = "okay";
 };
@@ -980,6 +971,7 @@
 		    <&sdmmc2m1_det>;
 	pinctrl-names = "default";
 	sd-uhs-sdr104;
+	vmmc-supply = <&vcc_3v3>;
 	vqmmc-supply = <&vcc2v8_dvp>;
 	status = "okay";
 };
@@ -1008,43 +1000,44 @@
 	status = "okay";
 };
 
+/*
+ * WiFi dongle is on usb_host0_ehci (usb2phy1_otg, Bus 003).
+ * All other USB host controllers are unused external ports.
+ */
 &usb_host0_xhci {
-	phys = <&usb2phy0_otg>;
-	phy-names = "usb2-phy";
-	status = "okay";
+	status = "disabled";
 };
 
 &usb_host0_ohci {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb_host0_ehci {
 	status = "okay";
 };
 
-
 &usb_host1_xhci {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb_host1_ohci {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb_host1_ehci {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb2phy0 {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb2phy0_otg {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb2phy0_host {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb2phy1 {
@@ -1056,7 +1049,7 @@
 };
 
 &usb2phy1_host {
-	status = "okay";
+	status = "disabled";
 };
 
 &vop {

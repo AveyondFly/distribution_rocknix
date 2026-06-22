@@ -217,10 +217,10 @@
 		  p = positive direction, n = negative direction
 		  report value = (real_adc_data * tuning_value) / 100
 		*/
-		abs_x-p-tuning = <245>;
+		abs_x-p-tuning = <545>;
 		abs_x-n-tuning = <545>;
 
-		abs_y-p-tuning = <245>;
+		abs_y-p-tuning = <545>;
 		abs_y-n-tuning = <545>;
 
 		abs_rx-p-tuning = <545>;
@@ -426,14 +426,14 @@
 };
 
 &combphy1 {
-	status = "okay";
+	status = "disabled";
 };
 
 &cru {
 	assigned-clocks = <&pmucru CLK_RTC_32K>, <&cru PLL_GPLL>,
 			  <&pmucru PLL_PPLL>, <&cru PLL_VPLL>;
 	assigned-clock-rates = <32768>, <1200000000>,
-			       <200000000>, <126400000>;
+			       <200000000>, <724000000>;
 };
 
 &cpu0 {
@@ -490,7 +490,7 @@
             panel_description =
                 "G size=72,128 delays=120,200,20,20,20 format=rgb888 lanes=4 flags=0xa03",
 
-                "M clock=72328 horizontal=720,146,20,19 vertical=1280,17,4,31 default=1",
+                "M clock=72400 horizontal=720,146,20,19 vertical=1280,17,4,31 default=1",
 
                 "I seq=0000",
                 "I seq=ff128401",
@@ -1006,13 +1006,14 @@
 
 &sdmmc0 {
 	bus-width = <4>;
-	cap-mmc-highspeed;
 	cap-sd-highspeed;
+	cd-gpios = <&gpio0 RK_PA4 GPIO_ACTIVE_LOW>;
 	disable-wp;
 	pinctrl-0 = <&sdmmc0_bus4>, <&sdmmc0_clk>, <&sdmmc0_cmd>,
 		    <&sdmmc0_det>;
 	pinctrl-names = "default";
 	sd-uhs-sdr104;
+	vmmc-supply = <&vcc_3v3>;
 	vqmmc-supply = <&vccio_sd>;
 	status = "okay";
 };
@@ -1043,6 +1044,7 @@
 		    <&sdmmc2m1_det>;
 	pinctrl-names = "default";
 	sd-uhs-sdr104;
+	vmmc-supply = <&vcc_3v3>;
 	vqmmc-supply = <&vcc2v8_dvp>;
 	status = "okay";
 };
@@ -1071,6 +1073,10 @@
 	status = "okay";
 };
 
+/*
+ * WiFi dongle is on usb_host0_xhci (usb2phy0_otg, Bus 001).
+ * All other USB host controllers are unused external ports.
+ */
 &usb_host0_xhci {
 	phys = <&usb2phy0_otg>;
 	phy-names = "usb2-phy";
@@ -1078,24 +1084,23 @@
 };
 
 &usb_host0_ohci {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb_host0_ehci {
-	status = "okay";
+	status = "disabled";
 };
 
-
 &usb_host1_xhci {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb_host1_ohci {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb_host1_ehci {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb2phy0 {
@@ -1107,19 +1112,19 @@
 };
 
 &usb2phy0_host {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb2phy1 {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb2phy1_otg {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb2phy1_host {
-	status = "okay";
+	status = "disabled";
 };
 
 &vop {

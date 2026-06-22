@@ -1,0 +1,52 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026-present ROCKNIX (https://github.com/ROCKNIX)
+
+is_radxa_zero_3w() {
+  [ -r /proc/device-tree/compatible ] &&
+    tr '\000' '\n' < /proc/device-tree/compatible | grep -qx 'radxa,zero-3w'
+}
+
+wait_for_ttys1() {
+  local i
+
+  for i in $(seq 1 20); do
+    [ -e /dev/ttyS1 ] && return 0
+    sleep 0.25
+  done
+
+  return 1
+}
+
+case "$1" in
+  start)
+    if ! is_radxa_zero_3w; then
+      echo "aic8800-sdio-bt: skipping non-Radxa Zero 3W board"
+      exit 0
+    fi
+
+    if ! wait_for_ttys1; then
+      echo "aic8800-sdio-bt: /dev/ttyS1 not found" >&2
+      exit 1
+    fi
+
+    /usr/sbin/rfkill unblock bluetooth
+    /usr/sbin/modprobe aic8800_bsp
+    /usr/sbin/modprobe aic8800_btlpm
+    sleep 1
+    exec /usr/bin/hciattach -s 1500000 /dev/ttyS1 any 1500000 flow nosleep
+    ;;
+
+  stop)
+    if ! is_radxa_zero_3w; then
+      exit 0
+    fi
+
+    /usr/sbin/rfkill block bluetooth
+    ;;
+
+  *)
+    echo "Usage: $0 {start|stop}" >&2
+    exit 1
+    ;;
+esac

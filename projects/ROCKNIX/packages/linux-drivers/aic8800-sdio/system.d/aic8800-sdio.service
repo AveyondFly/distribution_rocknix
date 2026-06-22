@@ -1,0 +1,11 @@
+[Unit]
+Description=AIC8800 SDIO Bluetooth (Radxa Zero 3W)
+Wants=bluetooth.service
+Before=bluetooth.service
+After=systemd-modules-load.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=true
+ExecStart=/usr/bin/aic8800-sdio-bt start
+ExecStop=/usr/bin/aic8800-sdio-bt stop

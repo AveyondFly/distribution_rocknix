@@ -70,6 +70,10 @@ if [ -z "$CCACHE_DIR" ]; then
   export CCACHE_DIR=$BUILD/.ccache
 fi
 
+if [ -z "$CARGO_HOME" ]; then
+  export CARGO_HOME=$BUILD/.cargo-home
+fi
+
 # keep a copy of ccache dir used for toolchain ccache
 export BUILD_CCACHE_DIR="${CCACHE_DIR}"
 

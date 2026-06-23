@@ -146,6 +146,32 @@ jobs:
           inputs.DEVICE == 'S922X'  || inputs.DEVICE == 'SM8250' || inputs.DEVICE == 'SM8550' || inputs.DEVICE == 'SDM845' || inputs.DEVICE == 'SM8650' }}
         run: rm build.qt6.tar.zst
 
+      - name: Retrieve rust cache
+        run: |
+          BASE="https://github.com/${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}/releases/download/ccache"
+          PREFIX="rust-cache-aarch64-${{ inputs.DEVICE }}-emu-standalone.tar.part-"
+          found_any=0
+          for suffix in $(printf "%s\n" {a..z}{a..z}); do
+            FILE="${PREFIX}${suffix}"
+            URL="${BASE}/${FILE}"
+
+            echo "Trying $URL"
+            if curl -L --fail --silent --show-error -o "$FILE" "$URL"; then
+              echo "Downloaded $FILE"
+              found_any=1
+            else
+              echo "No more parts found at $URL"
+              break
+            fi
+          done
+          if [ "$found_any" -eq 0 ]; then
+            echo "No rust cache found, skipping."
+            exit 0
+          fi
+          cat ${PREFIX}* > rust-cache.tar
+          tar -xf rust-cache.tar || { echo "Extract failed"; exit 0; }
+          rm -f ${PREFIX}* rust-cache.tar
+
       - name: Build
         uses: corrupt952/actions-retry-command@v1.0.7
         with:
@@ -191,6 +217,34 @@ jobs:
           makeLatest: true
           prerelease: true
           body: ccache
+          token: ${{ secrets.GH_PAT }}
+          repo: ${{ vars.CACHE_REPO || 'distribution-cache' }}
+        continue-on-error: true
+
+      - name: Tar rust cache
+        id: rust_cache
+        run: |
+          ./scripts/ci_rust_cache archive \
+            "./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64" \
+            "rust-cache-aarch64-${{ inputs.DEVICE }}-emu-standalone.tar.part-"
+          shopt -s nullglob
+          parts=(rust-cache-aarch64-${{ inputs.DEVICE }}-emu-standalone.tar.part-*)
+          if [ ${#parts[@]} -gt 0 ]; then
+            echo "found=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "found=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Save rust cache
+        if: steps.rust_cache.outputs.found == 'true'
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ccache
+          artifacts: "rust-cache-aarch64-${{ inputs.DEVICE }}-emu-standalone.tar.part-*"
+          allowUpdates: true
+          makeLatest: true
+          prerelease: true
+          body: rust-cache
           token: ${{ secrets.GH_PAT }}
           repo: ${{ vars.CACHE_REPO || 'distribution-cache' }}
         continue-on-error: true

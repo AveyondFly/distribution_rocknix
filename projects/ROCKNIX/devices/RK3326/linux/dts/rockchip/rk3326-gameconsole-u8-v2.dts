@@ -328,7 +328,18 @@ thumbr  { gpios = <&gpio2 RK_PB6 GPIO_ACTIVE_LOW>; };
 		panel_description =
 		"G size=153,85 delays=20,20,20,120,20 format=rgb888 lanes=2 flags=0xe03",
 		
-		"M clock=29700 horizontal=480,32,6,32 vertical=800,10,4,86 default=1",
+		"M clock=30000 horizontal=480,32,6,32 vertical=800,10,4,12 default=1",
+		"M clock=23600 horizontal=480,32,28,32 vertical=800,10,4,12",
+		"M clock=22770 horizontal=480,32,6,32 vertical=800,10,6,12",
+		"M clock=23930 horizontal=480,32,17,32 vertical=800,10,31,12",
+		"M clock=30360 horizontal=480,32,6,32 vertical=800,10,138,12",
+		"M clock=33320 horizontal=480,32,27,32 vertical=800,10,155,12",
+		"M clock=31440 horizontal=480,32,28,32 vertical=800,10,95,12",
+		"M clock=30030 horizontal=480,32,28,32 vertical=800,10,53,12",
+		"M clock=33820 horizontal=480,32,21,32 vertical=800,10,174,12",
+		"M clock=40280 horizontal=480,32,25,32 vertical=800,10,116,12",
+		"M clock=41580 horizontal=480,32,6,32 vertical=800,10,18,12",
+		"M clock=54780 horizontal=480,32,6,32 vertical=800,10,8,12",
 		
 		"I seq=ffff98060401",
 		"I seq=0810",

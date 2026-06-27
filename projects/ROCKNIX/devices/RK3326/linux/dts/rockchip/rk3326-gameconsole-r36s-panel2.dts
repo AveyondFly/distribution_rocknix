@@ -16,7 +16,18 @@
 	panel_description =
 	"G size=52,70 delays=20,150,20,120,20 format=rgb888 lanes=4 flags=0xe03",
 	
-	"M clock=29700 horizontal=640,150,50,150 vertical=480,15,3,2 default=1",
+	"M clock=29000 horizontal=640,46,2,44 vertical=480,16,2,14 default=1",
+	"M clock=19950 horizontal=640,46,11,44 vertical=480,16,29,14",
+	"M clock=19110 horizontal=640,46,5,44 vertical=480,16,10,14",
+	"M clock=19650 horizontal=640,46,33,44 vertical=480,16,5,14",
+	"M clock=22080 horizontal=640,46,20,44 vertical=480,16,2,14",
+	"M clock=26740 horizontal=640,46,10,44 vertical=480,16,95,14",
+	"M clock=23940 horizontal=640,46,11,44 vertical=480,16,29,14",
+	"M clock=23040 horizontal=640,46,20,44 vertical=480,16,2,14",
+	"M clock=22920 horizontal=640,46,2,44 vertical=480,16,11,14",
+	"M clock=35310 horizontal=640,46,32,44 vertical=480,16,104,14",
+	"M clock=34560 horizontal=640,46,20,44 vertical=480,16,2,14",
+	"M clock=46080 horizontal=640,46,20,44 vertical=480,16,2,14",
 	
 	"I seq=ff30",
 	"I seq=ff52",

@@ -1,0 +1,163 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+* # Copyright (C) 2022-26 AURKNIX (https://github.com/AveyondFly)
+*/
+
+/dts-v1/;
+#include "rk3326-gameconsole-r36s.dts"
+
+/ {
+	model = "Game Console R50H";
+	compatible = "gameconsole,r50h", "gameconsole,r36s", "rockchip,rk3326";
+	
+	dc_charger:dc-charger {
+		compatible = "gpio-charger";
+		charger-type = "mains";
+		gpios = <&gpio0 RK_PB3 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&dc_det>;
+	};
+};
+
+
+&rk817 {
+	regulators{
+		vcc_1v0: LDO_REG1 {
+			regulator-min-microvolt = <0xf4240>;
+			regulator-max-microvolt = <0xf4240>;
+			regulator-name = "vcc_1v0";
+			regulator-always-on;
+			regulator-boot-on;
+			
+			regulator-state-mem {
+				regulator-off-in-suspend;
+				regulator-suspend-microvolt = <0xf4240>;
+			};
+		};
+		vdd3v3_wifi: LDO_REG9 {
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-name = "vdd_wifi";
+			regulator-always-on;
+			regulator-boot-on;
+			
+			regulator-state-mem {
+				regulator-off-in-suspend;
+				regulator-suspend-microvolt = <3300000>;
+			};
+		};
+		otg_switch: OTG_SWITCH {
+			regulator-name = "otg_switch";
+			regulator-boot-on;
+			regulator-always-on;
+		};
+	};
+	charger {
+		rockchip,use-fuel-gauge-status;
+		rockchip,resistor-sense-micro-ohms = <0x2710>;
+		rockchip,sleep-enter-current-microamp = <0x493e0>;
+		rockchip,sleep-filter-current-microamp = <0x186a0>;
+	};
+};
+
+&usb20_otg {
+	vbus-supply = <&otg_switch>;
+};
+
+&joypad {
+	sw13 {
+		gpios = <&gpio0 RK_PB5 GPIO_ACTIVE_LOW>;
+		label = "GPIO BTN_FN";
+		linux,code = <BTN_MODE>;
+	};
+};
+
+&pinctrl {
+	btns {
+		btn_pins: btn-pins {
+			rockchip,pins =
+			<1 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>,
+			<0 RK_PB5 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PB5 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PA2 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PA5 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA2 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA4 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA5 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,
+			<2 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up>,
+			<3 RK_PB1 RK_FUNC_GPIO &pcfg_pull_up>,
+			<3 RK_PB2 RK_FUNC_GPIO &pcfg_pull_up>,
+			<3 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>,
+			<3 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+		
+	};
+};
+&cru {
+	assigned-clocks = <&cru PLL_NPLL>,
+	<&cru ACLK_BUS_PRE>, <&cru ACLK_PERI_PRE>,
+	<&cru HCLK_BUS_PRE>, <&cru HCLK_PERI_PRE>,
+	<&cru PCLK_BUS_PRE>, <&cru SCLK_GPU>;
+
+	assigned-clock-rates = <1188000000>,
+	<200000000>, <200000000>,
+	<150000000>, <150000000>,
+	<100000000>, <200000000>;
+};
+
+&internal_display {
+	compatible = "rocknix,generic-dsi";
+	rotation = <270>;
+	panel_description =
+	"G size=62,110 delays=20,150,20,120,20 format=rgb888 lanes=4 flags=0xa03",
+
+	"M clock=66000 horizontal=720,66,8,50 vertical=1280,8,6,9 default=1",
+	
+	"I seq=ff988107",
+	"I seq=0320", "I seq=0406", "I seq=0500", "I seq=0601", "I seq=0700",
+	"I seq=0800", "I seq=0900", "I seq=0a00", "I seq=0b2f", "I seq=0c00", "I seq=0d00", "I seq=0e00", "I seq=0f00",
+	"I seq=1040", "I seq=1102", "I seq=1205", "I seq=1300", "I seq=1400", "I seq=1500", "I seq=162f", "I seq=172f",
+	"I seq=1800", "I seq=1900", "I seq=1a00", "I seq=1b50", "I seq=1cbc", "I seq=1d0c", "I seq=1e00", "I seq=1f00",
+	"I seq=2000", "I seq=2100", "I seq=2200", "I seq=23c0", "I seq=2430", "I seq=2500", "I seq=2600", "I seq=2703",
+	"I seq=3001", "I seq=3123", "I seq=3245", "I seq=3367", "I seq=3489", "I seq=35ab", "I seq=3601", "I seq=3723",
+	"I seq=3845", "I seq=3967", "I seq=3a89", "I seq=3bab", "I seq=3ccd", "I seq=3def",
+	"I seq=5011", "I seq=5106", "I seq=520c", "I seq=530d", "I seq=540e", "I seq=550f", "I seq=5602", "I seq=5702",
+	"I seq=5802", "I seq=5902", "I seq=5a02", "I seq=5b02", "I seq=5c02", "I seq=5d02", "I seq=5e02", "I seq=5f02",
+	"I seq=6005", "I seq=6105", "I seq=6205", "I seq=6302", "I seq=6401", "I seq=6500", "I seq=6608", "I seq=6708",
+	"I seq=680c", "I seq=690d", "I seq=6a0e", "I seq=6b0f", "I seq=6c02", "I seq=6d02", "I seq=6e02", "I seq=6f02",
+	"I seq=7002", "I seq=7102", "I seq=7202", "I seq=7302", "I seq=7402", "I seq=7502", "I seq=7605", "I seq=7705",
+	"I seq=7805", "I seq=7902", "I seq=7a01", "I seq=7b00", "I seq=7c06",
+	"I seq=ff988108",
+	"I seq=76b4",
+	"I seq=7802",
+	"I seq=742b",
+	"I seq=8e15",
+	"I seq=4001",
+	"I seq=8481",
+	"I seq=7225",
+	"I seq=e375",
+	"I seq=7dcb", "I seq=7e49",
+	"I seq=4910",
+	"I seq=3205",
+	"I seq=3c05",
+	"I seq=ff988101",
+	"I seq=220a",
+	"I seq=4301",
+	"I seq=5382", "I seq=5585", "I seq=50b9", "I seq=51ba",
+	"I seq=3100",
+	"I seq=a000", "I seq=a114", "I seq=a22b", "I seq=a316", "I seq=a41c", "I seq=a52e", "I seq=a618", "I seq=a720",
+	"I seq=a878", "I seq=a920", "I seq=aa2a", "I seq=ab83", "I seq=ac25", "I seq=ad1b", "I seq=ae54", "I seq=af2b",
+	"I seq=b02b", "I seq=b14f", "I seq=b267", "I seq=b339",
+	"I seq=c000", "I seq=c114", "I seq=c22b", "I seq=c316", "I seq=c41c", "I seq=c52e", "I seq=c618", "I seq=c720",
+	"I seq=c878", "I seq=c920", "I seq=ca2a", "I seq=cb83", "I seq=cc25", "I seq=cd1b", "I seq=ce54", "I seq=cf2b",
+	"I seq=d02b", "I seq=d14f", "I seq=d267", "I seq=d339",
+	"I seq=ff988100",
+	"I seq=11 wait=120",
+	"I seq=29 wait=20";
+};

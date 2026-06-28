@@ -1,7 +1,7 @@
 # MRP phone keypad mapping for mrpoid-sdl2
 # DPad and analog keep the classic 2/4/6/8 phone-game direction layout.
-back = f2
-start = f1
+back = f1
+start = f2
 guide = f4
 a = 5
 a_hk = f4

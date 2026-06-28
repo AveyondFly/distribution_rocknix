@@ -148,29 +148,9 @@ jobs:
 
       - name: Retrieve rust cache
         run: |
-          BASE="https://github.com/${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}/releases/download/ccache"
-          PREFIX="rust-cache-aarch64-${{ inputs.DEVICE }}-emu-standalone.tar.part-"
-          found_any=0
-          for suffix in $(printf "%s\n" {a..z}{a..z}); do
-            FILE="${PREFIX}${suffix}"
-            URL="${BASE}/${FILE}"
-
-            echo "Trying $URL"
-            if curl -L --fail --silent --show-error -o "$FILE" "$URL"; then
-              echo "Downloaded $FILE"
-              found_any=1
-            else
-              echo "No more parts found at $URL"
-              break
-            fi
-          done
-          if [ "$found_any" -eq 0 ]; then
-            echo "No rust cache found, skipping."
-            exit 0
-          fi
-          cat ${PREFIX}* > rust-cache.tar
-          tar -xf rust-cache.tar || { echo "Extract failed"; exit 0; }
-          rm -f ${PREFIX}* rust-cache.tar
+          ./scripts/ci_rust_cache restore \
+            "https://github.com/${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}/releases/download/ccache" \
+            "rust-cache-aarch64-${{ inputs.DEVICE }}-emu-standalone.tar.part-"
 
       - name: Build
         uses: corrupt952/actions-retry-command@v1.0.7
@@ -221,12 +201,29 @@ jobs:
           repo: ${{ vars.CACHE_REPO || 'distribution-cache' }}
         continue-on-error: true
 
+      - name: Print space
+        run: df -h
+
+      - name: Compress directory
+        run: |
+          sudo tar --remove-files -cf - \
+          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/install_* \
+          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/.stamps \
+          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain  | split -b 2G -  build.emu-standalone.tar.part
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emu-standalone (${{ inputs.DEVICE }})
+          path: build.emu-standalone.tar.part*
+          if-no-files-found: error
+
       - name: Tar rust cache
         id: rust_cache
         run: |
           ./scripts/ci_rust_cache archive \
             "./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64" \
-            "rust-cache-aarch64-${{ inputs.DEVICE }}-emu-standalone.tar.part-"
+            "rust-cache-aarch64-${{ inputs.DEVICE }}-emu-standalone.tar.part-" \
+            --remove-files
           shopt -s nullglob
           parts=(rust-cache-aarch64-${{ inputs.DEVICE }}-emu-standalone.tar.part-*)
           if [ ${#parts[@]} -gt 0 ]; then
@@ -248,19 +245,3 @@ jobs:
           token: ${{ secrets.GH_PAT }}
           repo: ${{ vars.CACHE_REPO || 'distribution-cache' }}
         continue-on-error: true
-
-      - name: Print space
-        run: df -h
-
-      - name: Compress directory
-        run: |
-          sudo tar --remove-files -cf - \
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/install_* \
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/.stamps \
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain  | split -b 2G -  build.emu-standalone.tar.part
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: emu-standalone (${{ inputs.DEVICE }})
-          path: build.emu-standalone.tar.part*
-          if-no-files-found: error

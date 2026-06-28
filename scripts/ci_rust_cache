@@ -1,13 +1,16 @@
 #!/bin/bash
 
 # SPDX-License-Identifier: GPL-2.0
-# Archive Rust/Cargo build cache paths for CI (emu-standalone job).
-# Usage: ci_rust_cache archive <build-dir> <output-prefix>
+# Manage Rust/Cargo build cache paths for CI.
+# Usage:
+#   ci_rust_cache restore <cache-base-url> <artifact-prefix>
+#   ci_rust_cache archive <build-dir> <output-prefix> [--remove-files]
 
 set -e
 
 usage() {
-  echo "Usage: ${0##*/} archive <build-dir> <output-prefix>" >&2
+  echo "Usage: ${0##*/} restore <cache-base-url> <artifact-prefix>" >&2
+  echo "       ${0##*/} archive <build-dir> <output-prefix> [--remove-files]" >&2
   exit 1
 }
 
@@ -71,9 +74,42 @@ dedupe_paths() {
   _paths=("${unique[@]}")
 }
 
+cmd_restore() {
+  local base="$1"
+  local prefix="$2"
+  local found_any=0 suffix file url
+
+  [ -n "${base}" ] && [ -n "${prefix}" ] || usage
+
+  for suffix in $(printf "%s\n" {a..z}{a..z}); do
+    file="${prefix}${suffix}"
+    url="${base}/${file}"
+
+    echo "Trying ${url}"
+    if curl -L --fail --silent --show-error -o "${file}" "${url}"; then
+      echo "Downloaded ${file}"
+      found_any=1
+    else
+      echo "No more parts found at ${url}"
+      break
+    fi
+  done
+
+  if [ "${found_any}" -eq 0 ]; then
+    echo "No rust cache found, skipping."
+    return 0
+  fi
+
+  cat ${prefix}* > rust-cache.tar
+  tar -xf rust-cache.tar || { echo "Extract failed"; rm -f ${prefix}* rust-cache.tar; return 0; }
+  rm -f ${prefix}* rust-cache.tar
+}
+
 cmd_archive() {
   local build="$1"
   local prefix="$2"
+  local remove_files="${3:-}"
+  local tar_opts=()
   local -a paths=()
 
   [ -n "${build}" ] && [ -n "${prefix}" ] || usage
@@ -89,10 +125,17 @@ cmd_archive() {
   echo "Archiving ${#paths[@]} Rust cache path(s):"
   printf '  %s\n' "${paths[@]}"
 
-  tar --remove-files -cf - "${paths[@]}" | split -b 1900m - "${prefix}"
+  if [ "${remove_files}" = "--remove-files" ]; then
+    tar_opts+=(--remove-files)
+  fi
+
+  tar "${tar_opts[@]}" -cf - "${paths[@]}" | split -b 1900m - "${prefix}"
 }
 
 case "${1:-}" in
+  restore)
+    cmd_restore "${@:2:2}"
+    ;;
   archive)
     cmd_archive "${@:2}"
     ;;

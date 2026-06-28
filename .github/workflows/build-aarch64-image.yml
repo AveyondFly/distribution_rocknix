@@ -217,6 +217,12 @@ jobs:
       - name: Clean up compressed emu-standalone file
         run: rm build.emu-standalone.tar*
 
+      - name: Retrieve rust cache
+        run: |
+          ./scripts/ci_rust_cache restore \
+            "https://github.com/${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}/releases/download/ccache" \
+            "rust-cache-aarch64-${{ inputs.DEVICE }}-emu-standalone.tar.part-"
+
       # clean to rebuild retroarch with 32bit enabled
       - name: Clean retroarch
         run: |

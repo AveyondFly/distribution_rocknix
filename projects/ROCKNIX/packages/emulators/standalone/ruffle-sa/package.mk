@@ -2,7 +2,7 @@
 # Copyright (C) 2026 AURKNIX (https://github.com/AveyondFly/distribution_rocknix)
 
 PKG_NAME="ruffle-sa"
-PKG_VERSION="64cb9f7"
+PKG_VERSION="3bc39c5e0fdbc9fcde92681706395f6ef70f991b"
 PKG_SITE="https://github.com/AveyondFly/ruffle-aurknix"
 PKG_URL="${PKG_SITE}.git"
 PKG_GIT_BRANCH="main"

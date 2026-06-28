@@ -18,10 +18,13 @@ makeinstall_target() {
   curl -Lo ${PKG_BUILD}/mod_cores.zip ${PKG_URL}
   unzip -o ${PKG_BUILD}/mod_cores.zip -d ${PKG_BUILD}/cores
 
-  # Install the cores we need
+  # Install the cores we need (include upstream .info for correct corename/netplay matching)
   for core in nebularm_32b nebularm_legacy_32b fbneo_32b fbalpha2012_32b mame2003_plus_32b; do
     if [ -f "${PKG_BUILD}/cores/${core}_libretro.so" ]; then
       cp -v ${PKG_BUILD}/cores/${core}_libretro.so ${INSTALL}/usr/lib/libretro/
+    fi
+    if [ -f "${PKG_BUILD}/cores/${core}_libretro.info" ]; then
+      cp -v ${PKG_BUILD}/cores/${core}_libretro.info ${INSTALL}/usr/lib/libretro/
     fi
   done
 

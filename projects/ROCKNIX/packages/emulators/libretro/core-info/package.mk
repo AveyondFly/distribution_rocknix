@@ -37,8 +37,5 @@ makeinstall_target() {
   cp ${PKG_BUILD}/fbneo_libretro.info ${INSTALL}/usr/lib/libretro/fbneoplus_libretro.info
   cp ${PKG_BUILD}/flycast_libretro.info ${INSTALL}/usr/lib/libretro/flycast2021_libretro.info
   cp ${PKG_BUILD}/genesis_plus_gx_libretro.info ${INSTALL}/usr/lib/libretro/genesis_plus_gx_EX_libretro.info
-  cp ${PKG_BUILD}/fbneo_libretro.info ${INSTALL}/usr/lib/libretro/fbalpha2012_32b_libretro.info
-  cp ${PKG_BUILD}/fbneo_libretro.info ${INSTALL}/usr/lib/libretro/fbneo_32b_libretro.info
-  cp ${PKG_BUILD}/mame2003_plus_libretro.info ${INSTALL}/usr/lib/libretro/mame2003_plus_32b_libretro.info
   cp ${PKG_BUILD}/gpsp_libretro.info ${INSTALL}/usr/lib/libretro/gpsp_ezode_32b_libretro.info
 }

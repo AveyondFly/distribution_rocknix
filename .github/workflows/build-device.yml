@@ -59,6 +59,15 @@ jobs:
       DEVICE: ${{ inputs.DEVICE }}
       OWNER_LC: ${{ inputs.OWNER_LC }}
 
+  build-aarch64-ruffle-sa:
+    needs: build-aarch64-toolchain
+    uses: ./.github/workflows/build-aarch64-ruffle-sa.yml
+    secrets: inherit
+    with:
+      PROJECT: ${{ inputs.PROJECT }}
+      DEVICE: ${{ inputs.DEVICE }}
+      OWNER_LC: ${{ inputs.OWNER_LC }}
+
   build-aarch64-qt6:
     needs: build-aarch64
     uses: ./.github/workflows/build-aarch64-qt6.yml
@@ -85,6 +94,7 @@ jobs:
     needs:
       - build-aarch64
       - build-aarch64-qt6
+      - build-aarch64-ruffle-sa
     if: ${{ always() && !cancelled() && !contains(needs.*.result, 'failure')  }}
     uses: ./.github/workflows/build-aarch64-emu-standalone.yml
     secrets: inherit
@@ -125,5 +135,6 @@ jobs:
             emu-libretro (${{ inputs.DEVICE }})
             emu-standalone (${{ inputs.DEVICE }})
             mame-lr (${{ inputs.DEVICE }})
+            ruffle-sa (${{ inputs.DEVICE }})
             qt6 (${{ inputs.DEVICE }})
           failOnError: false    

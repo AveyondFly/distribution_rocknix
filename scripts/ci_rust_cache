@@ -39,6 +39,10 @@ collect_paths() {
     [ -e "${path}" ] && _out+=("${path}")
   done
 
+  for path in "${build}/install_pkg/ruffle-"*; do
+    [ -e "${path}" ] && _out+=("${path}")
+  done
+
   while IFS= read -r target_dir; do
     pkg_build_dir="$(dirname "$(dirname "${target_dir}")")"
     _out+=("${pkg_build_dir}")

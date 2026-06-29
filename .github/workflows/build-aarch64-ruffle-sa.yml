@@ -1,4 +1,4 @@
-name: Build emu-standalone
+name: Build ruffle-sa
 
 on:
   workflow_call:
@@ -14,17 +14,14 @@ on:
         type: string
 
 jobs:
-  build-aarch64-emu-standalone:
+  build-aarch64-ruffle-sa:
     runs-on: ubuntu-24.04
     env:
-      EMULATION_DEVICE: no
-      ENABLE_32BIT: no
-      TARGET_TYPE: emus_only
       JAVA_HOME: /usr
       PROJECT: ${{ inputs.PROJECT }}
       DEVICE: ${{ inputs.DEVICE }}
       ARCH: aarch64
-      CACHE_KEY: ccache-aarch64-${{ inputs.DEVICE }}-emu-standalone-${{ github.sha }}
+      CACHE_KEY: ccache-aarch64-${{ inputs.DEVICE }}-ruffle-sa-${{ github.sha }}
       DISABLE_COLORS: yes
       CCACHE_COMPILERCHECK: content
       CCACHE_COMPRESS: 1
@@ -70,72 +67,26 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download aarch64 (${{ inputs.DEVICE }})
+      - name: Download aarch64-toolchain (${{ inputs.DEVICE }})
         uses: actions/download-artifact@v4
         with:
-          name: aarch64 (${{ inputs.DEVICE }})
+          name: aarch64-toolchain (${{ inputs.DEVICE }})
 
-      - name: Extract artifact aarch64
+      - name: Extract artifact aarch64-toolchain
         uses: corrupt952/actions-retry-command@v1.0.7
         with:
           command: |
-            tar -xf build.aarch64.tar
+            tar --zstd -xf build.aarch64-toolchain.tar.zst
           max_attempts: 3
           retry_interval: 10
 
-      - name: Clean up compressed aarch64 file
-        run: rm build.aarch64.tar
-
-      - name: Download build aarch64 (${{ inputs.DEVICE }})
-        uses: actions/download-artifact@v4
-        with:
-          name: aarch64 build (${{ inputs.DEVICE }})
-
-      - name: Extract artifact aarch64 build
-        uses: corrupt952/actions-retry-command@v1.0.7
-        with:
-          command: |
-            tar -xf build.build.aarch64.tar
-          max_attempts: 3
-          retry_interval: 10
-
-      - name: Clean up compressed aarch64 file
-        run: rm build.build.aarch64.tar
-
-      - name: Download qt6 (${{ inputs.DEVICE }})
-        if: ${{ inputs.DEVICE == 'RK3399' || inputs.DEVICE == 'RK3566' || inputs.DEVICE == 'RK356X' || inputs.DEVICE == 'RK3588' ||
-          inputs.DEVICE == 'S922X'  || inputs.DEVICE == 'SM8250' || inputs.DEVICE == 'SM8550' || inputs.DEVICE == 'SDM845' || inputs.DEVICE == 'SM8650' }}
-        uses: actions/download-artifact@v4
-        with:
-          name: qt6 (${{ inputs.DEVICE }})
-
-      - name: Extract artifact qt6
-        if: ${{ inputs.DEVICE == 'RK3399' || inputs.DEVICE == 'RK3566' || inputs.DEVICE == 'RK356X' || inputs.DEVICE == 'RK3588' ||
-          inputs.DEVICE == 'S922X'  || inputs.DEVICE == 'SM8250' || inputs.DEVICE == 'SM8550' || inputs.DEVICE == 'SDM845' || inputs.DEVICE == 'SM8650' }}
-        run: |
-          sudo tar --zstd -xf build.qt6.tar.zst --same-owner
-
-      - name: Clean up compressed qt6 file
-        if: ${{ inputs.DEVICE == 'RK3399' || inputs.DEVICE == 'RK3566' || inputs.DEVICE == 'RK356X' || inputs.DEVICE == 'RK3588' ||
-          inputs.DEVICE == 'S922X'  || inputs.DEVICE == 'SM8250' || inputs.DEVICE == 'SM8550' || inputs.DEVICE == 'SDM845' || inputs.DEVICE == 'SM8650' }}
-        run: rm build.qt6.tar.zst
-
-      - name: Download ruffle-sa (${{ inputs.DEVICE }})
-        uses: actions/download-artifact@v4
-        with:
-          name: ruffle-sa (${{ inputs.DEVICE }})
-
-      - name: Extract artifact ruffle-sa
-        run: |
-          tar --skip-old-files --zstd -xf build.ruffle-sa.tar.zst
-
-      - name: Clean up compressed ruffle-sa file
-        run: rm build.ruffle-sa.tar.zst
+      - name: Clean up compressed aarch64-toolchain file
+        run: rm build.aarch64-toolchain.tar.zst
 
       - name: Retrieve ccache
         run: |
           BASE="https://github.com/${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}/releases/download/ccache"
-          PREFIX="ccache-aarch64-${{ inputs.DEVICE }}-emu-standalone.tar.part-"
+          PREFIX="ccache-aarch64-${{ inputs.DEVICE }}-ruffle-sa.tar.part-"
           found_any=0
           for suffix in $(printf "%s\n" {a..z}{a..z}); do
             FILE="${PREFIX}${suffix}"
@@ -151,12 +102,18 @@ jobs:
             fi
           done
           if [ "$found_any" -eq 0 ]; then
-            echo "No cache found, skipping."
+            echo "No ccache found, skipping."
             exit 0
           fi
           cat ${PREFIX}* > ccache.tar
           tar -xf ccache.tar || { echo "Extract failed"; exit 0; }
           rm -f ${PREFIX}* ccache.tar
+
+      - name: Retrieve rust cache
+        run: |
+          ./scripts/ci_rust_cache restore \
+            "https://github.com/${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}/releases/download/ccache" \
+            "rust-cache-aarch64-${{ inputs.DEVICE }}-ruffle-sa.tar.part-"
 
       - name: Build
         uses: corrupt952/actions-retry-command@v1.0.7
@@ -165,17 +122,17 @@ jobs:
             ./scripts/get_env > .env
             set -e
             { docker run --init --env-file .env --rm --user $(id -u):$(id -g) -v ${PWD}:${PWD} -w ${PWD} "ghcr.io/${{ inputs.OWNER_LC }}/rocknix-build:latest" \
-              bash -c "./scripts/build_mt emulators"; echo $? > docker_exit_code; } | tee output.log | grep -E  --color=never --line-buffered "^GET|^UNPACK|^BUILD|^INSTALL" || true
+              bash -c "./scripts/build_mt ruffle-sa"; echo $? > docker_exit_code; } | tee output.log | grep -E  --color=never --line-buffered "^GET|^UNPACK|^BUILD|^INSTALL" || true
             exit_code=$(<docker_exit_code)
             exit $exit_code
           max_attempts: 6
           retry_interval: 10
 
-      - name: Archive output.logs (${{ inputs.DEVICE }}-aarch64-emu-standalone)
+      - name: Archive output.logs (${{ inputs.DEVICE }}-aarch64-ruffle-sa)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: output.logs (${{ inputs.DEVICE }}-aarch64-emu-standalone)
+          name: output.logs (${{ inputs.DEVICE }}-aarch64-ruffle-sa)
           path: |
             output.log
             ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/.threads/logs/
@@ -184,7 +141,7 @@ jobs:
         run: |
           export CCACHE_DIR=./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/.ccache
           ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -s -v
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -M 4.5G
+          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -M 2G
           ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -c
           ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -s -v
           ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -z
@@ -192,13 +149,13 @@ jobs:
       - name: Tar ccache
         run: |
           tar --remove-files -cf - ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/.ccache \
-            | split -b 1900m - ccache-aarch64-${{ inputs.DEVICE }}-emu-standalone.tar.part-
+            | split -b 1900m - ccache-aarch64-${{ inputs.DEVICE }}-ruffle-sa.tar.part-
 
       - name: Save ccache
         uses: ncipollo/release-action@v1
         with:
           tag: ccache
-          artifacts: "ccache-aarch64-${{ inputs.DEVICE }}-emu-standalone.tar.part-*"
+          artifacts: "ccache-aarch64-${{ inputs.DEVICE }}-ruffle-sa.tar.part-*"
           allowUpdates: true
           makeLatest: true
           prerelease: true
@@ -207,18 +164,57 @@ jobs:
           repo: ${{ vars.CACHE_REPO || 'distribution-cache' }}
         continue-on-error: true
 
-      - name: Print space
-        run: df -h
-
       - name: Compress directory
         run: |
-          sudo tar --remove-files -cf - \
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/install_* \
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/.stamps \
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain  | split -b 2G -  build.emu-standalone.tar.part
+          BUILD="./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64"
+          shopt -s nullglob
+          paths=(
+            ${BUILD}/install_pkg/ruffle-sa-*
+            ${BUILD}/.stamps/rust
+            ${BUILD}/.stamps/cargo
+            ${BUILD}/.stamps/ruffle-sa
+            ${BUILD}/toolchain/bin/rustc
+            ${BUILD}/toolchain/bin/cargo
+            ${BUILD}/toolchain/lib/rustlib
+          )
+          if [ ${#paths[@]} -eq 0 ]; then
+            echo "No ruffle-sa artifact paths found."
+            exit 1
+          fi
+          tar --zstd -cf build.ruffle-sa.tar.zst "${paths[@]}"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: emu-standalone (${{ inputs.DEVICE }})
-          path: build.emu-standalone.tar.part*
+          name: ruffle-sa (${{ inputs.DEVICE }})
+          path: build.ruffle-sa.tar.zst
+          compression-level: 0
           if-no-files-found: error
+
+      - name: Tar rust cache
+        id: rust_cache
+        run: |
+          ./scripts/ci_rust_cache archive \
+            "./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64" \
+            "rust-cache-aarch64-${{ inputs.DEVICE }}-ruffle-sa.tar.part-" \
+            --remove-files
+          shopt -s nullglob
+          parts=(rust-cache-aarch64-${{ inputs.DEVICE }}-ruffle-sa.tar.part-*)
+          if [ ${#parts[@]} -gt 0 ]; then
+            echo "found=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "found=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Save rust cache
+        if: steps.rust_cache.outputs.found == 'true'
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ccache
+          artifacts: "rust-cache-aarch64-${{ inputs.DEVICE }}-ruffle-sa.tar.part-*"
+          allowUpdates: true
+          makeLatest: true
+          prerelease: true
+          body: rust-cache
+          token: ${{ secrets.GH_PAT }}
+          repo: ${{ vars.CACHE_REPO || 'distribution-cache' }}
+        continue-on-error: true

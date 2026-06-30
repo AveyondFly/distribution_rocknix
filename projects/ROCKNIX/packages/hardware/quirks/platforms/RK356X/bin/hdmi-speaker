@@ -1,0 +1,29 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+
+. /etc/profile
+
+HDMI_STATE="disconnected"
+for STATUS in /sys/class/drm/card*/card*-HDMI-A-*/status; do
+  [ -f "${STATUS}" ] || continue
+  HDMI_STATE="$(cat "${STATUS}")"
+  [ "${HDMI_STATE}" = "connected" ] && break
+done
+
+if [ -z "${DEVICE_PLAYBACK_PATH}" ]; then
+  DEVICE_PLAYBACK_PATH="Playback Path"
+fi
+
+if amixer -c "${ALSA_PRIMARY_CARD:-0}" -q cget name="${DEVICE_PLAYBACK_PATH}" >/dev/null 2>&1; then
+  case "${HDMI_STATE}" in
+    connected)
+      amixer -c "${ALSA_PRIMARY_CARD:-0}" -q cset name="${DEVICE_PLAYBACK_PATH}" OFF 2>/dev/null
+      ;;
+    *)
+      amixer -c "${ALSA_PRIMARY_CARD:-0}" -q cset name="${DEVICE_PLAYBACK_PATH}" "${DEVICE_PLAYBACK_PATH_SPK:-SPK}" 2>/dev/null
+      ;;
+  esac
+fi
+
+/usr/bin/hdmi_sense 2>/dev/null || true

@@ -2,10 +2,18 @@
 # SPDX-License-Identifier: GPL-2.0
 # Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
 
+if [ -z "${QUIRK_DEVICE}" ] || [ -z "${HW_DEVICE}" ]; then
+  . /etc/profile
+fi
+
 if [ -z "${QUIRK_DEVICE}" ]; then
   QUIRK_DEVICE="$(tr -d '\0' </sys/firmware/devicetree/base/model 2>/dev/null)"
 fi
 
 if [ -x "/usr/lib/autostart/quirks/devices/${QUIRK_DEVICE}/bin/hdmi-speaker" ]; then
   exec "/usr/lib/autostart/quirks/devices/${QUIRK_DEVICE}/bin/hdmi-speaker"
+fi
+
+if [ -x "/usr/lib/autostart/quirks/platforms/${HW_DEVICE}/bin/hdmi-speaker" ]; then
+  exec "/usr/lib/autostart/quirks/platforms/${HW_DEVICE}/bin/hdmi-speaker"
 fi

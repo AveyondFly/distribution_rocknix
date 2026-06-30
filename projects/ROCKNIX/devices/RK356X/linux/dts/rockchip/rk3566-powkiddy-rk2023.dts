@@ -807,11 +807,11 @@
 
 
 &dsi0_in_vp0 {
-	status = "disabled";
+	status = "okay";
 };
 
 &dsi0_in_vp1 {
-	status = "okay";
+	status = "disabled";
 };
 
 &dsi0_panel {
@@ -873,7 +873,7 @@
 
 &route_dsi0 {
 	status = "okay";
-	connect = <&vp1_out_dsi0>;
+	connect = <&vp0_out_dsi0>;
 };
 
 &gpu {
@@ -896,12 +896,11 @@
 };
 
 &hdmi_in_vp0 {
-	status = "disabled";
-	//status = "disabled";
+	status = "okay";
 };
 
 &hdmi_in_vp1 {
-	status = "okay";
+	status = "disabled";
 };
 
 &hdmi_sound {
@@ -1528,7 +1527,7 @@
 
 &route_hdmi {
 	status = "okay";
-	connect = <&vp1_out_hdmi>;
+	connect = <&vp0_out_hdmi>;
 };
 
 &saradc {

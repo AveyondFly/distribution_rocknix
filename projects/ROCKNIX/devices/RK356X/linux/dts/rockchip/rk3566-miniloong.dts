@@ -1229,16 +1229,16 @@
 };
 
 &dsi0_in_vp0 {
-	status = "disabled";
+	status = "okay";
 };
 
 &dsi0_in_vp1 {
-	status = "okay";
+	status = "disabled";
 };
 
 &route_dsi0 {
 	status = "okay";
-	connect = <&vp1_out_dsi0>;
+	connect = <&vp0_out_dsi0>;
 };
 
 &hdmi_in_vp0 {

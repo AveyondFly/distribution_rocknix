@@ -839,11 +839,38 @@
 			};
 		};
 
+		battery {
+			compatible = "rk817,battery";
+			ocv_table = <3400 3460 3504 3546 3579 3607 3627
+				     3647 3670 3701 3745 3804 3850 3882
+				     3907 3959 4005 4024 4050 4106 4187>;
+			design_capacity = <5120>;
+			design_qmax = <5500>;
+			bat_res = <67>;
+			sleep_enter_current = <150>;
+			sleep_exit_current = <180>;
+			sleep_filter_current = <100>;
+			power_off_thresd = <3400>;
+			zero_algorithm_vol = <3850>;
+			max_soc_offset = <60>;
+			monitor_sec = <5>;
+			sample_res = <10>;
+			virtual_power = <0>;
+		};
+
 		rk817_charger: charger {
-			monitored-battery = <&battery>;
-			rockchip,resistor-sense-micro-ohms = <10000>;
-			rockchip,sleep-enter-current-microamp = <150000>;
-			rockchip,sleep-filter-current-microamp = <100000>;
+			compatible = "rk817,charger";
+			min_input_voltage = <4500>;
+			max_input_current = <2000>;
+			max_chrg_current = <2000>;
+			max_chrg_voltage = <4300>;
+			chrg_term_mode = <0>;
+			chrg_finish_cur = <300>;
+			virtual_power = <0>;
+			dc_det_adc = <0>;
+			otg5v_suspend_enable = <1>;
+			extcon = <&usb2phy0>;
+			gate_function_disable = <1>;
 		};
 
 	};
@@ -879,7 +906,7 @@
 	pinctrl-0 = <&i2s1m0_sclktx>, <&i2s1m0_lrcktx>, <&i2s1m0_sdi0>,
 		    <&i2s1m0_sdo0>;
 	pinctrl-names = "default";
-	rockchip,trcm-sync-tx-only;
+	rockchip,clk-trcm = <1>;
 	status = "okay";
 };
 

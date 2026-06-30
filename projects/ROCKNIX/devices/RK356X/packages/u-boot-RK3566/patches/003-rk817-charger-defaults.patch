@@ -1,0 +1,69 @@
+diff --git a/drivers/power/pmic/rk8xx.c b/drivers/power/pmic/rk8xx.c
+--- a/drivers/power/pmic/rk8xx.c
++++ b/drivers/power/pmic/rk8xx.c
+@@ -239,8 +239,54 @@ static int rk8xx_bind(struct udevice *dev)
+ 	/* Always return success for this device */
+ 	return 0;
+ }
+ #endif
+ 
++/*
++ * RK809/RK817 on-chip charger: set input limit + CC/CV targets early in probe.
++ *
++ * 0xE5 (BSP fg_rk817.c USB_CTRL_REG): ILIM_1500MA|0x08, VLIM_4500MV|0x80
++ * 0xE4 (Linux rk817_charger RK817_PMIC_CHRG_OUT): 1.5A CC index, 4.2V CV step
++ *
++ * Review max voltage against your cell chemistry (4.2V = typical 1S Li-ion).
++ */
++#define RK817_REG_CHRG_OUT		0xe4
++#define RK817_REG_CHRG_IN		0xe5
++
++#define RK817_CHG_CUR_MASK		0x07
++#define RK817_CHG_CUR_1_5A		0x01	/* Linux CHG_1_5A */
++#define RK817_CHG_VOL_MASK		0x70
++#define RK817_CHG_VOL_4V2		0x20	/* (4200 - 4100) / 50 = 2 */
++
++#define RK817_USB_ILIM_MASK		0x0f
++#define RK817_USB_ILIM_1_5A		0x0b	/* ILIM_SEL 3 | ILIM_EN */
++#define RK817_USB_VLIM_MASK		0xf0
++#define RK817_USB_VLIM_4V5		0xd0	/* VLIM 4.5V step | VLIM_EN */
++
++static void rk817_apply_charger_defaults(struct udevice *dev)
++{
++	int ret;
++
++	ret = pmic_clrsetbits(dev, RK817_REG_CHRG_IN, RK817_USB_ILIM_MASK,
++			      RK817_USB_ILIM_1_5A);
++	if (ret)
++		debug("%s: CHRG_IN ilim clrset failed ret=%d\n", __func__, ret);
++
++	ret = pmic_clrsetbits(dev, RK817_REG_CHRG_IN, RK817_USB_VLIM_MASK,
++			      RK817_USB_VLIM_4V5);
++	if (ret)
++		debug("%s: CHRG_IN vlim clrset failed ret=%d\n", __func__, ret);
++
++	ret = pmic_clrsetbits(dev, RK817_REG_CHRG_OUT, RK817_CHG_CUR_MASK,
++			      RK817_CHG_CUR_1_5A);
++	if (ret)
++		debug("%s: CHRG_OUT ichg clrset failed ret=%d\n", __func__, ret);
++
++	ret = pmic_clrsetbits(dev, RK817_REG_CHRG_OUT, RK817_CHG_VOL_MASK,
++			      RK817_CHG_VOL_4V2);
++	if (ret)
++		debug("%s: CHRG_OUT vchg clrset failed ret=%d\n", __func__, ret);
++}
++
+ static int rk8xx_probe(struct udevice *dev)
+ {
+ 	struct rk8xx_priv *priv = dev_get_priv(dev);
+@@ -333,6 +379,9 @@ static int rk8xx_probe(struct udevice *dev)
+ 		debug("%s: reg[0x%x] = 0x%x\n", __func__, init_data[i].reg,
+ 		      pmic_reg_read(dev, init_data[i].reg));
+ 	}
+ 
++	if (priv->variant == RK809_ID || priv->variant == RK817_ID)
++		rk817_apply_charger_defaults(dev);
++
+ 	if (!IS_ENABLED(CONFIG_XPL_BUILD)) {
+ 		printf("PMIC:  RK%x ", show_variant);
+ 		if (on_source && off_source)

@@ -4,7 +4,10 @@
 . config/functions
 
 mkimage_uboot() {
-  if [ -f "${RELEASE_DIR}/3rdparty/bootloader/bootloader_area.img" ] && \
+  if [ -n "${SUBDEVICE}" ] && [ -f "${RELEASE_DIR}/3rdparty/bootloader/${SUBDEVICE}_uboot.bin" ]; then
+    echo "image: writing ${SUBDEVICE}_uboot.bin to $(basename "${DISK}")..."
+    dd if="${RELEASE_DIR}/3rdparty/bootloader/${SUBDEVICE}_uboot.bin" of="${DISK}" bs=512 seek=64 conv=sync,noerror,notrunc >"${SAVE_ERROR}" 2>&1 || show_error
+  elif [ -f "${RELEASE_DIR}/3rdparty/bootloader/bootloader_area.img" ] && \
      [ -f "${RELEASE_DIR}/3rdparty/bootloader/uboot_partition.img" ]; then
     # RK3562 aislpc / EmuELEC layout: idbloader @ sector 64, FIT @ sector 16384
     echo "image: writing bootloader_area.img to $(basename "${DISK}") @ sector 64..."
@@ -102,6 +105,19 @@ mkimage_dtb() {
     S922X)
       mcopy "${RELEASE_DIR}/3rdparty/bootloader/"*.dtb ::
       ;;
+    RK356X)
+      if [ -n "${SUBDEVICE}" ]; then
+        mkdir -p "${IMG_TMP}/device_trees"
+        for dtb_base in $(xmlstarlet sel -t -m "//rocknix/${DEVICE}/${SUBDEVICE}/file" -v "." -n "${CONFIGXML}"); do
+          if [ -f "${RELEASE_DIR}/3rdparty/bootloader/device_trees/${dtb_base}.dtb" ]; then
+            cp "${RELEASE_DIR}/3rdparty/bootloader/device_trees/${dtb_base}.dtb" "${IMG_TMP}/device_trees/"
+          fi
+        done
+        mcopy -s "${IMG_TMP}/device_trees" ::
+      else
+        mcopy -s "${RELEASE_DIR}/3rdparty/bootloader/device_trees" ::
+      fi
+      ;;
     *)
       mcopy -s "${RELEASE_DIR}/3rdparty/bootloader/device_trees" ::
       ;;
@@ -172,9 +188,13 @@ mkimage_rk3326_dtb_select() {
   fi
 }
 
-# RK3566-Specific: rk3566-dtb-select on boot FAT at partition root (/flash)
+# RK3566-Specific / RK356X-RK3566: rk3566-dtb-select on boot FAT at partition root (/flash)
 mkimage_rk3566_dtb_select() {
-  if [ ! "${DEVICE}" = "RK3566" ] || [ ! "${SUBDEVICE}" = "Specific" ]; then
+  if [ "${DEVICE}" = "RK3566" ] && [ "${SUBDEVICE}" = "Specific" ]; then
+    :
+  elif [ "${DEVICE}" = "RK356X" ] && [ "${SUBDEVICE}" = "RK3566" ]; then
+    :
+  else
     return 0
   fi
   if [ -f "${RELEASE_DIR}/3rdparty/bootloader/dtb_selector.py" ]; then
@@ -190,9 +210,9 @@ mkimage_rk3566_dtb_select() {
   fi
 }
 
-# RK356X: rk356x-dtb-select on boot FAT at partition root (/flash)
+# RK356X-RK3562: rk356x-dtb-select on boot FAT at partition root (/flash)
 mkimage_rk356x_dtb_select() {
-  if [ ! "${DEVICE}" = "RK356X" ]; then
+  if [ ! "${DEVICE}" = "RK356X" ] || [ ! "${SUBDEVICE}" = "RK3562" ]; then
     return 0
   fi
   if [ -f "${RELEASE_DIR}/3rdparty/bootloader/dtb_selector.py" ]; then

@@ -48,7 +48,7 @@
   # For maximum cross compatbility
     PREFER_GLES="yes"
 
-    ROCKNIX_JOYPAD="no"
+    ROCKNIX_JOYPAD="yes"
 
   # VULKAN_SUPPORT
     VULKAN_SUPPORT="yes"
@@ -78,7 +78,7 @@
     FIRMWARE="rk915-firmware"
 
   # Additional packages to install
-    ADDITIONAL_PACKAGES="libmali libmali-vulkan mcu-led rk356x-dtb-select"
+    ADDITIONAL_PACKAGES="libmali libmali-vulkan mcu-led generic-dsi rocknix-joypad rk356x-dtb-select rk3566-dtb-select"
     ADDITIONAL_PACKAGES_32BIT="libmali"
 
   # Debug tty path

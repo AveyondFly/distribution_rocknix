@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ROCKNIX <build@rocknix>
+Subject: [PATCH] rocknix-singleadc-joypad: export joypad_input_g and import VFS ns
+
+Define joypad_input_g in the singleadc module so it can be built as a
+standalone module alongside rocknix-joypad. Import the VFS namespace
+required for miyoo serial helpers on kernel 5.10+.
+---
+ rocknix-singleadc-joypad.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/rocknix-singleadc-joypad.c b/rocknix-singleadc-joypad.c
+--- a/rocknix-singleadc-joypad.c
++++ b/rocknix-singleadc-joypad.c
+@@ -243,7 +243,8 @@
+ 	bool positive;
+ };
+ 
+-extern struct input_dev * joypad_input_g;
++struct input_dev *joypad_input_g;
++EXPORT_SYMBOL(joypad_input_g);
+ 
+ static int pwm_vibrator_start(struct joypad *joypad)
+ {
+@@ -1811,6 +1812,7 @@
+ /*----------------------------------------------------------------------------*/
+ MODULE_AUTHOR("ROCKNIX");
+ MODULE_DESCRIPTION("ROCKNIX singleadc joypad driver");
++MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
+ MODULE_LICENSE("GPL");
+ MODULE_ALIAS("platform:" DRV_NAME);
+ MODULE_INFO(intree, "Y");

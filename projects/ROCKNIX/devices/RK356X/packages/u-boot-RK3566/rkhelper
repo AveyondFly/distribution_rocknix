@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
+
+PKG_SOC="rk3568"
+
+${PKG_BUILD}/tools/mkimage -n "${PKG_SOC}" -T rksd -d "${PKG_DDR_BIN}":"${PKG_MINILOADER}" -C bzip2 idbloader.img
+
+dd if=idbloader.img of=uboot.bin bs=512 seek=0 conv=fsync,notrunc
+for BOOT_IMAGE in uboot.img u-boot.itb; do
+  if [ -f "$BOOT_IMAGE" ]; then
+    dd if=$BOOT_IMAGE of=uboot.bin bs=512 seek=16320 conv=fsync,notrunc
+    break
+  fi
+done

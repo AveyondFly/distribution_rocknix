@@ -16,6 +16,7 @@
 #include <linux/firmware.h>
 #include <linux/of.h>
 #include <linux/regulator/consumer.h>
+#include <linux/version.h>
 
 #include <video/display_timing.h>
 #include <video/mipi_display.h>
@@ -27,6 +28,10 @@
 #include <drm/drm_panel.h>
 
 #define DRIVER_NAME "panel-generic-dsi"
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 0, 0)
+#define GENERIC_DSI_LEGACY_KERNEL 1
+#endif
 
 static char *descfile = "";
 module_param(descfile,charp,0660);
@@ -270,14 +275,17 @@ int panel_description_foreach(struct mipi_dsi_device *dsi, struct generic_panel 
     int ret;
 
     if (strlen(descfile) > 0) {
+        size_t pos = 0, size;
+        char *data;
+
         ret = request_firmware(&fw, descfile, dev);
         if (ret) {
             dev_err(dev, "No config file found (error=%d)\n", ret);
             return -1;
         }
 
-        size_t pos = 0, size = fw->size;
-        char *data = (char *)fw->data;
+        size = fw->size;
+        data = (char *)fw->data;
 
         while (pos < size) {
             while ((pos < size) && (data[pos] != '\n')) pos++;
@@ -327,12 +335,13 @@ int panel_description_foreach(struct mipi_dsi_device *dsi, struct generic_panel 
 
 int load_panel_description(struct mipi_dsi_device *dsi, struct generic_panel *ctx) {
     int ret;
+    struct generic_panel_init_seq *rev, *fwd = NULL, *tmp = NULL;
 
     ret = panel_description_foreach(dsi, ctx, &load_panel_description_line);
     if (ret < 0) { return ret; }
 
     // Reverse iseq
-    struct generic_panel_init_seq *rev = ctx->iseq, *fwd = NULL, *tmp = NULL;
+    rev = ctx->iseq;
     while (rev) {
         tmp = rev;
         rev = tmp->link;
@@ -355,9 +364,10 @@ static int generic_panel_init_sequence(struct generic_panel *ctx)
 {
     struct mipi_dsi_device *dsi = to_mipi_dsi_device(ctx->dev);
     struct device *dev = ctx->dev;
-    int ret;
-
     struct generic_panel_init_seq *iseq = ctx->iseq;
+    int ret;
+    int i;
+
     while (iseq) {
         if (iseq->read > 0) {
             u8 readbuf[8];
@@ -366,7 +376,7 @@ static int generic_panel_init_sequence(struct generic_panel *ctx)
             if (ret < 0) {
                 dev_err(ctx->dev, "failed to read: %d\n", ret);
             } else {
-                for (int i = 0; i < ret; i++) {
+                for (i = 0; i < ret; i++) {
                     dev_info(ctx->dev, "read[%d]: %02x\n", i, readbuf[i]);
                 }
             }
@@ -581,18 +591,22 @@ static int generic_panel_get_modes(struct drm_panel *panel,
     return 1;
 }
 
+#if !defined(GENERIC_DSI_LEGACY_KERNEL)
 static enum drm_panel_orientation generic_panel_get_orientation(struct drm_panel *panel)
 {
     struct generic_panel *ctx = panel_to_generic_panel(panel);
 
     return ctx->orientation;
 }
+#endif
 
 static const struct drm_panel_funcs generic_panel_funcs = {
     .unprepare  = generic_panel_unprepare,
     .prepare    = generic_panel_prepare,
     .get_modes  = generic_panel_get_modes,
+#if !defined(GENERIC_DSI_LEGACY_KERNEL)
     .get_orientation = generic_panel_get_orientation,
+#endif
 };
 
 static int generic_panel_probe(struct mipi_dsi_device *dsi)
@@ -660,7 +674,10 @@ static int generic_panel_probe(struct mipi_dsi_device *dsi)
     dsi->lanes = 1;
     dsi->format = MIPI_DSI_FMT_RGB888;
     dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
-              MIPI_DSI_MODE_LPM | MIPI_DSI_MODE_NO_EOT_PACKET |
+              MIPI_DSI_MODE_LPM |
+#if !defined(GENERIC_DSI_LEGACY_KERNEL)
+              MIPI_DSI_MODE_NO_EOT_PACKET |
+#endif
               MIPI_DSI_CLOCK_NON_CONTINUOUS;
 
     ret = load_panel_description(dsi, ctx);
@@ -701,7 +718,11 @@ static void generic_panel_shutdown(struct mipi_dsi_device *dsi)
     drm_panel_disable(&ctx->panel);
 }
 
+#if defined(GENERIC_DSI_LEGACY_KERNEL)
+static int generic_panel_remove(struct mipi_dsi_device *dsi)
+#else
 static void generic_panel_remove(struct mipi_dsi_device *dsi)
+#endif
 {
     struct generic_panel *ctx = mipi_dsi_get_drvdata(dsi);
     int ret;
@@ -713,6 +734,9 @@ static void generic_panel_remove(struct mipi_dsi_device *dsi)
         dev_err(&dsi->dev, "Failed to detach from DSI host: %d\n", ret);
 
     drm_panel_remove(&ctx->panel);
+#if defined(GENERIC_DSI_LEGACY_KERNEL)
+    return 0;
+#endif
 }
 
 static const struct of_device_id generic_panel_of_match[] = {

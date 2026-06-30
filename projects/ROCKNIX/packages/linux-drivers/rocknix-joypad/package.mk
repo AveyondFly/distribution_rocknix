@@ -12,6 +12,7 @@ PKG_IS_KERNEL_PKG="yes"
 
 pre_make_target() {
   unset LDFLAGS
+  export DEVICE
 }
 
 make_target() {

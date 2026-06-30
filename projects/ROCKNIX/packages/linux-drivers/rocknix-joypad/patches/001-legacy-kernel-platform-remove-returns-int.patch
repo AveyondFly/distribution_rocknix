@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ROCKNIX <build@rocknix>
+Subject: [PATCH] rocknix-singleadc-joypad: fix remove callback on kernel < 6.0
+
+---
+diff --git a/rocknix-singleadc-joypad.c b/rocknix-singleadc-joypad.c
++++ b/rocknix-singleadc-joypad.c	2026-06-29 22:04:19.470581232 +0800
+@@ -1668,12 +1668,16 @@
+ 
+ static SIMPLE_DEV_PM_OPS(joypad_pm_ops, joypad_suspend, joypad_resume);
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 0, 0)
++static int joypad_remove(struct platform_device *pdev)
++#else
+ static void joypad_remove(struct platform_device *pdev)
++#endif
+ {
+ 	struct joypad *joypad = platform_get_drvdata(pdev);
+ 
+ 	if (!joypad)
+-		return;
++		goto out;
+ 
+ 	if (joypad->use_miyoo_serial) {
+ 		cancel_delayed_work_sync(&joypad->miyoo_init_work);
+@@ -1690,6 +1694,11 @@
+ 		cancel_work_sync(&joypad->play_work);
+ 		joypad_vibrator_stop(joypad);
+ 	}
++
++out:
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 0, 0)
++	return 0;
++#endif
+ }
+ 
+ /*----------------------------------------------------------------------------*/

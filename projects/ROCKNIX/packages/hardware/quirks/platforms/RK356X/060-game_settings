@@ -2,7 +2,18 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (C) 2023-present Fewtarius (https://github.com/fewtarius)
 
-. /storage/.config/profile.d/010-governors
+### RK3562 (ff320000.gpu) and RK3566 (fde60000.gpu) share this platform image.
+### Platform quirks run before device quirks, so pick the GPU from hardware.
+if [ -d /sys/devices/platform/fde60000.gpu/devfreq/fde60000.gpu ]; then
+  GPU_FREQ=/sys/devices/platform/fde60000.gpu/devfreq/fde60000.gpu
+elif [ -d /sys/devices/platform/ff320000.gpu/devfreq/ff320000.gpu ]; then
+  GPU_FREQ=/sys/devices/platform/ff320000.gpu/devfreq/ff320000.gpu
+elif [ -f /storage/.config/profile.d/010-governors ]; then
+  . /storage/.config/profile.d/010-governors
+  GPU_FREQ="${GPU_FREQ[0]:-${GPU_FREQ}}"
+fi
 
 ### Set the minimum GPU frequency to reduce UI latency.
-echo 400000000 >${GPU_FREQ}/min_freq
+if [ -n "${GPU_FREQ}" ] && [ -e "${GPU_FREQ}/min_freq" ]; then
+  echo 400000000 >"${GPU_FREQ}/min_freq"
+fi

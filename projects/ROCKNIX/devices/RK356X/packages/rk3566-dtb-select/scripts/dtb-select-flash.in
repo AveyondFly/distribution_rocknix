@@ -1,0 +1,6 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026-present ROCKNIX (https://github.com/ROCKNIX)
+# Intended on /flash root next to dtb_selector.py
+DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+exec /usr/bin/python3 "${DIR}/dtb_selector.py" "$@"

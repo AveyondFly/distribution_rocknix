@@ -122,13 +122,19 @@
       <file>rk3566-radxa-zero-3w</file>
     </Specific>
   </RK3566>
-  <RK356X mkimage_options="dtb,extlinux,uboot" fdt="device_trees/rk3562-rg52mini-v1.dtb" fdt_type="fdt" dtb_prefix="rockchip">
-    <file>rk3562-rg52mini</file>
-    <file>rk3562-rg52mini-v1</file>
-    <file>rk3562-rg43h</file>
-    <file>rk3562-rg43h-v1</file>
-    <file>rk3562-rg43v</file>
-    <file>rk3562-rg43v-v1</file>
+  <RK356X dtb_prefix="rockchip">
+    <RK3562 mkimage_options="dtb,extlinux,uboot,rk356x_dtb_select" fdt="device_trees/rk3562-rg52mini-v1.dtb" fdt_type="fdt">
+      <file>rk3562-rg52mini</file>
+      <file>rk3562-rg52mini-v1</file>
+      <file>rk3562-rg43h</file>
+      <file>rk3562-rg43h-v1</file>
+      <file>rk3562-rg43v</file>
+      <file>rk3562-rg43v-v1</file>
+    </RK3562>
+    <RK3566 mkimage_options="dtb,extlinux,uboot,rk3566_dtb_select" fdt="device_trees/rk3566-powkiddy-x35h.dtb" fdt_type="fdt">
+      <file>rk3566-powkiddy-x55</file>
+      <file>rk3566-powkiddy-x35h</file>
+    </RK3566>
   </RK356X>
   <RK3588 mkimage_options="dtb,extlinux,uboot" fdt="device_trees/rk3588s-gameforce-ace.dtb" fdt_type="fdt" dtb_prefix="rockchip">
     <file>rk3588s-gameforce-ace</file>

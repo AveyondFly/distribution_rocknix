@@ -23,4 +23,5 @@ pre_configure_target() {
 makeinstall_target() {
   mkdir -p ${INSTALL}/usr/lib/libretro
   cp ${PKG_BUILD}/src/burner/libretro/fbneo_libretro.so ${INSTALL}/usr/lib/libretro/fbneoplus_libretro.so
+  ln -sf fbneoplus_libretro.so ${INSTALL}/usr/lib/libretro/fbneo_libretro.so
 }

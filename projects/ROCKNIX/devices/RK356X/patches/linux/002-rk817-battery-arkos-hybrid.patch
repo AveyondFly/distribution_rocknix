@@ -1127,7 +1127,7 @@ b/drivers/power/supply/rk817_battery.c	2026-06-18 21:51:52.908554838 +0800
 +
 +	/* Sanity check: calibration values must be different and reasonable */
 +	if (delta == 0 || abs(delta) > 10000) {
-+		dev_warn(battery->dev,
++		dev_dbg(battery->dev,
 +			 "bad voltage calibration: vcalib0=%d vcalib1=%d, using defaults\n",
 +			 vcalib0, vcalib1);
 +		/* Use safe defaults that produce reasonable voltage readings */

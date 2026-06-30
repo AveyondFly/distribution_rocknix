@@ -22,6 +22,7 @@ jobs:
       DEVICE: ${{ inputs.DEVICE }}
       ARCH: aarch64
       CACHE_KEY: ccache-aarch64-${{ inputs.DEVICE }}-ruffle-sa-${{ github.sha }}
+      RUST_CACHE_PREFIX: rust-cache-v2-aarch64-${{ inputs.DEVICE }}-ruffle-sa.tar.part-
       DISABLE_COLORS: yes
       CCACHE_COMPILERCHECK: content
       CCACHE_COMPRESS: 1
@@ -113,7 +114,7 @@ jobs:
         run: |
           ./scripts/ci_rust_cache restore \
             "https://github.com/${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}/releases/download/ccache" \
-            "rust-cache-aarch64-${{ inputs.DEVICE }}-ruffle-sa.tar.part-"
+            "${RUST_CACHE_PREFIX}"
 
       - name: Build
         uses: corrupt952/actions-retry-command@v1.0.7
@@ -167,20 +168,9 @@ jobs:
       - name: Compress directory
         run: |
           BUILD="./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64"
-          shopt -s nullglob
-          paths=(
-            ${BUILD}/install_pkg/ruffle-sa-*
-            ${BUILD}/.stamps/rust
-            ${BUILD}/.stamps/cargo
-            ${BUILD}/.stamps/ruffle-sa
-            ${BUILD}/toolchain/bin/rustc
-            ${BUILD}/toolchain/bin/cargo
-            ${BUILD}/toolchain/lib/rustlib
-          )
-          if [ ${#paths[@]} -eq 0 ]; then
-            echo "No ruffle-sa artifact paths found."
-            exit 1
-          fi
+          mapfile -t paths < <(./scripts/ci_rust_cache artifact-paths "${BUILD}")
+          echo "Packing ${#paths[@]} ruffle-sa artifact path(s):"
+          printf '  %s\n' "${paths[@]}"
           tar --zstd -cf build.ruffle-sa.tar.zst "${paths[@]}"
 
       - uses: actions/upload-artifact@v4
@@ -195,10 +185,10 @@ jobs:
         run: |
           ./scripts/ci_rust_cache archive \
             "./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64" \
-            "rust-cache-aarch64-${{ inputs.DEVICE }}-ruffle-sa.tar.part-" \
+            "${RUST_CACHE_PREFIX}" \
             --remove-files
           shopt -s nullglob
-          parts=(rust-cache-aarch64-${{ inputs.DEVICE }}-ruffle-sa.tar.part-*)
+          parts=(${RUST_CACHE_PREFIX}*)
           if [ ${#parts[@]} -gt 0 ]; then
             echo "found=true" >> "${GITHUB_OUTPUT}"
           else
@@ -210,11 +200,11 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           tag: ccache
-          artifacts: "rust-cache-aarch64-${{ inputs.DEVICE }}-ruffle-sa.tar.part-*"
+          artifacts: "${{ env.RUST_CACHE_PREFIX }}*"
           allowUpdates: true
           makeLatest: true
           prerelease: true
-          body: rust-cache
+          body: rust-cache-v2
           token: ${{ secrets.GH_PAT }}
           repo: ${{ vars.CACHE_REPO || 'distribution-cache' }}
         continue-on-error: true

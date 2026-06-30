@@ -5,13 +5,58 @@
 # Usage:
 #   ci_rust_cache restore <cache-base-url> <artifact-prefix>
 #   ci_rust_cache archive <build-dir> <output-prefix> [--remove-files]
+#   ci_rust_cache artifact-paths <build-dir>
 
 set -e
 
 usage() {
   echo "Usage: ${0##*/} restore <cache-base-url> <artifact-prefix>" >&2
   echo "       ${0##*/} archive <build-dir> <output-prefix> [--remove-files]" >&2
+  echo "       ${0##*/} artifact-paths <build-dir>" >&2
   exit 1
+}
+
+collect_toolchain_rust_paths() {
+  local build="$1"
+  local -n _out=$2
+  local path
+
+  for path in \
+    "${build}/toolchain/bin/rustc" \
+    "${build}/toolchain/bin/cargo"
+  do
+    [ -e "${path}" ] && _out+=("${path}")
+  done
+
+  [ -d "${build}/toolchain/lib/rustlib" ] && _out+=("${build}/toolchain/lib/rustlib")
+
+  # rustc is dynamically linked against librustc_driver-*.so in toolchain/lib
+  shopt -s nullglob
+  for path in "${build}/toolchain/lib"/librustc*.so*; do
+    _out+=("${path}")
+  done
+  shopt -u nullglob
+}
+
+collect_artifact_paths() {
+  local build="$1"
+  local -n _out=$2
+
+  _out=()
+  [ -d "${build}" ] || return 0
+
+  shopt -s nullglob
+  for path in \
+    "${build}/install_pkg/ruffle-sa-"* \
+    "${build}/.stamps/rust" \
+    "${build}/.stamps/cargo" \
+    "${build}/.stamps/ruffle-sa"
+  do
+    [ -e "${path}" ] && _out+=("${path}")
+  done
+  shopt -u nullglob
+
+  collect_toolchain_rust_paths "${build}" _out
 }
 
 collect_paths() {
@@ -30,14 +75,13 @@ collect_paths() {
     "${build}/build/rustc-snapshot-"* \
     "${build}/build/rust-std-snapshot-"* \
     "${build}/build/cargo-snapshot-"* \
-    "${build}/toolchain/bin/rustc" \
-    "${build}/toolchain/bin/cargo" \
-    "${build}/toolchain/lib/rustlib" \
     "${build}/.stamps/rust" \
     "${build}/.stamps/cargo"
   do
     [ -e "${path}" ] && _out+=("${path}")
   done
+
+  collect_toolchain_rust_paths "${build}" _out
 
   for path in "${build}/install_pkg/ruffle-"*; do
     [ -e "${path}" ] && _out+=("${path}")
@@ -136,12 +180,32 @@ cmd_archive() {
   tar "${tar_opts[@]}" -cf - "${paths[@]}" | split -b 1900m - "${prefix}"
 }
 
+cmd_artifact_paths() {
+  local build="$1"
+  local -a paths=()
+
+  [ -n "${build}" ] || usage
+
+  collect_artifact_paths "${build}" paths
+  dedupe_paths paths
+
+  if [ ${#paths[@]} -eq 0 ]; then
+    echo "No ruffle-sa artifact paths found under ${build}." >&2
+    exit 1
+  fi
+
+  printf '%s\n' "${paths[@]}"
+}
+
 case "${1:-}" in
   restore)
     cmd_restore "${@:2:2}"
     ;;
   archive)
     cmd_archive "${@:2}"
+    ;;
+  artifact-paths)
+    cmd_artifact_paths "${2}"
     ;;
   *)
     usage

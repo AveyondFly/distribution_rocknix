@@ -217,18 +217,6 @@ jobs:
       - name: Clean up compressed emu-standalone file
         run: rm build.emu-standalone.tar*
 
-      - name: Download ruffle-sa (${{ inputs.DEVICE }})
-        uses: actions/download-artifact@v4
-        with:
-          name: ruffle-sa (${{ inputs.DEVICE }})
-
-      - name: Extract artifact ruffle-sa
-        run: |
-          tar --skip-old-files --zstd -xf build.ruffle-sa.tar.zst
-
-      - name: Clean up compressed ruffle-sa file
-        run: rm build.ruffle-sa.tar.zst
-
       # clean to rebuild retroarch with 32bit enabled
       - name: Clean retroarch
         run: |

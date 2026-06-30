@@ -70,6 +70,32 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Retrieve ccache
+        run: |
+          BASE="https://github.com/${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}/releases/download/ccache"
+          PREFIX="ccache-aarch64-${{ inputs.DEVICE }}-emu-standalone.tar.part-"
+          found_any=0
+          for suffix in $(printf "%s\n" {a..z}{a..z}); do
+            FILE="${PREFIX}${suffix}"
+            URL="${BASE}/${FILE}"
+          
+            echo "Trying $URL"
+            if curl -L --fail --silent --show-error -o "$FILE" "$URL"; then
+              echo "Downloaded $FILE"
+              found_any=1
+            else
+              echo "No more parts found at $URL"
+              break
+            fi
+          done
+          if [ "$found_any" -eq 0 ]; then
+            echo "No cache found, skipping."
+            exit 0
+          fi
+          cat ${PREFIX}* > ccache.tar
+          tar -xf ccache.tar || { echo "Extract failed"; exit 0; }
+          rm -f ${PREFIX}* ccache.tar
+
       - name: Download aarch64 (${{ inputs.DEVICE }})
         uses: actions/download-artifact@v4
         with:
@@ -119,44 +145,6 @@ jobs:
         if: ${{ inputs.DEVICE == 'RK3399' || inputs.DEVICE == 'RK3566' || inputs.DEVICE == 'RK356X' || inputs.DEVICE == 'RK3588' ||
           inputs.DEVICE == 'S922X'  || inputs.DEVICE == 'SM8250' || inputs.DEVICE == 'SM8550' || inputs.DEVICE == 'SDM845' || inputs.DEVICE == 'SM8650' }}
         run: rm build.qt6.tar.zst
-
-      - name: Download ruffle-sa (${{ inputs.DEVICE }})
-        uses: actions/download-artifact@v4
-        with:
-          name: ruffle-sa (${{ inputs.DEVICE }})
-
-      - name: Extract artifact ruffle-sa
-        run: |
-          tar --skip-old-files --zstd -xf build.ruffle-sa.tar.zst
-
-      - name: Clean up compressed ruffle-sa file
-        run: rm build.ruffle-sa.tar.zst
-
-      - name: Retrieve ccache
-        run: |
-          BASE="https://github.com/${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}/releases/download/ccache"
-          PREFIX="ccache-aarch64-${{ inputs.DEVICE }}-emu-standalone.tar.part-"
-          found_any=0
-          for suffix in $(printf "%s\n" {a..z}{a..z}); do
-            FILE="${PREFIX}${suffix}"
-            URL="${BASE}/${FILE}"
-
-            echo "Trying $URL"
-            if curl -L --fail --silent --show-error -o "$FILE" "$URL"; then
-              echo "Downloaded $FILE"
-              found_any=1
-            else
-              echo "No more parts found at $URL"
-              break
-            fi
-          done
-          if [ "$found_any" -eq 0 ]; then
-            echo "No cache found, skipping."
-            exit 0
-          fi
-          cat ${PREFIX}* > ccache.tar
-          tar -xf ccache.tar || { echo "Extract failed"; exit 0; }
-          rm -f ${PREFIX}* ccache.tar
 
       - name: Build
         uses: corrupt952/actions-retry-command@v1.0.7

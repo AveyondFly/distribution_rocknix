@@ -119,10 +119,16 @@ def print_header(title: str, *, no_color=False, ascii_border=False):
     print(color(pad_disp(bar, tw), bg=True, enable=not no_color))
 
 
-# RK3566-Specific / RK356X-RK3566：与 config.xml 中 RK3566 子镜像 DTB 一致
+# RK3566-Specific / RK356X-RK3566-Specific：与 config.xml 中 RK3566 子镜像 DTB 一致
 ALL_DEVICES: List[Tuple[str, str]] = [
     ("泡机堂 Powkiddy X55", "device_trees/rk3566-powkiddy-x55.dtb"),
+    ("泡机堂 Powkiddy X35S", "device_trees/rk3566-powkiddy-x35s.dtb"),
     ("泡机堂 Powkiddy X35H", "device_trees/rk3566-powkiddy-x35h.dtb"),
+    ("GameMT E5Plus", "device_trees/rk3566-gamemt-e5p.dtb"),
+    ("Diium D50Plus", "device_trees/rk3566-diium-d50plus.dtb"),
+    ("GameMT E6Plus", "device_trees/rk3566-gamemt-e6p.dtb"),
+    ("MINILOONG Pocket1", "device_trees/rk3566-miniloong.dtb"),
+    ("Radxa ZERO 3W", "device_trees/rk3566-radxa-zero-3w.dtb"),
 ]
 
 

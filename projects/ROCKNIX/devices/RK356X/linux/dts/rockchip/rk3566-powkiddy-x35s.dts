@@ -1,0 +1,44 @@
+#include "rk3566-powkiddy-x55.dts"
+
+/ {
+	model = "Powkiddy x35s";
+	compatible = "powkiddy,x35s", "rockchip,rk3566";
+};
+
+&battery {
+	charge-full-design-microamp-hours = <3000000>;
+};
+
+&cru {
+	assigned-clocks = <&pmucru CLK_RTC_32K>, <&cru PLL_GPLL>,
+			  <&pmucru PLL_PPLL>, <&cru PLL_VPLL>;
+	assigned-clock-rates = <32768>, <1200000000>,
+			       <200000000>, <126400000>;
+};
+
+&joypad {
+	invert-absx;
+	invert-absy;
+	sw5 {
+		label = "GPIO BTN-B";
+		linux,code = <BTN_SOUTH>;
+	};
+	sw6 {
+		label = "GPIO BTN-A";
+		linux,code = <BTN_EAST>;
+	};
+	sw7 {
+		label = "GPIO BTN-X";
+		linux,code = <BTN_NORTH>;
+	};
+	sw8 {
+		label = "GPIO BTN-Y";
+		linux,code = <BTN_WEST>;
+	};
+};
+
+&panel {
+	compatible = "rocknix,generic-dsi";
+	panel_description = "G size=70,52 delays=60,60,60,120,20 format=rgb888 lanes=4 flags=0xa03", "M clock=31600 horizontal=640,113,96,150 vertical=480,20,14,12 default=1", "I seq=b9f11283", "I seq=b1000000da80", "I seq=b2000370", "I seq=b31010fcfc03ff00000000", "I seq=b480", "I seq=b50606", "I seq=b6a9a9", "I seq=b825622003", "I seq=ba338105f90e0e2000000000000000442500900a0000014f01000037", "I seq=bc47", "I seq=bf021100", "I seq=c0737350500000127000", "I seq=c125c0323277e4ffffcccc7777", "I seq=c68200bfff00ff", "I seq=c7b8000a000000", "I seq=c810401e02", "I seq=cc0b", "I seq=e0000a0f293c3f4138080c0f121412131219000a0f293c3f4138080c0f121412131219", "I seq=e307070b0b0b0b00000000ff00c010", "I seq=e9c8100a0000f0811231234f86f0814708000010000000000010000000888808f8f4466002288888888818f8f557711338888800000001000000000000000000", "I seq=ea001a0000000000000000000088f818f88331177558888888f808f88220066448888823000002fe00000000000000000000000000000000000000000000", "I seq=efffff01", "I seq=11 wait=250", "I seq=29 wait=50";
+	rotation = <0>;
+};

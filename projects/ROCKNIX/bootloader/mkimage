@@ -192,7 +192,7 @@ mkimage_rk3326_dtb_select() {
 mkimage_rk3566_dtb_select() {
   if [ "${DEVICE}" = "RK3566" ] && [ "${SUBDEVICE}" = "Specific" ]; then
     :
-  elif [ "${DEVICE}" = "RK356X" ] && [ "${SUBDEVICE}" = "RK3566" ]; then
+  elif [ "${DEVICE}" = "RK356X" ] && [ "${SUBDEVICE}" = "RK3566-Specific" ]; then
     :
   else
     return 0

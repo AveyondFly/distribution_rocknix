@@ -1,24 +1,24 @@
-From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: ROCKNIX <rocknix@local>
-Date: Mon, 29 Jun 2026 00:00:00 +0000
-Subject: [PATCH] arm64: dts: rockchip: add Powkiddy x55/x35h device trees
-
----
- arch/arm64/boot/dts/rockchip/Makefile | 2 ++
- 1 file changed, 2 insertions(+)
-
 diff --git a/arch/arm64/boot/dts/rockchip/Makefile b/arch/arm64/boot/dts/rockchip/Makefile
 index 111111111111..222222222222 100644
 --- a/arch/arm64/boot/dts/rockchip/Makefile
 +++ b/arch/arm64/boot/dts/rockchip/Makefile
-@@ -157,6 +157,8 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-rgb30.dtb
+@@ -156,7 +156,20 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-rgb30.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-rgb30-v2.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-rgb20pro.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-rk2023.dtb
 +dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-powkiddy-x55.dtb
 +dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-powkiddy-x35h.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-powkiddy-x35s.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-powkiddy-rk2023.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-powkiddy-rgb20-pro.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-powkiddy-rgb20sx.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-powkiddy-rgb30.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-powkiddy-rgb10max3.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-gamemt-e5p.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-gamemt-e6p.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-diium-d50plus.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-miniloong.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-radxa-zero-3w.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3567-evb2-lp4x-v10.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3567-evb2-lp4x-v10-dual-channel-lvds.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3567-evb2-lp4x-v10-one-vp-two-single-channel-lvds.dtb
--- 
-2.43.0

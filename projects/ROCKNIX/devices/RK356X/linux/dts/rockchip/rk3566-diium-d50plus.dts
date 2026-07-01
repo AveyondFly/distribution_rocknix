@@ -369,35 +369,23 @@
 		post-power-on-delay-ms = <200>;
 		reset-gpios = <&gpio0 RK_PC0 GPIO_ACTIVE_LOW>;
 	};
-	sound {
-	    compatible = "simple-audio-card";
-	    pinctrl-0 = <&hp_det>;
-	    pinctrl-names = "default";
-	    simple-audio-card,name = "rk817_int";
-	    simple-audio-card,aux-devs = <&spk_sw>;
-	    simple-audio-card,format = "i2s";
-	    simple-audio-card,hp-det-gpios = <&gpio4 RK_PC6 GPIO_ACTIVE_HIGH>;
-	    simple-audio-card,mclk-fs = <256>;
-	    simple-audio-card,widgets =
-	        "Microphone", "Mic Jack",
-	        "Headphone", "Headphones",
-	        "Speaker", "Internal Speakers";
-	    simple-audio-card,routing =
-	        "MICL", "Mic Jack",
-	        "Headphones", "HPOL",
-	        "Headphones", "HPOR",
-	        /* 把 speaker 路径也挂在 headphone 输出上，模拟原来 amp 的行为 */
-	        "Speaker Switch INL", "HPOL",
-	        "Speaker Switch INR", "HPOR",
-	        "Internal Speakers", "Speaker Switch OUTL",
-	        "Internal Speakers", "Speaker Switch OUTR";
-	    simple-audio-card,pin-switches = "Internal Speakers";
-	    simple-audio-card,codec {
-	        sound-dai = <&rk817>;
-	    };
-	    simple-audio-card,cpu {
-	        sound-dai = <&i2s1_8ch>;
-	    };
+	rk817_sound: rk817-sound {
+		status = "okay";
+		compatible = "rockchip,multicodecs-card";
+		rockchip,card-name = "rockchip-rk817";
+		rockchip,format = "i2s";
+		rockchip,mclk-fs = <256>;
+		rockchip,cpu = <&i2s1_8ch>;
+		rockchip,codec = <&rk817_codec>;
+		hp-det-gpio = <&gpio4 RK_PC6 GPIO_ACTIVE_HIGH>;
+		spk-con-gpios = <&gpio4 RK_PC2 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&hp_det &spk_amp_enable_h>;
+		rockchip,audio-routing =
+			"Headphone", "HPOL",
+			"Headphone", "HPOR",
+			"Speaker", "HPOL",
+			"Speaker", "HPOR";
 	};
 	spk_sw: speaker-switch {
 	    compatible = "simple-audio-amplifier";
@@ -721,18 +709,13 @@
 	rk817: pmic@20 {
 		compatible = "rockchip,rk817";
 		reg = <0x20>;
-		assigned-clocks = <&cru I2S1_MCLKOUT_TX>;
-		assigned-clock-parents = <&cru CLK_I2S1_8CH_TX>;
-		clock-names = "mclk";
 		clock-output-names = "rk808-clkout1", "rk808-clkout2";
-		clocks = <&cru I2S1_MCLKOUT_TX>;
 		interrupt-parent = <&gpio0>;
 		interrupts = <RK_PA3 IRQ_TYPE_LEVEL_LOW>;
 		pinctrl-names = "default";
-		pinctrl-0 = <&i2s1m0_mclk>, <&pmic_int_l>;
+		pinctrl-0 = <&pmic_int_l>;
 		wakeup-source;
 		#clock-cells = <1>;
-		#sound-dai-cells = <0>;
 
 		vcc1-supply = <&vcc_sys>;
 		vcc2-supply = <&vcc_sys>;
@@ -945,6 +928,24 @@
 			dc_det_adc = <0>;
 			otg5v_suspend_enable = <1>;
 			extcon = <&usb2phy0>;
+		};
+
+		rk817_codec: codec {
+			compatible = "rockchip,rk817-codec";
+			#sound-dai-cells = <0>;
+			clocks = <&cru I2S1_MCLKOUT>;
+			clock-names = "mclk";
+			assigned-clocks = <&cru I2S1_MCLKOUT>,
+					  <&cru I2S1_MCLK_TX_IOE>;
+			assigned-clock-rates = <12288000>;
+			assigned-clock-parents = <&cru I2S1_MCLKOUT_TX>,
+						 <&cru I2S1_MCLKOUT_TX>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&i2s1m0_mclk>;
+			hp-volume = <20>;
+			spk-volume = <3>;
+			out-l2spk-r2hp;
+			status = "okay";
 		};
 
 	};

@@ -1,0 +1,83 @@
+From: ROCKNIX
+Subject: rtl8733bs: fix RK356X 5.10 module build
+
+The dArkOS/Rockchip 5.10 kernel build uses a compiler wrapper that rejects
+warning output from external modules and exports VFS helpers into a namespace.
+Quiet vendor-driver warning output and import the VFS namespace used by
+filp_open/kernel_read/kernel_write.
+
+diff --git a/Makefile b/Makefile
+--- a/Makefile
++++ b/Makefile
+@@ -14,6 +14,10 @@
+ #EXTRA_CFLAGS += -Wno-unused-parameter
+ #EXTRA_CFLAGS += -Wno-unused-function
+ #EXTRA_CFLAGS += -Wno-unused
++EXTRA_CFLAGS += -w
++EXTRA_CFLAGS += -Wno-error=address
++EXTRA_CFLAGS += -Wno-error=misleading-indentation
++EXTRA_CFLAGS += -Wno-unused-function
+ #EXTRA_CFLAGS += -Wno-uninitialized
+ 
+ ############ ANDROID COMMON KERNEL ############
+diff --git a/core/efuse/rtw_efuse.c b/core/efuse/rtw_efuse.c
+--- a/core/efuse/rtw_efuse.c
++++ b/core/efuse/rtw_efuse.c
+@@ -968,11 +968,12 @@
+ 	j = 0;
+ 
+ 	for (i = 0; i < mapLen; i++) {
+-		if (i % 16 == 0)
++		if (i % 16 == 0) {
+ 			RTW_PRINT_SEL(RTW_DBGDUMP, "0x%03x: ", i);
++		}
+ 			_RTW_PRINT_SEL(RTW_DBGDUMP, "%02X%s"
+ 				, pEfuseHal->fakeEfuseInitMap[i]
+ 				, ((i + 1) % 16 == 0) ? "\n" : (((i + 1) % 8 == 0) ? "	  " : " ")
+ 			);
+ 		}
+ 	_RTW_PRINT_SEL(RTW_DBGDUMP, "\n");
+diff --git a/core/rtw_recv.c b/core/rtw_recv.c
+--- a/core/rtw_recv.c
++++ b/core/rtw_recv.c
+@@ -3900,10 +3900,11 @@
+ 			int i;
+ 			RTW_INFO("############ type:0x%02x subtype:0x%02x #################\n", type, subtype);
+ 
+-			for (i = 0; i < precv_frame->u.hdr.len; i = i + 8)
++			for (i = 0; i < precv_frame->u.hdr.len; i = i + 8) {
+ 				RTW_INFO("%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:\n", *(ptr + i),
+ 					*(ptr + i + 1), *(ptr + i + 2) , *(ptr + i + 3) , *(ptr + i + 4), *(ptr + i + 5), *(ptr + i + 6), *(ptr + i + 7));
+-				RTW_INFO("#############################\n");
++			}
++			RTW_INFO("#############################\n");
+ 				_rtw_memset(pmppriv->mplink_buf, '\0' , sizeof(pmppriv->mplink_buf));
+ 				_rtw_memcpy(pmppriv->mplink_buf, ptr, precv_frame->u.hdr.len);
+ 				pmppriv->mplink_rx_len = precv_frame->u.hdr.len;
+diff --git a/core/rtw_sta_mgt.c b/core/rtw_sta_mgt.c
+--- a/core/rtw_sta_mgt.c
++++ b/core/rtw_sta_mgt.c
+@@ -391,8 +391,7 @@
+ void rtw_mfree_stainfo(struct sta_info *psta)
+ {
+ 
+-	if (&psta->lock != NULL)
+-		_rtw_spinlock_free(&psta->lock);
++	_rtw_spinlock_free(&psta->lock);
+ 
+ 	_rtw_free_sta_xmit_priv_lock(&psta->sta_xmitpriv);
+ 	_rtw_free_sta_recv_priv_lock(&psta->sta_recvpriv);
+diff --git a/os_dep/linux/os_intfs.c b/os_dep/linux/os_intfs.c
+--- a/os_dep/linux/os_intfs.c
++++ b/os_dep/linux/os_intfs.c
+@@ -17,6 +17,10 @@
+ #include <drv_types.h>
+ #include <hal_data.h>
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(6, 13, 0))
++MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
++#endif
++
+ MODULE_LICENSE("GPL");
+ MODULE_DESCRIPTION("Realtek Wireless Lan Driver");
+ MODULE_AUTHOR("Realtek Semiconductor Corp.");

@@ -78,7 +78,7 @@
     FIRMWARE="rk915-firmware"
 
   # Additional packages to install
-    ADDITIONAL_PACKAGES="libmali libmali-vulkan mcu-led generic-dsi rocknix-joypad rk356x-dtb-select rk3566-dtb-select"
+    ADDITIONAL_PACKAGES="libmali libmali-vulkan mcu-led generic-dsi rocknix-joypad rtl8733bs rk356x-dtb-select rk3566-dtb-select"
     ADDITIONAL_PACKAGES_32BIT="libmali"
 
   # Debug tty path

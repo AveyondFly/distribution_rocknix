@@ -1,7 +1,21 @@
 diff -Naur a/drivers/bluetooth/btrtl.c b/drivers/bluetooth/btrtl.c
 --- a/drivers/bluetooth/btrtl.c	2026-06-15 07:50:16.000000000 +0800
 +++ b/drivers/bluetooth/btrtl.c	2026-07-02 11:11:25.674446388 +0800
-@@ -125,11 +125,28 @@
+@@ -92,7 +92,12 @@
+ 
+ 	/* 8723D */
+-	{ IC_INFO(RTL_ROM_LMP_8723B, 0xd),
++	{ .match_flags = IC_MATCH_FL_LMPSUBV | IC_MATCH_FL_HCIREV |
++			 IC_MATCH_FL_HCIVER | IC_MATCH_FL_HCIBUS,
++	  .lmp_subver = RTL_ROM_LMP_8723B,
++	  .hci_rev = 0xd,
++	  .hci_ver = 8,
++	  .hci_bus = HCI_USB,
+ 	  .config_needed = true,
+ 	  .has_rom_version = true,
+ 	  .fw_name  = "rtl_bt/rtl8723d_fw.bin",
+ 	  .cfg_name = "rtl_bt/rtl8723d_config" },
+@@ -125,11 +130,28 @@
  
  	/* 8821C */
 -	{ IC_INFO(RTL_ROM_LMP_8821A, 0xc),

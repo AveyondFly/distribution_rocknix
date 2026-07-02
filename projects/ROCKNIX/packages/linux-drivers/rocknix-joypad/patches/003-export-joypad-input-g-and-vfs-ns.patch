@@ -1,20 +1,7 @@
 diff --git a/rocknix-singleadc-joypad.c b/rocknix-singleadc-joypad.c
 --- a/rocknix-singleadc-joypad.c
 +++ b/rocknix-singleadc-joypad.c
-@@ -243,7 +243,12 @@
- 	bool positive;
- };
- 
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0)
- extern struct input_dev * joypad_input_g;
-+#else
-+struct input_dev *joypad_input_g;
-+EXPORT_SYMBOL(joypad_input_g);
-+#endif
- 
- static int pwm_vibrator_start(struct joypad *joypad)
- {
-@@ -1811,6 +1816,9 @@
+@@ -1811,6 +1813,9 @@
  /*----------------------------------------------------------------------------*/
  MODULE_AUTHOR("ROCKNIX");
  MODULE_DESCRIPTION("ROCKNIX singleadc joypad driver");

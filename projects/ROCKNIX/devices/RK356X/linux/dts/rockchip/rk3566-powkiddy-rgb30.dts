@@ -804,19 +804,18 @@
 	  reg = <0x62>;
 	 };*/
 
-	vdd_cpu: tcs4525@40 {
-		compatible = "fcs,fan53555";
-		reg = <0x40>;
-		vin-supply = <&vccsys>;
-		regulator-compatible = "fan53555-reg";
-		regulator-name = "vdd_cpu";
+	vdd_cpu: regulator@1c {
+		compatible = "tcs,tcs4525";
+		reg = <0x1c>;
+		fcs,suspend-voltage-selector = <1>;
+		regulator-always-on;
+		regulator-boot-on;
 		regulator-min-microvolt = <712500>;
 		regulator-max-microvolt = <1390000>;
 		regulator-init-microvolt = <900000>;
+		regulator-name = "vdd_cpu";
 		regulator-ramp-delay = <2300>;
-		fcs,suspend-voltage-selector = <1>;
-		regulator-boot-on;
-		regulator-always-on;
+		vin-supply = <&vccsys>;
 		regulator-state-mem {
 			regulator-off-in-suspend;
 		};

@@ -15,8 +15,10 @@
 };
 
 &dsi0 {
+	/delete-node/ panel@0;
+
 	panel: panel@0 {
-		compatible = "powkiddy,rgb10max3-panel";
+		compatible = "rocknix,generic-dsi";
 		reg = <0>;
 		backlight = <&backlight>;
 		iovcc-supply = <&vcc3v3_lcd0_n>;
@@ -25,6 +27,35 @@
 		reset-gpios = <&gpio4 RK_PA0 GPIO_ACTIVE_LOW>;
 		rotation = <270>;
 		vcc-supply = <&vcc3v3_lcd0_n>;
+		panel_description =
+			"G size=62,109 delays=20,20,20,120,20 format=rgb888 lanes=4 flags=0xa03",
+
+			"M clock=63800 horizontal=720,40,10,40 vertical=1280,16,4,14 default=1",
+
+			"I seq=b9f11283",
+			"I seq=b1000000da80",
+			"I seq=b2c80230",
+			"I seq=b31010282803ff00000000",
+			"I seq=b480",
+			"I seq=b50404",
+			"I seq=b67878",
+			"I seq=b82522f063",
+			"I seq=ba338105f90e0e2000000000000000442500900a0000014f01000037",
+			"I seq=bc47",
+			"I seq=bf021100",
+			"I seq=c0737350500000127000",
+			"I seq=c12500323277e1ffffcccc7777",
+			"I seq=c68200bfff00ff",
+			"I seq=c7b8000a000000",
+			"I seq=c810401e02",
+			"I seq=cc0b",
+			"I seq=e00004072a393f3631060b0e121412130f170004072a393f3631060b0e121412130f17",
+			"I seq=e303030303000300000000ff80c010",
+			"I seq=e9c81008000041f8123123378611c8372a00000c00000000000c00000088204602888888888888ff88315713888888888888ff00000000000000000000000000",
+			"I seq=ea001a000000000000000000008f133175888888888888f88f022064888888888888f80000000000000000000000000000000000000000000000000000",
+			"I seq=efffff01",
+			"I seq=11 wait=120",
+			"I seq=29 wait=20";
 
 		ports {
 			#address-cells = <1>;
@@ -53,7 +84,7 @@
 };
 
 &i2c0 {
-	/delete-node/ tcs4525@1c;
+	/delete-node/ regulator@1c;
 
 	vdd_cpu: regulator@40 {
 		compatible = "fcs,fan53555";
@@ -80,7 +111,7 @@
 
 &uart1 {
 	bluetooth {
-		compatible = "realtek,rtl8723ds-bt";
+		compatible = "realtek,rtl8723ds-bt", "realtek,rtl8723bs-bt";
 	};
 };
 

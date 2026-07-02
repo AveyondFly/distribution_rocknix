@@ -5,10 +5,11 @@ PKG_NAME="linux-uapi"
 PKG_VERSION="6.18.21"
 PKG_SHA256=""
 PKG_LICENSE="GPL"
-PKG_SITE="http://www.kernel.org"
-PKG_URL="https://www.kernel.org/pub/linux/kernel/v${PKG_VERSION/.*/}.x/linux-${PKG_VERSION}.tar.xz"
+PKG_SITE="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git"
+PKG_URL="${PKG_SITE}/snapshot/linux-${PKG_VERSION}.tar.gz"
 PKG_DEPENDS_HOST="ccache:host openssl:host"
 PKG_LONGDESC="Linux UAPI headers for userspace (sysroot), independent of the target kernel version."
+PKG_TOOLCHAIN="manual"
 
 make_host() {
   :

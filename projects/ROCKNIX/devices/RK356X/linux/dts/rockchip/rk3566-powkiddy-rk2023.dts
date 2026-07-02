@@ -294,7 +294,6 @@
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio0 RK_PC5 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
-			retain-state-suspended;
 		};
 
 		led@2 {
@@ -302,7 +301,6 @@
 			function = LED_FUNCTION_CHARGING;
 			gpios = <&gpio0 RK_PC6 GPIO_ACTIVE_HIGH>;
 			default-state = "off";
-			retain-state-suspended;
 		};
 	};
 
@@ -315,7 +313,7 @@
 		WIFI,host_wake_irq = <&gpio4 RK_PA1 GPIO_ACTIVE_HIGH>;
 		//WIFI,poweren_gpio = <&gpio0 RK_PA0 GPIO_ACTIVE_HIGH>; /* GPIO0_a3 */
 		keep_wifi_power_on;		
-		status = "okay";
+		status = "disabled";
 	};
 
 	wireless-bluetooth {
@@ -925,19 +923,17 @@
 	  reg = <0x62>;
 	 };*/
 
-	vdd_cpu: tcs4525@1c {
-		compatible = "tcs,tcs452x";
+	vdd_cpu: regulator@1c {
+		compatible = "tcs,tcs4525";
 		reg = <0x1c>;
-		vin-supply = <&vccsys>;
-		regulator-compatible = "fan53555-reg";
-		regulator-name = "vdd_cpu";
+		fcs,suspend-voltage-selector = <1>;
+		regulator-always-on;
+		regulator-boot-on;
 		regulator-min-microvolt = <712500>;
 		regulator-max-microvolt = <1390000>;
-		regulator-init-microvolt = <900000>;
+		regulator-name = "vdd_cpu";
 		regulator-ramp-delay = <2300>;
-		fcs,suspend-voltage-selector = <1>;
-		regulator-boot-on;
-		regulator-always-on;
+		vin-supply = <&vccsys>;
 		regulator-state-mem {
 			regulator-off-in-suspend;
 		};
@@ -1372,6 +1368,8 @@
 };
 
 &sdmmc2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	max-frequency = <100000000>;
 	supports-sdio;
 	bus-width = <4>;
@@ -1383,9 +1381,21 @@
 	non-removable;
 	pinctrl-names = "default";
 	pinctrl-0 = <&sdmmc2m0_bus4 &sdmmc2m0_cmd &sdmmc2m0_clk>;
-	sd-uhs-sdr104;
-	rockchip,default-sample-phase = <90>;
+	vmmc-supply = <&vcc_wifi>;
+	vqmmc-supply = <&vcca1v8_pmu>;
+	no-mmc;
+	no-sd;
+	sd-uhs-sdr50;
 	status = "okay";
+
+	wifi@1 {
+		reg = <1>;
+		interrupt-names = "host-wake";
+		interrupt-parent = <&gpio4>;
+		interrupts = <RK_PA1 IRQ_TYPE_LEVEL_HIGH>;
+		pinctrl-0 = <&wifi_host_wake_irq>;
+		pinctrl-names = "default";
+	};
 };
 
 &spdif_8ch {
@@ -1597,11 +1607,11 @@
 };
 
 &usb_host0_ehci {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb_host0_ohci {
-	status = "okay";
+	status = "disabled";
 };
 
 &usb_host1_ehci {
@@ -1623,11 +1633,11 @@
 };
 
 &usbhost_dwc3 {
-	status = "okay";
+	status = "disabled";
 };
 
 &usbhost30 {
-	status = "okay";
+	status = "disabled";
 };
 
 &vad {

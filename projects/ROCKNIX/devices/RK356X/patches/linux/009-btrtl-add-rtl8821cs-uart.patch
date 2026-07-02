@@ -1,0 +1,43 @@
+diff -Naur a/drivers/bluetooth/btrtl.c b/drivers/bluetooth/btrtl.c
+--- a/drivers/bluetooth/btrtl.c	2026-06-15 07:50:16.000000000 +0800
++++ b/drivers/bluetooth/btrtl.c	2026-07-02 11:11:25.674446388 +0800
+@@ -125,11 +125,28 @@
+ 
+ 	/* 8821C */
+-	{ IC_INFO(RTL_ROM_LMP_8821A, 0xc),
++	{ .match_flags = IC_MATCH_FL_LMPSUBV | IC_MATCH_FL_HCIREV |
++			 IC_MATCH_FL_HCIVER | IC_MATCH_FL_HCIBUS,
++	  .lmp_subver = RTL_ROM_LMP_8821A,
++	  .hci_rev = 0xc,
++	  .hci_ver = 8,
++	  .hci_bus = HCI_USB,
+ 	  .config_needed = false,
+ 	  .has_rom_version = true,
+ 	  .fw_name  = "rtl_bt/rtl8821c_fw.bin",
+ 	  .cfg_name = "rtl_bt/rtl8821c_config" },
+ 
++	/* 8821CS */
++	{ .match_flags = IC_MATCH_FL_LMPSUBV | IC_MATCH_FL_HCIREV |
++			 IC_MATCH_FL_HCIVER | IC_MATCH_FL_HCIBUS,
++	  .lmp_subver = RTL_ROM_LMP_8821A,
++	  .hci_rev = 0xc,
++	  .hci_ver = 8,
++	  .hci_bus = HCI_UART,
++	  .config_needed = true,
++	  .has_rom_version = true,
++	  .fw_name  = "rtl_bt/rtl8821cs_fw.bin",
++	  .cfg_name = "rtl_bt/rtl8821cs_config" },
++
+ 	/* 8761A */
+ 	{ IC_INFO(RTL_ROM_LMP_8761A, 0xa),
+ 	  .config_needed = false,
+@@ -833,5 +845,9 @@
+ MODULE_FIRMWARE("rtl_bt/rtl8761a_config.bin");
+ MODULE_FIRMWARE("rtl_bt/rtl8821a_fw.bin");
+ MODULE_FIRMWARE("rtl_bt/rtl8821a_config.bin");
++MODULE_FIRMWARE("rtl_bt/rtl8821c_fw.bin");
++MODULE_FIRMWARE("rtl_bt/rtl8821c_config.bin");
++MODULE_FIRMWARE("rtl_bt/rtl8821cs_fw.bin");
++MODULE_FIRMWARE("rtl_bt/rtl8821cs_config.bin");
+ MODULE_FIRMWARE("rtl_bt/rtl8822b_fw.bin");
+ MODULE_FIRMWARE("rtl_bt/rtl8822b_config.bin");

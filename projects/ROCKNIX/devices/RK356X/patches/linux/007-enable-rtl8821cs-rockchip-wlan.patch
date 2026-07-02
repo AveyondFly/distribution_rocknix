@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ROCKNIX <noreply@rocknix.org>
+Date: Thu, 2 Jul 2026 09:48:00 +0800
+Subject: [PATCH] wifi: rockchip_wlan: enable rtl8821cs driver
+
+The RK356X Powkiddy RGB30 uses an RTL8821CS SDIO WiFi module. The driver
+source is present in the Rockchip WLAN tree, but its Kconfig and Makefile
+entries are commented out, so CONFIG_RTL8821CS cannot build a module.
+
+Enable the existing driver so devices with the 024c:c821 SDIO function can
+bind to rtl8821cs.
+
+---
+ drivers/net/wireless/rockchip_wlan/Kconfig  | 2 +-
+ drivers/net/wireless/rockchip_wlan/Makefile | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/rockchip_wlan/Kconfig b/drivers/net/wireless/rockchip_wlan/Kconfig
+--- a/drivers/net/wireless/rockchip_wlan/Kconfig
++++ b/drivers/net/wireless/rockchip_wlan/Kconfig
+@@ -43,7 +43,7 @@ source "drivers/net/wireless/rockchip_wlan/rtl8188fu/Kconfig"
+ source "drivers/net/wireless/rockchip_wlan/rtl8189fs/Kconfig"
+ source "drivers/net/wireless/rockchip_wlan/rtl8723cs/Kconfig"
+ source "drivers/net/wireless/rockchip_wlan/rtl8723ds/Kconfig"
+-#source "drivers/net/wireless/rockchip_wlan/rtl8821cs/Kconfig"
++source "drivers/net/wireless/rockchip_wlan/rtl8821cs/Kconfig"
+ source "drivers/net/wireless/rockchip_wlan/rtl8822bs/Kconfig"
+ source "drivers/net/wireless/rockchip_wlan/rk915/Kconfig"
+ 
+diff --git a/drivers/net/wireless/rockchip_wlan/Makefile b/drivers/net/wireless/rockchip_wlan/Makefile
+--- a/drivers/net/wireless/rockchip_wlan/Makefile
++++ b/drivers/net/wireless/rockchip_wlan/Makefile
+@@ -5,7 +5,7 @@ obj-$(CONFIG_RTL8188FU)	+= rtl8188fu/
+ obj-$(CONFIG_RTL8189FS)	+= rtl8189fs/
+ obj-$(CONFIG_RTL8723CS)	+= rtl8723cs/
+ obj-$(CONFIG_RTL8723DS)	+= rtl8723ds/
+-#obj-$(CONFIG_RTL8821CS) += rtl8821cs/
++obj-$(CONFIG_RTL8821CS) += rtl8821cs/
+ obj-$(CONFIG_RTL8822BS) += rtl8822bs/
+ obj-$(CONFIG_CYW_BCMDHD)	+= cywdhd/
+ #obj-$(CONFIG_WL_ROCKCHIP)	+= rkwifi/rk_wifi_config.o
+-- 
+2.43.0

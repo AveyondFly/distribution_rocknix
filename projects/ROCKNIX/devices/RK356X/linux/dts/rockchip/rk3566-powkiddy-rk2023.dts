@@ -10,6 +10,7 @@
 #include <dt-bindings/display/drm_mipi_dsi.h>
 #include <dt-bindings/sensor-dev.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/display/media-bus-format.h>
 #include <dt-bindings/pinctrl/rockchip.h>
 #include "rk3566.dtsi"
@@ -283,32 +284,26 @@
 			
 	};
 
-        leds: gpio-leds {
-                compatible = "gpio-leds";
-                pinctrl-names = "default";
-                pinctrl-0 =<&leds_gpio>;
+	leds: gpio-leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&leds_gpio>;
 
-                led@1 {
-                        gpios = <&gpio0 RK_PC5 GPIO_ACTIVE_HIGH>;
-                        label = "battery_full";
-			default-state="on";
+		led@1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio0 RK_PC5 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
 			retain-state-suspended;
-                };
+		};
 
-                led@2 {
-                        gpios = <&gpio0 RK_PC6 GPIO_ACTIVE_HIGH>;
-                        label = "battery_charging";
-                        default-state = "off";
-                        linux,default-trigger = "battery-charging";
-                        retain-state-suspended;
-                };
-				
-                led@3 {
-                        gpios = <&gpio0 RK_PC7 GPIO_ACTIVE_HIGH>;
-                        label = "low_power";
-			default-state="off";
+		led@2 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_CHARGING;
+			gpios = <&gpio0 RK_PC6 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
 			retain-state-suspended;
-                };			
+		};
 	};
 
 	wireless-wlan {
@@ -335,24 +330,27 @@
 		BT,reset_gpio    = <&gpio4 RK_PA3 GPIO_ACTIVE_HIGH>;
 		BT,wake_gpio     = <&gpio4 RK_PA4 GPIO_ACTIVE_HIGH>;
 		BT,wake_host_irq = <&gpio4 RK_PA5 GPIO_ACTIVE_HIGH>;
-		status = "okay";
+		status = "disabled";
 	};
 	
-	joypad: singleadc-joypad {
-		compatible = "singleadc-joypad";
+	joypad: rocknix-singleadc-joypad {
+		compatible = "rocknix-singleadc-joypad";
 
 		joypad-name = "retrogame_joypad";
 		joypad-product = <0x1101>;
 		joypad-revision = <0x0100>;
+		joypad-vendor = <0x484B>;
 
 		status = "okay";
 
-		/* rumble */
-		pwms = <&pwm5 0 10000 0>;
+		pwms = <&pwm5 0 1000000000 0>;
+		pwm-names = "enable";
+		rumble-boost-weak = <0x0000>;
+		rumble-boost-strong = <0x0000>;
 
 		/* gpio pincontrol setup */
 		pinctrl-names = "default";
-		pinctrl-0 = <&btn_pins>;
+		pinctrl-0 = <&btn_pins_ctrl>;
 
 		/* Analog mux define */
 		io-channel-names = "amux_adc";
@@ -370,126 +368,129 @@
 		button-adc-scale = <2>;
 
 		/* adc deadzone range  */
-		button-adc-deadzone = <48>;
+		button-adc-deadzone = <64>;
 
 		/*
 		  specifies fuzz value that is used to filter noise from
 		  the event stream.
 		*/
-		button-adc-fuzz = <16>;
-		button-adc-flat = <16>;
+		button-adc-fuzz = <32>;
+		button-adc-flat = <32>;
 
 		/*
 		  Analog Stick data tuning value(precent)
 		  p = positive direction, n = negative direction
 		  report value = (real_adc_data * tuning_value) / 100
 		*/
-		abs_x-p-tuning = <250>;
-		abs_x-n-tuning = <250>;
+		abs_x-p-tuning = <245>;
+		abs_x-n-tuning = <245>;
 
-		abs_y-p-tuning = <250>;
-		abs_y-n-tuning = <250>;
+		abs_y-p-tuning = <245>;
+		abs_y-n-tuning = <245>;
 
-		abs_rx-p-tuning = <250>;
-		abs_rx-n-tuning = <250>;
+		abs_rx-p-tuning = <245>;
+		abs_rx-n-tuning = <245>;
 
-		abs_ry-p-tuning = <250>;
-		abs_ry-n-tuning = <250>;
+		abs_ry-p-tuning = <245>;
+		abs_ry-n-tuning = <245>;
 
 		/* poll device interval (ms), adc read interval */
 		poll-interval = <10>;
+
+		/* required to invert x/y */
+		invert-absx;
+		invert-absy;
 
 		/* gpio button auto repeat set value : default disable */
 		/*
 			autorepeat;
 		*/
 		sw1 {
-		        gpios = <&gpio3 RK_PA3 GPIO_ACTIVE_LOW>;
-		        label = "GPIO DPAD-UP";
-		        linux,code = <BTN_DPAD_UP>;
+			gpios = <&gpio3 RK_PA3 GPIO_ACTIVE_LOW>;
+			label = "GPIO DPAD-UP";
+			linux,code = <BTN_DPAD_UP>;
 		};
 		sw2 {
-		        gpios = <&gpio3 RK_PA4 GPIO_ACTIVE_LOW>;
-		        label = "GPIO DPAD-DOWN";
-		        linux,code = <BTN_DPAD_DOWN>;
+			gpios = <&gpio3 RK_PA4 GPIO_ACTIVE_LOW>;
+			label = "GPIO DPAD-DOWN";
+			linux,code = <BTN_DPAD_DOWN>;
 		};
 		sw3 {
-		        gpios = <&gpio3 RK_PA6 GPIO_ACTIVE_LOW>;
-		        label = "GPIO DPAD-LEFT";
-		        linux,code = <BTN_DPAD_LEFT>;
+			gpios = <&gpio3 RK_PA6 GPIO_ACTIVE_LOW>;
+			label = "GPIO DPAD-LEFT";
+			linux,code = <BTN_DPAD_LEFT>;
 		};
 		sw4 {
-		        gpios = <&gpio3 RK_PA5 GPIO_ACTIVE_LOW>;
-		        label = "GPIO DPAD-RIGHT";
-		        linux,code = <BTN_DPAD_RIGHT>;
+			gpios = <&gpio3 RK_PA5 GPIO_ACTIVE_LOW>;
+			label = "GPIO DPAD-RIGHT";
+			linux,code = <BTN_DPAD_RIGHT>;
 		};
 		sw5 {
-		        gpios = <&gpio3 RK_PC3 GPIO_ACTIVE_LOW>;
-		        label = "GPIO KEY BTN-A";
-		        linux,code = <BTN_SOUTH>;
+			gpios = <&gpio3 RK_PC3 GPIO_ACTIVE_LOW>;
+			label = "GPIO KEY BTN-A";
+			linux,code = <BTN_SOUTH>;
 		};
 		sw6 {
-		        gpios = <&gpio3 RK_PC2 GPIO_ACTIVE_LOW>;
-		        label = "GPIO BTN-B";
-		        linux,code = <BTN_EAST>;
+			gpios = <&gpio3 RK_PC2 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN-B";
+			linux,code = <BTN_EAST>;
 		};
 		sw7 {
-		        gpios = <&gpio3 RK_PC0 GPIO_ACTIVE_LOW>;
-		        label = "GPIO BTN-X";
-		        linux,code = <BTN_NORTH>;
+			gpios = <&gpio3 RK_PC0 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN-X";
+			linux,code = <BTN_NORTH>;
 		};
 		sw8 {
-		        gpios = <&gpio3 RK_PC1 GPIO_ACTIVE_LOW>;
-		        label = "GPIO BTN-Y";
-		        linux,code = <BTN_WEST>;
+			gpios = <&gpio3 RK_PC1 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN-Y";
+			linux,code = <BTN_WEST>;
 		};
 		sw9 {
-		        gpios = <&gpio3 RK_PB6 GPIO_ACTIVE_LOW>;
-		        label = "GPIO BTN_SELECT";
-		        linux,code = <BTN_SELECT>;
+			gpios = <&gpio3 RK_PB6 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN_SELECT";
+			linux,code = <BTN_SELECT>;
 		};
 		sw10 {
-		        gpios = <&gpio3 RK_PB5 GPIO_ACTIVE_LOW>;
-		        label = "GPIO BTN_START";
-		        linux,code = <BTN_START>;
+			gpios = <&gpio3 RK_PB5 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN_START";
+			linux,code = <BTN_START>;
 		};
 		sw11 {
-		        gpios = <&gpio3 RK_PB7 GPIO_ACTIVE_LOW>;
-		        label = "GPIO BTN_F";
-		        linux,code = <BTN_MODE>;
+			gpios = <&gpio3 RK_PB7 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN_F";
+			linux,code = <BTN_MODE>;
 		};
 		sw12 {
-		        gpios = <&gpio3 RK_PB1 GPIO_ACTIVE_LOW>;
-		        label = "GPIO BTN_TL";
-		        linux,code = <BTN_TL>;
+			gpios = <&gpio3 RK_PB1 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN_TL";
+			linux,code = <BTN_TL>;
 		};
 		sw13 {
-		        gpios = <&gpio3 RK_PB4 GPIO_ACTIVE_LOW>;
-		        label = "GPIO BTN_TR2";
-		        linux,code = <BTN_TR2>;
+			gpios = <&gpio3 RK_PB3 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN_TR";
+			linux,code = <BTN_TR>;
 		};
 		sw14 {
-		        gpios = <&gpio3 RK_PB2 GPIO_ACTIVE_LOW>;
-		        label = "GPIO BTN_TL2";
-		        linux,code = <BTN_TL2>;
+			gpios = <&gpio3 RK_PB2 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN_TL2";
+			linux,code = <BTN_TL2>;
 		};
 		sw15 {
-		        gpios = <&gpio3 RK_PB3 GPIO_ACTIVE_LOW>;
-		        label = "GPIO BTN_TR";
-		        linux,code = <BTN_TR>;
+			gpios = <&gpio3 RK_PB4 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN_TR2";
+			linux,code = <BTN_TR2>;
 		};
 		sw16 {
-		        gpios = <&gpio3 RK_PA1 GPIO_ACTIVE_LOW>;
-		        label = "GPIO BTN_THUMBL";
-		        linux,code = <BTN_THUMBL>;
+			gpios = <&gpio3 RK_PA1 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN_THUMBL";
+			linux,code = <BTN_THUMBL>;
 		};
 		sw17 {
-		        gpios = <&gpio3 RK_PA2 GPIO_ACTIVE_LOW>;
-		        label = "GPIO BTN_THUMBR";
-		        linux,code = <BTN_THUMBR>;
+			gpios = <&gpio3 RK_PA2 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN_THUMBR";
+			linux,code = <BTN_THUMBR>;
 		};
-	
-    	};
+	};
 
 	es8316-sound {
 		status = "disabled";
@@ -874,6 +875,14 @@
 &route_dsi0 {
 	status = "okay";
 	connect = <&vp0_out_dsi0>;
+};
+
+&cpu0_opp_table {
+	/delete-property/ rockchip,supported-hw;
+};
+
+&gpu_opp_table {
+	/delete-property/ rockchip,supported-hw;
 };
 
 &gpu {
@@ -1388,7 +1397,15 @@
 &uart1 {
 	status = "okay";
 	pinctrl-names = "default";
-	pinctrl-0 = <&uart1m1_xfer &uart1m1_ctsn>;
+	pinctrl-0 = <&uart1m1_xfer &uart1m1_ctsn &uart1m1_rtsn>;
+	uart-has-rtscts;
+
+	bluetooth {
+		compatible = "realtek,rtl8821cs-bt", "realtek,rtl8723bs-bt";
+		device-wake-gpios = <&gpio4 RK_PA4 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&gpio4 RK_PA3 GPIO_ACTIVE_HIGH>;
+		host-wake-gpios = <&gpio4 RK_PA5 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &can0 {
@@ -1731,29 +1748,25 @@
 		};
 	};
 
-	btns {
-		btn_pins: btn-pins {
-			rockchip,pins = 
-					<3 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PA1 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PA2 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PA4 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PA5 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PB1 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PB2 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PB3 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PB5 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PC0 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PC1 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PC2 RK_FUNC_GPIO &pcfg_pull_up>,
-					//<4 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,
-					<3 RK_PC3 RK_FUNC_GPIO &pcfg_pull_up>;
+	gpio-btns {
+		btn_pins_ctrl: btn-pins-ctrl {
+			rockchip,pins =
+				<3 RK_PA1 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PA2 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PA4 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PA5 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PB1 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PB2 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PB3 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PB5 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PC0 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PC1 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PC2 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PC3 RK_FUNC_GPIO &pcfg_pull_up>;
 		};
 	};
 

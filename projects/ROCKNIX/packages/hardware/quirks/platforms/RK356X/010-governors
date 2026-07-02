@@ -2,8 +2,14 @@
 # SPDX-License-Identifier: GPL-2.0
 # Copyright (C) 2023 JELOS (https://github.com/JustEnoughLinuxOS)
 
+if [ -d /sys/devices/platform/fde60000.gpu/devfreq/fde60000.gpu ]; then
+  GPU_FREQ="/sys/devices/platform/fde60000.gpu/devfreq/fde60000.gpu"
+else
+  GPU_FREQ="/sys/devices/platform/ff320000.gpu/devfreq/ff320000.gpu"
+fi
+
 cat <<EOF >/storage/.config/profile.d/010-governors
 # FREQ governors
 CPU_FREQ=("/sys/devices/system/cpu/cpufreq/policy0")
-GPU_FREQ=("/sys/devices/platform/ff320000.gpu/devfreq/ff320000.gpu")
+GPU_FREQ=("${GPU_FREQ}")
 EOF

@@ -1,0 +1,80 @@
+diff -Naur a/drivers/net/wireless/rockchip_wlan/rtl8821cs/core/rtw_sta_mgt.c b/drivers/net/wireless/rockchip_wlan/rtl8821cs/core/rtw_sta_mgt.c
+--- a/drivers/net/wireless/rockchip_wlan/rtl8821cs/core/rtw_sta_mgt.c	2026-06-15 07:50:16.000000000 +0800
++++ b/drivers/net/wireless/rockchip_wlan/rtl8821cs/core/rtw_sta_mgt.c	2026-07-02 09:49:44.011401750 +0800
+@@ -389,8 +389,7 @@
+ void rtw_mfree_stainfo(struct sta_info *psta)
+ {
+ 
+-	if (&psta->lock != NULL)
+-		_rtw_spinlock_free(&psta->lock);
++	_rtw_spinlock_free(&psta->lock);
+ 
+ 	_rtw_free_sta_xmit_priv_lock(&psta->sta_xmitpriv);
+ 	_rtw_free_sta_recv_priv_lock(&psta->sta_recvpriv);
+diff -Naur a/drivers/net/wireless/rockchip_wlan/rtl8821cs/hal/phydm/halrf/halrf.c b/drivers/net/wireless/rockchip_wlan/rtl8821cs/hal/phydm/halrf/halrf.c
+--- a/drivers/net/wireless/rockchip_wlan/rtl8821cs/hal/phydm/halrf/halrf.c	2026-06-15 07:50:16.000000000 +0800
++++ b/drivers/net/wireless/rockchip_wlan/rtl8821cs/hal/phydm/halrf/halrf.c	2026-07-02 09:54:24.431323188 +0800
+@@ -821,7 +821,7 @@
+ 	u8 i;
+ 
+ 	for (i = 0; i < 5; i++)
+-		if (input[i + 1])
++		if (input[i + 1][0])
+ 			PHYDM_SSCANF(input[i + 2], DCMD_DECIMAL, &dm_value[i]);
+ 
+ 	if (dm_value[0] == 100) {
+@@ -3922,7 +3922,7 @@
+ 
+ 	reg_1b00 = odm_get_bb_reg(dm, R_0x1b00, MASKDWORD);
+ 
+-	if (input[2])
++	if (input[2][0])
+ 		PHYDM_SSCANF(input[2], DCMD_DECIMAL, &var1[0]);
+ 
+ 	if ((strcmp(input[2], help) == 0))
+diff -Naur a/drivers/net/wireless/rockchip_wlan/rtl8821cs/hal/phydm/halrf/halrf_debug.c b/drivers/net/wireless/rockchip_wlan/rtl8821cs/hal/phydm/halrf/halrf_debug.c
+--- a/drivers/net/wireless/rockchip_wlan/rtl8821cs/hal/phydm/halrf/halrf_debug.c	2026-06-15 07:50:16.000000000 +0800
++++ b/drivers/net/wireless/rockchip_wlan/rtl8821cs/hal/phydm/halrf/halrf_debug.c	2026-07-02 09:54:49.082743080 +0800
+@@ -152,7 +152,7 @@
+ 	u8 i;
+ 
+ 	for (i = 0; i < 5; i++)
+-		if (input[i + 1])
++		if (input[i + 1][0])
+ 			PHYDM_SSCANF(input[i + 2], DCMD_DECIMAL, &rf_var[i]);
+ 
+ 	if (rf_var[0] == 100) {
+@@ -212,7 +212,7 @@
+ 	u8 i;
+ 
+ 	for (i = 0; i < 7; i++)
+-		if (input[i + 1])
++		if (input[i + 1][0])
+ 			PHYDM_SSCANF(input[i + 2], DCMD_DECIMAL, &dm_value[i]);
+ 
+ 	if (dm_value[0] == 1)
+@@ -330,7 +330,7 @@
+ 		PDM_SNPF(out_len, used, output + used, out_len - used,
+ 			 "IQK DEBUG!!!!!\n");
+ 		for (i = 0; i < 5; i++) {
+-			if (input[i + 1]) {
++			if (input[i + 1][0]) {
+ 				PHYDM_SSCANF(input[i + 2], DCMD_HEX,
+ 					     &rf_var[i]);
+ 				input_idx++;
+diff -Naur a/drivers/net/wireless/rockchip_wlan/rtl8821cs/include/osdep_service.h b/drivers/net/wireless/rockchip_wlan/rtl8821cs/include/osdep_service.h
+--- a/drivers/net/wireless/rockchip_wlan/rtl8821cs/include/osdep_service.h	2026-06-15 07:50:16.000000000 +0800
++++ b/drivers/net/wireless/rockchip_wlan/rtl8821cs/include/osdep_service.h	2026-07-02 09:50:45.707501099 +0800
+@@ -161,10 +161,10 @@
+ bool match_mstat_sniff_rules(const enum mstat_f flags, const size_t size);
+ void *dbg_rtw_vmalloc(u32 sz, const enum mstat_f flags, const char *func, const int line);
+ void *dbg_rtw_zvmalloc(u32 sz, const enum mstat_f flags, const char *func, const int line);
+-void dbg_rtw_vmfree(void *pbuf, const enum mstat_f flags, u32 sz, const char *func, const int line);
++void dbg_rtw_vmfree(void *pbuf, u32 sz, const enum mstat_f flags, const char *func, const int line);
+ void *dbg_rtw_malloc(u32 sz, const enum mstat_f flags, const char *func, const int line);
+ void *dbg_rtw_zmalloc(u32 sz, const enum mstat_f flags, const char *func, const int line);
+-void dbg_rtw_mfree(void *pbuf, const enum mstat_f flags, u32 sz, const char *func, const int line);
++void dbg_rtw_mfree(void *pbuf, u32 sz, const enum mstat_f flags, const char *func, const int line);
+ 
+ struct sk_buff *dbg_rtw_skb_alloc(unsigned int size, const enum mstat_f flags, const char *func, const int line);
+ void dbg_rtw_skb_free(struct sk_buff *skb, const enum mstat_f flags, const char *func, const int line);

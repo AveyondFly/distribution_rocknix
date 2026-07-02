@@ -3,9 +3,10 @@
 
 PKG_NAME="kernel-firmware"
 PKG_VERSION="20260110"
+PKG_SHA256="8978ac27fb306252739bab54d17a9926fe936d060eacb56e5c3de55c69a81283"
 PKG_LICENSE="other"
 PKG_SITE="https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/"
-PKG_URL="https://cdn.kernel.org/pub/linux/kernel/firmware/linux-firmware-${PKG_VERSION}.tar.gz"
+PKG_URL="https://gitlab.com/kernel-firmware/linux-firmware/-/archive/${PKG_VERSION}/linux-firmware-${PKG_VERSION}.tar.gz"
 PKG_NEED_UNPACK="${PROJECT_DIR}/${PROJECT}/packages/${PKG_NAME} ${PROJECT_DIR}/${PROJECT}/devices/${DEVICE}/packages/${PKG_NAME}"
 PKG_LONGDESC="kernel-firmware: kernel related firmware"
 PKG_TOOLCHAIN="manual"

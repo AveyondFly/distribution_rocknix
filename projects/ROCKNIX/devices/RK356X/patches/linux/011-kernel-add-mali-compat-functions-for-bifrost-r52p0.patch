@@ -1,0 +1,54 @@
+diff --git a/include/linux/version_compat_defs.h b/include/linux/version_compat_defs.h
+index d94a39e..ee73b42 100644
+--- a/include/linux/version_compat_defs.h
++++ b/include/linux/version_compat_defs.h
+@@ -521,4 +521,49 @@ static inline unsigned long find_next_clump8(unsigned long *clump, const unsigne
+ 	     (start) = find_next_clump8(&(clump), (bits), (size), (start) + 8))
+ #endif
+ 
++/* For kernel versions from 6.5 onward, the read_poll_timeout_atomic() implementation does not
++ * suit our usecase where we have a delay_us of zero. This causes the timeout to take allot longer
++ * than expected. mali_read_poll_timeout_atomic() is the previous kernel implementation with the
++ * desired timekeeping.
++ */
++#define mali_read_poll_timeout_atomic(op, val, cond, delay_us, timeout_us, delay_before_read, \
++				      args...)                                                \
++	({                                                                                    \
++		u64 __timeout_us = (timeout_us);                                              \
++		unsigned long __delay_us = (delay_us);                                        \
++		ktime_t __timeout = ktime_add_us(ktime_get(), __timeout_us);                  \
++		if (delay_before_read && __delay_us)                                          \
++			udelay(__delay_us);                                                   \
++		for (;;) {                                                                    \
++			(val) = op(args);                                                     \
++			if (cond)                                                             \
++				break;                                                        \
++			if (__timeout_us && ktime_compare(ktime_get(), __timeout) > 0) {      \
++				(val) = op(args);                                             \
++				break;                                                        \
++			}                                                                     \
++			if (__delay_us)                                                       \
++				udelay(__delay_us);                                           \
++		}                                                                             \
++		(cond) ? 0 : -ETIMEDOUT;                                                      \
++	})
++
++#ifndef read_poll_timeout_atomic
++#define read_poll_timeout_atomic(op, val, cond, delay_us, timeout_us, delay_before_read, ...) \
++	mali_read_poll_timeout_atomic(op, val, cond, delay_us, timeout_us, delay_before_read, \
++				      __VA_ARGS__)
++#endif
++
++static inline unsigned long
++kbase_mm_get_unmapped_area_helper(struct mm_struct *mm, struct file *filp, unsigned long addr,
++				  unsigned long len, unsigned long pgoff, unsigned long flags)
++{
++#if (KERNEL_VERSION(6, 10, 0) <= LINUX_VERSION_CODE)
++	return mm_get_unmapped_area(mm, filp, addr, len, pgoff, flags);
++#else
++	return mm->get_unmapped_area(filp, addr, len, pgoff, flags);
++#endif
++}
++
++
+ #endif /* _VERSION_COMPAT_DEFS_H_ */

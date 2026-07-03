@@ -3,3 +3,14 @@
 # Copyright (C) 2024 ROCKNIX (https://github.com/ROCKNIX)
 
 /usr/bin/gpudriver --start
+
+# Platform quirks run before the GPU driver; set min_freq here on RK356X.
+. /etc/os-release
+if [ "${HW_DEVICE}" = "RK356X" ] && [ -f /storage/.config/profile.d/010-governors ]; then
+  # shellcheck disable=SC1091
+  . /storage/.config/profile.d/010-governors
+  GPU_FREQ="${GPU_FREQ[0]:-${GPU_FREQ}}"
+  if [ -n "${GPU_FREQ}" ] && [ -e "${GPU_FREQ}/min_freq" ]; then
+    echo 400000000 >"${GPU_FREQ}/min_freq"
+  fi
+fi

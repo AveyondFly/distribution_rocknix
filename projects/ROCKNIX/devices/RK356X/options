@@ -70,7 +70,7 @@
   # Space separated list is supported,
   # e.g. ADDITIONAL_DRIVERS="DRIVER1 DRIVER2"
   # RK3562 joystick and RK915 are provided by the dArkOS 5.10 kernel tree.
-    ADDITIONAL_DRIVERS="RTL8812AU RTL8814AU RTL8821AU RTL8821CU RTL88x2BU RTL8851BU"
+    ADDITIONAL_DRIVERS="RTL8812AU RTL8814AU RTL8821AU RTL8821CU RTL88x2BU RTL8851BU mali-bifrost"
 
   # Additional Firmware to use ( )
   # Space separated list is supported,

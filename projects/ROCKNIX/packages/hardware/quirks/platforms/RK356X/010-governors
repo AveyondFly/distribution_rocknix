@@ -2,14 +2,16 @@
 # SPDX-License-Identifier: GPL-2.0
 # Copyright (C) 2023 JELOS (https://github.com/JustEnoughLinuxOS)
 
-if [ -d /sys/devices/platform/fde60000.gpu/devfreq/fde60000.gpu ]; then
-  GPU_FREQ="/sys/devices/platform/fde60000.gpu/devfreq/fde60000.gpu"
+# RK3562 and RK3566 share this image; pick GPU devfreq from SoC compatible.
+if tr '\0' '\n' </proc/device-tree/compatible 2>/dev/null | grep -qx rockchip,rk3562; then
+  GPU_DEV="ff320000.gpu"
 else
-  GPU_FREQ="/sys/devices/platform/ff320000.gpu/devfreq/ff320000.gpu"
+  GPU_DEV="fde60000.gpu"
 fi
 
 cat <<EOF >/storage/.config/profile.d/010-governors
 # FREQ governors
 CPU_FREQ=("/sys/devices/system/cpu/cpufreq/policy0")
-GPU_FREQ=("${GPU_FREQ}")
+GPU_FREQ=("/sys/devices/platform/${GPU_DEV}/devfreq/${GPU_DEV}")
+DMC_FREQ="/sys/devices/platform/dmc/devfreq/dmc"
 EOF

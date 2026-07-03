@@ -16,11 +16,11 @@ makeinstall_target() {
   mkdir -p ${INSTALL}/usr/bin
   install -m 0755 ${PKG_DIR}/scripts/rk3566-dtb-select.in ${INSTALL}/usr/bin/rk3566-dtb-select
 
-  # Shipped to FAT /flash root via bootloader release + mkimage (dtb_selector.py, dtbselect)
-  mkdir -p ${INSTALL}/usr/share/bootloader/dtb-select
-  cp -a ${PKG_DIR}/dtb_selector.py ${INSTALL}/usr/share/bootloader/
-  install -m 0755 ${PKG_DIR}/scripts/dtb-select-flash.in ${INSTALL}/usr/share/bootloader/dtbselect
+  # Staged under a dedicated subdir; mkimage copies to /flash root per sub-image.
+  mkdir -p ${INSTALL}/usr/share/bootloader/rk3566-dtb-select
+  cp -a ${PKG_DIR}/dtb_selector.py ${INSTALL}/usr/share/bootloader/rk3566-dtb-select/
+  install -m 0755 ${PKG_DIR}/scripts/dtb-select-flash.in ${INSTALL}/usr/share/bootloader/rk3566-dtb-select/dtbselect
   if [ -f ${PKG_DIR}/prebuilt/DtbselectWin64.exe ]; then
-    install -m 644 ${PKG_DIR}/prebuilt/DtbselectWin64.exe ${INSTALL}/usr/share/bootloader/DtbselectWin64.exe
+    install -m 644 ${PKG_DIR}/prebuilt/DtbselectWin64.exe ${INSTALL}/usr/share/bootloader/rk3566-dtb-select/DtbselectWin64.exe
   fi
 }

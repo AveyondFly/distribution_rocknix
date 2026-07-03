@@ -197,16 +197,17 @@ mkimage_rk3566_dtb_select() {
   else
     return 0
   fi
-  if [ -f "${RELEASE_DIR}/3rdparty/bootloader/dtb_selector.py" ]; then
+  local sel_dir="${RELEASE_DIR}/3rdparty/bootloader/rk3566-dtb-select"
+  if [ -f "${sel_dir}/dtb_selector.py" ]; then
     echo "image: copying rk3566-dtb-select to boot partition root (RK3566-Specific)..."
-    mcopy -o "${RELEASE_DIR}/3rdparty/bootloader/dtb_selector.py" ::/dtb_selector.py
+    mcopy -o "${sel_dir}/dtb_selector.py" ::/dtb_selector.py
   fi
-  if [ -f "${RELEASE_DIR}/3rdparty/bootloader/dtbselect" ]; then
-    mcopy -o "${RELEASE_DIR}/3rdparty/bootloader/dtbselect" ::/dtbselect
+  if [ -f "${sel_dir}/dtbselect" ]; then
+    mcopy -o "${sel_dir}/dtbselect" ::/dtbselect
   fi
-  if [ -f "${RELEASE_DIR}/3rdparty/bootloader/DtbselectWin64.exe" ]; then
+  if [ -f "${sel_dir}/DtbselectWin64.exe" ]; then
     echo "image: copying DtbselectWin64.exe (Windows) to boot partition (RK3566-Specific)..."
-    mcopy -o "${RELEASE_DIR}/3rdparty/bootloader/DtbselectWin64.exe" ::/DtbselectWin64.exe
+    mcopy -o "${sel_dir}/DtbselectWin64.exe" ::/DtbselectWin64.exe
   fi
 }
 
@@ -215,16 +216,17 @@ mkimage_rk356x_dtb_select() {
   if [ ! "${DEVICE}" = "RK356X" ] || [ ! "${SUBDEVICE}" = "RK3562" ]; then
     return 0
   fi
-  if [ -f "${RELEASE_DIR}/3rdparty/bootloader/dtb_selector.py" ]; then
+  local sel_dir="${RELEASE_DIR}/3rdparty/bootloader/rk356x-dtb-select"
+  if [ -f "${sel_dir}/dtb_selector.py" ]; then
     echo "image: copying rk356x-dtb-select to boot partition root (RK356X)..."
-    mcopy -o "${RELEASE_DIR}/3rdparty/bootloader/dtb_selector.py" ::/dtb_selector.py
+    mcopy -o "${sel_dir}/dtb_selector.py" ::/dtb_selector.py
   fi
-  if [ -f "${RELEASE_DIR}/3rdparty/bootloader/dtbselect" ]; then
-    mcopy -o "${RELEASE_DIR}/3rdparty/bootloader/dtbselect" ::/dtbselect
+  if [ -f "${sel_dir}/dtbselect" ]; then
+    mcopy -o "${sel_dir}/dtbselect" ::/dtbselect
   fi
-  if [ -f "${RELEASE_DIR}/3rdparty/bootloader/DtbselectWin64.exe" ]; then
+  if [ -f "${sel_dir}/DtbselectWin64.exe" ]; then
     echo "image: copying DtbselectWin64.exe (Windows) to boot partition (RK356X)..."
-    mcopy -o "${RELEASE_DIR}/3rdparty/bootloader/DtbselectWin64.exe" ::/DtbselectWin64.exe
+    mcopy -o "${sel_dir}/DtbselectWin64.exe" ::/DtbselectWin64.exe
   fi
 }
 

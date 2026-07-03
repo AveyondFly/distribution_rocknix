@@ -13,6 +13,7 @@ on:
   push:
     paths:
       - "projects/ROCKNIX/devices/RK3566/packages/rk3566-dtb-select/**"
+      - "projects/ROCKNIX/devices/RK356X/packages/rk3566-dtb-select/**"
       - ".github/workflows/build-rk3566-dtbselect-windows.yml"
       - ".github/workflows/build-nightly.yml"
 

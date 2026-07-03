@@ -157,7 +157,7 @@ jobs:
           name: dtbselect-rk356x-windows
           path: /tmp/dtbw356x-art
 
-      - name: Stage DtbselectWin64.exe (RK356X prebuilt for package)
+      - name: Stage DtbselectWin64.exe (RK356X RK3562 prebuilt for package)
         if: inputs.DEVICE == 'RK356X'
         run: |
           set -e
@@ -174,6 +174,33 @@ jobs:
             fi
           else
             echo "No dtbselect-rk356x-windows artifact; building image without DtbselectWin64.exe on /flash"
+          fi
+
+      - name: Get DtbselectWin64 (PyInstaller) for RK356X RK3566-Specific /flash
+        if: inputs.DEVICE == 'RK356X'
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: dtbselect-rk3566-windows
+          path: /tmp/dtbw3566-rk356x-art
+
+      - name: Stage DtbselectWin64.exe (RK356X RK3566-Specific prebuilt for package)
+        if: inputs.DEVICE == 'RK356X'
+        run: |
+          set -e
+          PRE=projects/ROCKNIX/devices/RK356X/packages/rk3566-dtb-select/prebuilt
+          rm -rf "${PRE}"
+          mkdir -p "${PRE}"
+          if [ -f /tmp/dtbw3566-rk356x-art/dtbselect-rk3566-windows-x64.zip ]; then
+            unzip -o /tmp/dtbw3566-rk356x-art/dtbselect-rk3566-windows-x64.zip -d /tmp/dtbw3566-rk356x-ex
+            if [ -f /tmp/dtbw3566-rk356x-ex/DtbselectWin64.exe ]; then
+              cp -a /tmp/dtbw3566-rk356x-ex/DtbselectWin64.exe "${PRE}/DtbselectWin64.exe"
+              ls -la "${PRE}/DtbselectWin64.exe"
+            else
+              echo "Zip has no DtbselectWin64.exe; Windows build skipped in RK3566-Specific image"
+            fi
+          else
+            echo "No dtbselect-rk3566-windows artifact; building RK3566-Specific image without DtbselectWin64.exe on /flash"
           fi
 
       - name: Download arm (${{ inputs.DEVICE }})

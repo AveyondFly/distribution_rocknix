@@ -1,0 +1,26 @@
+diff -Naur a/product/kernel/drivers/gpu/arm/midgard/backend/gpu/mali_kbase_devfreq.c b/product/kernel/drivers/gpu/arm/midgard/backend/gpu/mali_kbase_devfreq.c
+--- a/product/kernel/drivers/gpu/arm/midgard/backend/gpu/mali_kbase_devfreq.c	2026-03-16 02:44:15.000000000 +0800
++++ b/product/kernel/drivers/gpu/arm/midgard/backend/gpu/mali_kbase_devfreq.c	2026-07-03 17:31:18.353838783 +0800
+@@ -599,6 +599,11 @@
+ 	destroy_workqueue(workq);
+ }
+ 
++static struct devfreq_simple_ondemand_data kbase_ondemand_data = {
++	.upthreshold = 40,
++	.downdifferential = 5,
++};
++
+ int kbase_devfreq_init(struct kbase_device *kbdev)
+ {
+ 	struct devfreq_dev_profile *dp;
+@@ -647,10 +652,6 @@
+ 		goto init_core_mask_table_failed;
+ 
+ 	/* Lower upthreshold from default 90% to 40% for bursty Vulkan compute */
+-	static struct devfreq_simple_ondemand_data kbase_ondemand_data = {
+-		.upthreshold = 40,
+-		.downdifferential = 5,
+-	};
+ 	kbdev->devfreq = devfreq_add_device(kbdev->dev, dp, "simple_ondemand", &kbase_ondemand_data);
+ 	if (IS_ERR(kbdev->devfreq)) {
+ 		err = PTR_ERR(kbdev->devfreq);

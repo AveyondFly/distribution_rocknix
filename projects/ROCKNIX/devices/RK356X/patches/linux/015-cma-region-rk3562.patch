@@ -1,0 +1,18 @@
+diff -Naur a/arch/arm64/boot/dts/rockchip/rk3562.dtsi b/arch/arm64/boot/dts/rockchip/rk3562.dtsi
+--- a/arch/arm64/boot/dts/rockchip/rk3562.dtsi	2026-06-15 07:50:16.000000000 +0800
++++ b/arch/arm64/boot/dts/rockchip/rk3562.dtsi	2026-07-03 19:47:57.387857973 +0800
+@@ -704,6 +704,14 @@
+ 			ftrace-size = <0x00000>;
+ 			record-size = <0x14000>;
+ 		};
++
++		linux,cma {
++			compatible = "shared-dma-pool";
++			reusable;
++			size = <0x0 0x10000000>;
++			alignment = <0x0 0x400000>;
++			linux,cma-default;
++		};
+ 	};
+ 
+ 	rkcif_mipi_lvds: rkcif-mipi-lvds {

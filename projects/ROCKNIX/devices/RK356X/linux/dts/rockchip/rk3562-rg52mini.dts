@@ -7,6 +7,7 @@
 
 /dts-v1/;
 
+#include "dt-bindings/usb/pd.h"
 #include "rk3562.dtsi"
 #include "rk3562-linux.dtsi"
 #include "rk3562-rk817.dtsi"
@@ -254,14 +255,80 @@
 		virtual_power = <0>;
 		dc_det_adc = <0>;
 		otg5v_suspend_enable = <1>;
-		extcon = <&u2phy>;
+		extcon = <&usbc0>;
 		gate_function_disable = <1>;
 	};
+};
+
+/* ---- USB Type-C (HUSB311 on I2C2) ---------------------------------------- */
+
+&i2c2 {
+	status = "okay";
+
+	usbc0: husb311@4e {
+		compatible = "hynetek,husb311";
+		reg = <0x4e>;
+		interrupt-parent = <&gpio0>;
+		interrupts = <RK_PB7 IRQ_TYPE_LEVEL_LOW>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&usbc0_int>;
+		vbus-supply = <&otg_switch>;
+		status = "okay";
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				usbc0_role_sw: endpoint@0 {
+					remote-endpoint = <&dwc3_role_switch>;
+				};
+			};
+		};
+
+		usb_con: connector {
+			compatible = "usb-c-connector";
+			label = "USB-C";
+			data-role = "dual";
+			power-role = "dual";
+			try-power-role = "sink";
+			op-sink-microwatt = <1000000>;
+			sink-pdos =
+				<PDO_FIXED(5000, 1000, PDO_FIXED_USB_COMM)>;
+			source-pdos =
+				<PDO_FIXED(5000, 3000, PDO_FIXED_USB_COMM)>;
+		};
+	};
+};
+
+&usbdrd_dwc3 {
+	/delete-property/ extcon;
+	usb-role-switch;
+
+	port {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		dwc3_role_switch: endpoint@0 {
+			reg = <0>;
+			remote-endpoint = <&usbc0_role_sw>;
+		};
+	};
+};
+
+&u2phy_otg {
+	rockchip,vbus-always-on;
 };
 
 /* ---- Per-device pinctrl additions ---------------------------------------- */
 
 &pinctrl {
+	usb-typec {
+		usbc0_int: usbc0-int {
+			rockchip,pins = <0 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
 	vcc3v3_lcd_n {
 		lcd_pwren_h: lcd-pwren-h {
 			rockchip,pins = <0 RK_PB0 RK_FUNC_GPIO &pcfg_pull_up>;

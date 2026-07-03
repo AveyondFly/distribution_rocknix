@@ -1,0 +1,19 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+#
+# Load SDIO WiFi driver matching the active DTB wifi_chip_type.
+# AISLPC RG52/RG43 quirk dirs symlink here; Rev A uses rk915, Rev B AIC8800D80.
+# AIC8800 needs modprobe to power-cycle mmc2 — SDIO scan alone is not enough.
+
+CHIP=$(tr -d '\0' </proc/device-tree/wireless-wlan/wifi_chip_type 2>/dev/null)
+
+case "$CHIP" in
+  rk915)
+    modprobe rk915
+    ;;
+  aic8800D80)
+    modprobe aic8800_bsp
+    modprobe aic8800_fdrv
+    ;;
+esac

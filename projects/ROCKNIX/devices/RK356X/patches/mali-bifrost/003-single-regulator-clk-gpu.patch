@@ -1,0 +1,33 @@
+diff -Naur a/product/kernel/drivers/gpu/arm/midgard/mali_kbase_core_linux.c b/product/kernel/drivers/gpu/arm/midgard/mali_kbase_core_linux.c
+--- a/product/kernel/drivers/gpu/arm/midgard/mali_kbase_core_linux.c	2026-03-16 02:44:15.000000000 +0800
++++ b/product/kernel/drivers/gpu/arm/midgard/mali_kbase_core_linux.c	2026-07-03 17:30:33.333013118 +0800
+@@ -4602,7 +4602,7 @@
+ 	/* Regulator array must be terminated with a NULL pointer, because of how the
+ 	 * Linux kernel iterates through them.
+ 	 */
+-	static const char *const regulator_names[] = { "mali", "shadercores", NULL };
++	static const char *const regulator_names[] = { "mali", NULL };
+ 	static const char *avail_regulator_names[BASE_MAX_NR_CLOCKS_REGULATORS + 1];
+ 	/* Usually, clocks and regulators go in pairs.
+ 	 * The reduction of 1 is to account for the NULL pointer that ends the list.
+@@ -4659,7 +4659,7 @@
+ 	 * operating with a partial initialization of clocks.
+ 	 */
+ 	for (i = 0; i < BASE_MAX_NR_CLOCKS_REGULATORS; i++) {
+-		kbdev->clocks[i] = of_clk_get(kbdev->dev->of_node, (int)i);
++		kbdev->clocks[i] = of_clk_get_by_name(kbdev->dev->of_node, "clk_gpu");
+ 		if (IS_ERR(kbdev->clocks[i])) {
+ 			err = PTR_ERR(kbdev->clocks[i]);
+ 			kbdev->clocks[i] = NULL;
+diff -Naur a/product/kernel/drivers/gpu/arm/midgard/mali_kbase_defs.h b/product/kernel/drivers/gpu/arm/midgard/mali_kbase_defs.h
+--- a/product/kernel/drivers/gpu/arm/midgard/mali_kbase_defs.h	2026-03-16 02:44:15.000000000 +0800
++++ b/product/kernel/drivers/gpu/arm/midgard/mali_kbase_defs.h	2026-07-03 17:30:33.330816166 +0800
+@@ -141,7 +141,7 @@
+  * This is dependent on support for of_property_read_u64_array() in the
+  * kernel.
+  */
+-#define BASE_MAX_NR_CLOCKS_REGULATORS (2)
++#define BASE_MAX_NR_CLOCKS_REGULATORS (1)
+ 
+ /* Forward declarations */
+ struct kbase_context;

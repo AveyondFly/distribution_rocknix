@@ -1,0 +1,52 @@
+diff -Naur a/product/kernel/drivers/gpu/arm/midgard/platform/devicetree/mali_kbase_runtime_pm.c b/product/kernel/drivers/gpu/arm/midgard/platform/devicetree/mali_kbase_runtime_pm.c
+--- a/product/kernel/drivers/gpu/arm/midgard/platform/devicetree/mali_kbase_runtime_pm.c	2026-03-16 02:44:15.000000000 +0800
++++ b/product/kernel/drivers/gpu/arm/midgard/platform/devicetree/mali_kbase_runtime_pm.c	2026-07-03 17:32:03.403729219 +0800
+@@ -48,13 +48,13 @@
+ #if defined(CONFIG_REGULATOR)
+ 	for (i = 0; i < kbdev->nr_regulators; i++) {
+ 		if (kbdev->regulators[i])
+-			regulator_enable(kbdev->regulators[i]);
++			WARN_ON(regulator_enable(kbdev->regulators[i]));
+ 	}
+ #endif
+ 
+ 	for (i = 0; i < kbdev->nr_clocks; i++) {
+ 		if (kbdev->clocks[i])
+-			clk_prepare_enable(kbdev->clocks[i]);
++			WARN_ON(clk_prepare_enable(kbdev->clocks[i]));
+ 	}
+ }
+ 
+@@ -70,7 +70,7 @@
+ #if defined(CONFIG_REGULATOR)
+ 	for (i = 0; i < kbdev->nr_regulators; i++) {
+ 		if (kbdev->regulators[i])
+-			regulator_disable(kbdev->regulators[i]);
++			WARN_ON(regulator_disable(kbdev->regulators[i]));
+ 	}
+ #endif
+ 
+@@ -208,6 +208,11 @@
+ 
+ 	dev_dbg(kbdev->dev, "%s\n", __func__);
+ 
++	/* Enable before runtime PM starts so early autosuspend cannot
++	 * regulator_disable() without a matching enable from this driver.
++	 */
++	enable_gpu_power_control(kbdev);
++
+ 	pm_runtime_set_autosuspend_delay(kbdev->dev, AUTO_SUSPEND_DELAY);
+ 	pm_runtime_use_autosuspend(kbdev->dev);
+ 
+@@ -235,6 +240,11 @@
+ 			 __func__, atomic_read(&kbdev->dev->power.usage_count));
+ 
+ 	pm_runtime_disable(kbdev->dev);
++
++#if !MALI_USE_CSF
++	/* Pair with enable_gpu_power_control() in runtime init. */
++	disable_gpu_power_control(kbdev);
++#endif
+ }
+ #endif /* KBASE_PM_RUNTIME */
+ 

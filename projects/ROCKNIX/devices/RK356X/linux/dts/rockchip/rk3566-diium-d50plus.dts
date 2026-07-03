@@ -712,10 +712,19 @@
 		clock-output-names = "rk808-clkout1", "rk808-clkout2";
 		interrupt-parent = <&gpio0>;
 		interrupts = <RK_PA3 IRQ_TYPE_LEVEL_LOW>;
-		pinctrl-names = "default";
+		pinctrl-names = "default", "pmic-sleep",
+				"pmic-power-off", "pmic-reset";
 		pinctrl-0 = <&pmic_int_l>;
+		pinctrl-1 = <&soc_slppin_slp>, <&rk817_slppin_slp>;
+		pinctrl-2 = <&soc_slppin_gpio>, <&rk817_slppin_pwrdn>;
+		pinctrl-3 = <&soc_slppin_gpio>, <&rk817_slppin_rst>;
+		rockchip,system-power-controller;
 		wakeup-source;
 		#clock-cells = <1>;
+		/* 1: rst regs (default in codes), 0: rst the pmic */
+		pmic-reset-func = <0>;
+		/* not save the PMIC_POWER_EN register in uboot */
+		not-save-power-en = <1>;
 
 		vcc1-supply = <&vcc_sys>;
 		vcc2-supply = <&vcc_sys>;
@@ -726,6 +735,35 @@
 		vcc7-supply = <&vcc_sys>;
 		vcc8-supply = <&vcc_sys>;
 		vcc9-supply = <&dcdc_boost>;
+
+		pwrkey {
+			status = "okay";
+		};
+
+		pinctrl_rk8xx: pinctrl_rk8xx {
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			rk817_slppin_null: rk817_slppin_null {
+				pins = "gpio_slp";
+				function = "pin_fun0";
+			};
+
+			rk817_slppin_slp: rk817_slppin_slp {
+				pins = "gpio_slp";
+				function = "pin_fun1";
+			};
+
+			rk817_slppin_pwrdn: rk817_slppin_pwrdn {
+				pins = "gpio_slp";
+				function = "pin_fun2";
+			};
+
+			rk817_slppin_rst: rk817_slppin_rst {
+				pins = "gpio_slp";
+				function = "pin_fun3";
+			};
+		};
 
 		regulators {
 			vdd_logic: DCDC_REG1 {
@@ -927,7 +965,6 @@
 			virtual_power = <0>;
 			dc_det_adc = <0>;
 			otg5v_suspend_enable = <1>;
-			extcon = <&usb2phy0>;
 		};
 
 		rk817_codec: codec {
@@ -1049,6 +1086,21 @@
 			rockchip,pins =
 				<0 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>;
 		};
+
+		soc_slppin_gpio: soc_slppin_gpio {
+			rockchip,pins =
+				<0 RK_PA2 RK_FUNC_GPIO &pcfg_output_low>;
+		};
+
+		soc_slppin_slp: soc_slppin_slp {
+			rockchip,pins =
+				<0 RK_PA2 1 &pcfg_pull_up>;
+		};
+
+		soc_slppin_rst: soc_slppin_rst {
+			rockchip,pins =
+				<0 RK_PA2 2 &pcfg_pull_none>;
+		};
 	};
 
 	sdio-pwrseq {
@@ -1117,6 +1169,7 @@
 	pinctrl-0 = <&sdmmc0_bus4>, <&sdmmc0_clk>, <&sdmmc0_cmd>,
 		    <&sdmmc0_det>;
 	pinctrl-names = "default";
+	post-power-on-delay-ms = <500>;
 	sd-uhs-sdr104;
 	vmmc-supply = <&vcc_3v3>;
 	vqmmc-supply = <&vccio_sd>;
@@ -1179,7 +1232,7 @@
 };
 
 /*
- * WiFi dongle is on usb_host0_ehci (usb2phy1_otg, Bus 005).
+ * WiFi dongle is on usb_host0_ehci (u2phy1_otg, Bus 005).
  * D50Plus differs from E5Plus which uses usb_host0_xhci (Bus 001).
  */
 
@@ -1194,6 +1247,22 @@
 
 
 
+&usb_host0_ehci {
+	status = "okay";
+};
+
+&usb_host0_ohci {
+	status = "disabled";
+};
+
+&usb_host1_ehci {
+	status = "disabled";
+};
+
+&usb_host1_ohci {
+	status = "disabled";
+};
+
 &usb2phy0 {
 	status = "disabled";
 };
@@ -1202,13 +1271,29 @@
 	status = "disabled";
 };
 
+&u2phy0_host {
+	status = "disabled";
+};
 
+&usb2phy1 {
+	status = "okay";
+};
 
+&u2phy1_otg {
+	status = "okay";
+};
 
+&u2phy1_host {
+	status = "disabled";
+};
 
+&usbdrd_dwc3 {
+	status = "disabled";
+};
 
-
-
+&usbdrd30 {
+	status = "disabled";
+};
 
 &vop {
 	assigned-clocks = <&cru DCLK_VOP0>, <&cru DCLK_VOP1>;
@@ -1217,24 +1302,6 @@
 };
 
 &vop_mmu {
-	status = "okay";
-};
-
-&usb2phy0 {
-	status = "okay";
-};
-
-&u2phy0_otg {
-	status = "okay";
-};
-
-&usbdrd_dwc3 {
-	dr_mode = "otg";
-	extcon = <&usb2phy0>;
-	status = "okay";
-};
-
-&usbdrd30 {
 	status = "okay";
 };
 

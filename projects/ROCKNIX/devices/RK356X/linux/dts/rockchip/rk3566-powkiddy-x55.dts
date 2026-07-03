@@ -393,7 +393,7 @@
 	assigned-clocks = <&pmucru CLK_RTC_32K>, <&cru PLL_GPLL>,
 			  <&pmucru PLL_PPLL>, <&cru PLL_VPLL>;
 	assigned-clock-rates = <32768>, <1200000000>,
-			       <200000000>, <126400000>;
+			       <200000000>, <120000000>;
 };
 
 &cpu0 {
@@ -420,7 +420,7 @@
 	status = "okay";
 
 	panel: panel@0 {
-		compatible = "powkiddy,x55-panel", "himax,hx8394";
+		compatible = "rocknix,generic-dsi";
 		reg = <0>;
 		backlight = <&backlight>;
 		iovcc-supply = <&vcc_lcd>;
@@ -428,7 +428,33 @@
 		pinctrl-0 = <&lcd_rst>;
 		reset-gpios = <&gpio0 RK_PD5 GPIO_ACTIVE_LOW>;
 		rotation = <270>;
-		vcc-supply = <&vcc_lcd>;
+		vdd-supply = <&vcc_lcd>;
+		panel_description =
+			"G size=67,121 delays=60,60,60,120,20 format=rgb888 lanes=4 flags=0xa03",
+			"M clock=60000 horizontal=720,24,4,20 vertical=1280,8,4,8 default=1",
+			"I seq=b9ff8394",
+			"I seq=ba6303686bb2c0",
+			"I seq=b148127209325471715747",
+			"I seq=b20080640c0d2f",
+			"I seq=b4737473747374010c8675003f737473747374010c86",
+			"I seq=b66e6e",
+			"I seq=d30000070740070c00081008000854150a050a021506050647440a0a4b1007070c40",
+			"I seq=d51c1c1d1d000102030405060708090a0b24251818262718181818181818181818181818181818202118181818",
+			"I seq=d61c1c1d1d07060504030201000b0a090821201818272618181818181818181818181818181818252418181818",
+			"I seq=e0000a151b1e212422475665666e82888b9a9d98a8b95d5c61666a6f7f7f000a151b1e212422475665656e81878b989d99a8ba5d5d62676b727f7f",
+			"I seq=c01f31",
+			"I seq=cc0b",
+			"I seq=d402",
+			"I seq=bd02",
+			"I seq=d8ffffffffffffffffffffffff",
+			"I seq=bd00",
+			"I seq=bd01",
+			"I seq=b100",
+			"I seq=bd00",
+			"I seq=bf408150001afc01",
+			"I seq=c6ed",
+			"I seq=11 wait=120",
+			"I seq=29 wait=20";
 
 		ports {
 			#address-cells = <1>;
@@ -490,10 +516,19 @@
 		clock-output-names = "rk808-clkout1", "rk808-clkout2";
 		interrupt-parent = <&gpio0>;
 		interrupts = <RK_PA3 IRQ_TYPE_LEVEL_LOW>;
-		pinctrl-names = "default";
+		pinctrl-names = "default", "pmic-sleep",
+				"pmic-power-off", "pmic-reset";
 		pinctrl-0 = <&pmic_int_l>;
+		pinctrl-1 = <&soc_slppin_slp>, <&rk817_slppin_slp>;
+		pinctrl-2 = <&soc_slppin_gpio>, <&rk817_slppin_pwrdn>;
+		pinctrl-3 = <&soc_slppin_gpio>, <&rk817_slppin_rst>;
+		rockchip,system-power-controller;
 		wakeup-source;
 		#clock-cells = <1>;
+		/* 1: rst regs (default in codes), 0: rst the pmic */
+		pmic-reset-func = <0>;
+		/* not save the PMIC_POWER_EN register in uboot */
+		not-save-power-en = <1>;
 
 		vcc1-supply = <&vcc_sys>;
 		vcc2-supply = <&vcc_sys>;
@@ -504,6 +539,35 @@
 		vcc7-supply = <&vcc_sys>;
 		vcc8-supply = <&vcc_sys>;
 		vcc9-supply = <&dcdc_boost>;
+
+		pwrkey {
+			status = "okay";
+		};
+
+		pinctrl_rk8xx: pinctrl_rk8xx {
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			rk817_slppin_null: rk817_slppin_null {
+				pins = "gpio_slp";
+				function = "pin_fun0";
+			};
+
+			rk817_slppin_slp: rk817_slppin_slp {
+				pins = "gpio_slp";
+				function = "pin_fun1";
+			};
+
+			rk817_slppin_pwrdn: rk817_slppin_pwrdn {
+				pins = "gpio_slp";
+				function = "pin_fun2";
+			};
+
+			rk817_slppin_rst: rk817_slppin_rst {
+				pins = "gpio_slp";
+				function = "pin_fun3";
+			};
+		};
 
 		regulators {
 			vdd_logic: DCDC_REG1 {
@@ -828,6 +892,21 @@
 			rockchip,pins =
 				<0 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>;
 		};
+
+		soc_slppin_gpio: soc_slppin_gpio {
+			rockchip,pins =
+				<0 RK_PA2 RK_FUNC_GPIO &pcfg_output_low>;
+		};
+
+		soc_slppin_slp: soc_slppin_slp {
+			rockchip,pins =
+				<0 RK_PA2 1 &pcfg_pull_up>;
+		};
+
+		soc_slppin_rst: soc_slppin_rst {
+			rockchip,pins =
+				<0 RK_PA2 2 &pcfg_pull_none>;
+		};
 	};
 
 	sdio-pwrseq {
@@ -903,6 +982,7 @@
 	pinctrl-0 = <&sdmmc0_bus4>, <&sdmmc0_clk>, <&sdmmc0_cmd>,
 		    <&sdmmc0_det>;
 	pinctrl-names = "default";
+	post-power-on-delay-ms = <500>;
 	sd-uhs-sdr104;
 	vqmmc-supply = <&vccio_sd>;
 	status = "okay";

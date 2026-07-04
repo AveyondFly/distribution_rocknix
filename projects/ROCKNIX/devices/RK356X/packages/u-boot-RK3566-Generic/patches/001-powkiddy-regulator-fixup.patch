@@ -1,0 +1,241 @@
+diff --git a/arch/arm/mach-rockchip/board.c b/arch/arm/mach-rockchip/board.c
+index bd4593d..fa9aa23 100644
+--- a/arch/arm/mach-rockchip/board.c
++++ b/arch/arm/mach-rockchip/board.c
+@@ -28,6 +28,9 @@
+ #include <syscon.h>
+ #include <sysmem.h>
+ #include <video_rockchip.h>
++#ifdef CONFIG_POWKIDDY_REGULATOR_FIXUP
++#include "../../../board/rockchip/evb_rk3568/powkiddy-rk3566.h"
++#endif
+ #include <asm/io.h>
+ #include <asm/gpio.h>
+ #include <dm/uclass-internal.h>
+@@ -487,6 +490,10 @@ int interrupt_debugger_init(void)
+ 
+ int board_fdt_fixup(void *blob)
+ {
++#ifdef CONFIG_POWKIDDY_REGULATOR_FIXUP
++	powkiddy_rk3566_fdt_fixup(blob);
++#endif
++
+ 	/* Common fixup for DRM */
+ #ifdef CONFIG_DRM_ROCKCHIP
+ 	rockchip_display_fixup(blob);
+diff --git a/arch/arm/mach-rockchip/resource_img.c b/arch/arm/mach-rockchip/resource_img.c
+index 57f939c..2f440f5 100644
+--- a/arch/arm/mach-rockchip/resource_img.c
++++ b/arch/arm/mach-rockchip/resource_img.c
+@@ -904,9 +904,24 @@ int rockchip_read_resource_dtb(void *fdt_addr, char **hash, int *hash_size)
+ 	*hash = file->hash;
+ 	*hash_size = file->hash_size;
+ 	printf("DTB: %s\n", file->name);
+-	char * myfdtfile = strtok(file->name, "#");
+-	strncat(myfdtfile,".dtb",4);
+-	env_set("fdtfile", myfdtfile);
++	{
++		char fdtfile[128];
++		const char *hashmark = strchr(file->name, '#');
++
++		if (hashmark && hashmark > file->name) {
++			size_t len = hashmark - file->name;
++
++			if (len >= sizeof(fdtfile))
++				len = sizeof(fdtfile) - 5;
++			memcpy(fdtfile, file->name, len);
++			fdtfile[len] = '\0';
++			if (!strstr(fdtfile, ".dtb"))
++				snprintf(fdtfile + len, sizeof(fdtfile) - len, ".dtb");
++		} else {
++			strlcpy(fdtfile, file->name, sizeof(fdtfile));
++		}
++		env_set("fdtfile", fdtfile);
++	}
+ 
+ 	return 0;
+ }
+diff --git a/board/rockchip/evb_rk3568/Kconfig b/board/rockchip/evb_rk3568/Kconfig
+index f3d3a7e..8c59571 100644
+--- a/board/rockchip/evb_rk3568/Kconfig
++++ b/board/rockchip/evb_rk3568/Kconfig
+@@ -12,4 +12,11 @@ config SYS_CONFIG_NAME
+ config BOARD_SPECIFIC_OPTIONS # dummy
+ 	def_bool y
+ 
++config POWKIDDY_REGULATOR_FIXUP
++	bool "Powkiddy vdd_cpu regulator auto-detect and DT fixup"
++	default y
++	help
++	  Detect Powkiddy CPU regulator (tcs4525 vs fan53555) over I2C and
++	  fix up the kernel device tree before boot.
++
+ endif
+diff --git a/board/rockchip/evb_rk3568/Makefile b/board/rockchip/evb_rk3568/Makefile
+index 7fe184a..9501307 100644
+--- a/board/rockchip/evb_rk3568/Makefile
++++ b/board/rockchip/evb_rk3568/Makefile
+@@ -5,3 +5,4 @@
+ #
+ 
+ obj-y	+= evb_rk3568.o
++obj-$(CONFIG_POWKIDDY_REGULATOR_FIXUP) += powkiddy-rk3566.o
+diff --git a/configs/rk3568_defconfig b/configs/rk3568_defconfig
+index 201b328..69849b7 100644
+--- a/configs/rk3568_defconfig
++++ b/configs/rk3568_defconfig
+@@ -9,6 +9,7 @@ CONFIG_ROCKCHIP_FIT_IMAGE=y
+ CONFIG_ROCKCHIP_VENDOR_PARTITION=y
+ CONFIG_ROCKCHIP_FIT_IMAGE_PACK=y
+ CONFIG_ROCKCHIP_HWID_DTB=y
++CONFIG_POWKIDDY_REGULATOR_FIXUP=y
+ CONFIG_ROCKCHIP_RESOURCE_IMAGE=y
+ CONFIG_OF_LIBFDT=y
+ CONFIG_ROCKCHIP_PRELOADER_ATAGS=y
+diff --git a/board/rockchip/evb_rk3568/powkiddy-rk3566.c b/board/rockchip/evb_rk3568/powkiddy-rk3566.c
+new file mode 100644
+index 0000000..a1f67a6
+--- /dev/null
++++ b/board/rockchip/evb_rk3568/powkiddy-rk3566.c
+@@ -0,0 +1,127 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Powkiddy RK3566 board helpers (regulator auto-detect).
++ * Adapted from Anbernic RGXX3 U-Boot board code.
++ */
++
++#include <common.h>
++#include <dm.h>
++#include <fdt_support.h>
++#include <i2c.h>
++#include <linux/errno.h>
++#include <linux/types.h>
++
++struct powkiddy_regulator {
++	u8 addr;
++	const char *regulator_compat;
++};
++
++static const struct powkiddy_regulator regulator_details[] = {
++	{ .addr = 0x1c, .regulator_compat = "tcs,tcs4525" },
++	{ .addr = 0x40, .regulator_compat = "fcs,fan53555" },
++};
++
++static bool powkiddy_fdt_selected(void)
++{
++	const char *fdtfile = env_get("fdtfile");
++
++	if (!fdtfile)
++		return false;
++
++	return !!strstr(fdtfile, "powkiddy");
++}
++
++static int powkiddy_detect_regulator(void)
++{
++	struct udevice *bus;
++	struct udevice *chip;
++	u8 val;
++	int ret;
++
++	if (env_get("vdd_cpu"))
++		return 0;
++
++	ret = uclass_get_device_by_name(UCLASS_I2C, "i2c@fdd40000", &bus);
++	if (ret)
++		return ret;
++
++	for (int i = 0; i < ARRAY_SIZE(regulator_details); i++) {
++		ret = i2c_get_chip(bus, regulator_details[i].addr, 1, &chip);
++		if (ret)
++			continue;
++
++		ret = dm_i2c_read(chip, 0, &val, 1);
++		if (!ret) {
++			env_set("vdd_cpu", regulator_details[i].regulator_compat);
++			return 0;
++		}
++	}
++
++	return -ENODEV;
++}
++
++static int powkiddy_regulator_fixup(void *blob)
++{
++	const struct powkiddy_regulator *vdd_cpu = NULL;
++	char path[48];
++	char name[16];
++	char *env;
++	int node, ret, i;
++
++	env = env_get("vdd_cpu");
++	if (!env)
++		return -EINVAL;
++
++	for (i = 0; i < ARRAY_SIZE(regulator_details); i++) {
++		snprintf(path, sizeof(path),
++			 "/i2c@fdd40000/regulator@%02x",
++			 regulator_details[i].addr);
++		node = fdt_path_offset(blob, path);
++		if (node > 0)
++			break;
++	}
++
++	if (i >= ARRAY_SIZE(regulator_details))
++		return -ENODEV;
++
++	ret = fdt_node_check_compatible(blob, node, env);
++	if (ret < 0)
++		return ret;
++	if (!ret)
++		return 0;
++
++	for (i = 0; i < ARRAY_SIZE(regulator_details); i++) {
++		if (!strcmp(env, regulator_details[i].regulator_compat)) {
++			vdd_cpu = &regulator_details[i];
++			break;
++		}
++	}
++
++	if (!vdd_cpu)
++		return -ENODEV;
++
++	fdt_setprop_string(blob, node, "compatible", vdd_cpu->regulator_compat);
++	fdt_setprop_u32(blob, node, "reg", vdd_cpu->addr);
++	snprintf(name, sizeof(name), "regulator@%02x", vdd_cpu->addr);
++	fdt_set_name(blob, node, name);
++
++	return 0;
++}
++
++int powkiddy_rk3566_fdt_fixup(void *blob)
++{
++	int ret;
++
++	if (!powkiddy_fdt_selected())
++		return 0;
++
++	ret = powkiddy_detect_regulator();
++	if (ret)
++		printf("Powkiddy: unable to detect vdd_cpu regulator (%d)\n", ret);
++
++	ret = powkiddy_regulator_fixup(blob);
++	if (ret)
++		printf("Powkiddy: unable to update vdd_cpu compat (%d)\n", ret);
++
++	return 0;
++}
+diff --git a/board/rockchip/evb_rk3568/powkiddy-rk3566.h b/board/rockchip/evb_rk3568/powkiddy-rk3566.h
+new file mode 100644
+index 0000000..7b3e81c
+--- /dev/null
++++ b/board/rockchip/evb_rk3568/powkiddy-rk3566.h
+@@ -0,0 +1,8 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++
++#ifndef __POWKIDDY_RK3566_H
++#define __POWKIDDY_RK3566_H
++
++int powkiddy_rk3566_fdt_fixup(void *blob);
++
++#endif

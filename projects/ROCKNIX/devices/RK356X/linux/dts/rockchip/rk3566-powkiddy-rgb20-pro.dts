@@ -815,9 +815,9 @@
 	  reg = <0x62>;
 	 };*/
 
-	vdd_cpu: regulator@1c {
-		compatible = "tcs,tcs4525";
-		reg = <0x1c>;
+	vdd_cpu: regulator@40 {
+		compatible = "fcs,fan53555";
+		reg = <0x40>;
 		fcs,suspend-voltage-selector = <1>;
 		regulator-always-on;
 		regulator-boot-on;

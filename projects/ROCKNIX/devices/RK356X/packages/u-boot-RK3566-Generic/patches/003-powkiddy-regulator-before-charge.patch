@@ -1,0 +1,24 @@
+diff --git a/arch/arm/mach-rockchip/kernel_dtb.c b/arch/arm/mach-rockchip/kernel_dtb.c
+index 8b3c2a1..f4e91d2 100644
+--- a/arch/arm/mach-rockchip/kernel_dtb.c
++++ b/arch/arm/mach-rockchip/kernel_dtb.c
+@@ -10,6 +10,9 @@
+ #include <of_live.h>
+ #include <dm/root.h>
+ #include <asm/arch/hotkey.h>
++#ifdef CONFIG_POWKIDDY_REGULATOR_FIXUP
++#include "../../../board/rockchip/evb_rk3568/powkiddy-rk3566.h"
++#endif
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+@@ -305,6 +308,9 @@ int init_kernel_dtb(void)
+ 	}
+ 
+ dtb_okay:
++#ifdef CONFIG_POWKIDDY_REGULATOR_FIXUP
++	powkiddy_rk3566_fdt_fixup((void *)fdt_addr);
++#endif
+ 	ufdt_blob = (void *)gd->fdt_blob;
+ 	gd->fdt_blob = (void *)fdt_addr;
+ 

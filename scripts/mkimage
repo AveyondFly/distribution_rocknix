@@ -27,6 +27,14 @@ if [ -n "${SUBDEVICE}" ]; then
 fi
 DISK="${DISK_BASENAME}.img"
 
+# RK3566-Generic (Powkiddy BSP): GPT must expose uboot/resource for U-Boot HWID DTB
+# lookup (part_get_info_by_name "resource"). Matches JELOS RK3566-BSP layout. Other
+# images keep MBR layout.
+RK3566_GENERIC_GPT=0
+if [ "${DEVICE}" = "RK356X" ] && [ "${SUBDEVICE}" = "RK3566-Generic" ]; then
+  RK3566_GENERIC_GPT=1
+fi
+
 # functions
 cleanup() {
   echo -e "image: cleanup...\n"
@@ -52,7 +60,7 @@ trap cleanup SIGINT
 echo -e "\nimage: creating sparse file for disk image ${DISK##*/}..."
 dd if=/dev/zero of="${DISK}" bs=1M count=0 seek="${DISK_SIZE}" conv=fsync >"${SAVE_ERROR}" 2>&1 || show_error
 
-if [ "${BOOTLOADER}" = "syslinux" ]; then
+if [ "${BOOTLOADER}" = "syslinux" ] || [ "${RK3566_GENERIC_GPT}" = "1" ]; then
   DISK_LABEL=gpt
 else
   DISK_LABEL=msdos
@@ -70,7 +78,21 @@ SYSTEM_PART_END=$((${SYSTEM_PART_START} + (${SYSTEM_SIZE} * 1024 * 1024 / 512) -
 STORAGE_PART_START=$((${SYSTEM_PART_END} + 1))
 STORAGE_PART_END=$((${STORAGE_PART_START} + (${STORAGE_SIZE} * 1024 * 1024 / 512) - 1))
 
-if [ "${DISK_LABEL}" = "gpt" ]; then
+if [ "${RK3566_GENERIC_GPT}" = "1" ]; then
+  # Match JELOS RK3566-BSP / rk356x-uboot PARTS_DEFAULT (__ANBERNIC_BOOT__):
+  # uboot @8MB/4MB, resource @12MB/4MB, boot @16MB (idbloader @ sector 64, raw)
+  echo "image: creating Rockchip GPT for RK3566-Generic..."
+  parted -s "${DISK}" -a min unit s mkpart uboot 16384 24575
+  parted -s "${DISK}" name 1 uboot
+  parted -s "${DISK}" -a min unit s mkpart resource 24576 32767
+  parted -s "${DISK}" name 2 resource
+  parted -s "${DISK}" -a min unit s mkpart "${DISTRO_BOOTLABEL}" fat32 ${SYSTEM_PART_START} ${SYSTEM_PART_END}
+  parted -s "${DISK}" name 3 "${DISTRO_BOOTLABEL}"
+  parted -s "${DISK}" set 3 boot on
+  parted -s "${DISK}" set 3 msftdata on
+  parted -s "${DISK}" -a min unit s mkpart storage ext4 ${STORAGE_PART_START} ${STORAGE_PART_END}
+  parted -s "${DISK}" name 4 storage
+elif [ "${DISK_LABEL}" = "gpt" ]; then
   parted -s "${DISK}" -a min unit s mkpart system fat32 ${SYSTEM_PART_START} ${SYSTEM_PART_END}
   parted -s "${DISK}" -a min unit s mkpart storage ext4 ${STORAGE_PART_START} ${STORAGE_PART_END}
   parted -s "${DISK}" set 1 legacy_boot on

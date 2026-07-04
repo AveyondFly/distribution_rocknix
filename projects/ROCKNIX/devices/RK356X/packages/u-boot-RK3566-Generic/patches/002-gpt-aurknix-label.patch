@@ -1,0 +1,17 @@
+diff --git a/include/configs/rockchip-common.h b/include/configs/rockchip-common.h
+index 8c9e8e3..a3b1c2d 100644
+--- a/include/configs/rockchip-common.h
++++ b/include/configs/rockchip-common.h
+@@ -90,10 +90,9 @@
+ #ifdef __ANBERNIC_BOOT__
+ #define PARTS_DEFAULT \
+ 	"uuid_disk=${uuid_gpt_disk};" \
+-	"name=loader1,start=32K,size=4000K,uuid=${uuid_gpt_loader1};" \
+-	"name=loader2,start=8MB,size=4MB,uuid=${uuid_gpt_loader2};" \
++	"name=uboot,start=8MB,size=4MB,uuid=${uuid_gpt_loader2};" \
+ 	"name=resource,start=12MB,size=4MB,uuid=${uuid_gpt_resource};" \
+-	"name=JELOS,start=16MB,size=3072M,bootable,uuid=${uuid_gpt_boot};\0"
++	"name=AURKNIX,start=16MB,size=3072M,bootable,uuid=${uuid_gpt_boot};\0"
+ #endif
+ 
+ #define PARTS_RKIMG \

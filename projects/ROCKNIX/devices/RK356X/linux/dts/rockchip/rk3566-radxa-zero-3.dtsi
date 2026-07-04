@@ -188,6 +188,7 @@
 &gpu {
 	operating-points-v2 = <&gpu_opp_table>;
 	mali-supply = <&vdd_gpu_npu>;
+	mem-supply = <&vdd_gpu_npu>;
 	status = "okay";
 };
 

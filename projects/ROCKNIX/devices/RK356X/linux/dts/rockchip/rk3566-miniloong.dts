@@ -324,16 +324,6 @@
 		vin-supply = <&dcdc_boost>;
 	};
 
-	vcc_lcd: regulator-vcc-lcd {
-		compatible = "regulator-fixed";
-		enable-active-high;
-		gpio = <&gpio0 RK_PB5 GPIO_ACTIVE_HIGH>;
-		pinctrl-0 = <&vcc_lcd_en>;
-		pinctrl-names = "default";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		regulator-name = "vcc_lcd";
-	};
 /*
 	vcc_spk: regulator-vcc-spk {
 		compatible = "regulator-fixed";
@@ -428,65 +418,111 @@
 
 
 	panel: panel@0 {
-		compatible = "rocknix,generic-dsi";
+		compatible = "simple-panel-dsi";
 		reg = <0>;
 		backlight = <&backlight>;
-		iovcc-supply = <&vcc_lcd>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&lcd_rst>;
+		enable-gpios = <&gpio0 RK_PB5 GPIO_ACTIVE_HIGH>;
 		reset-gpios = <&gpio0 RK_PB7 GPIO_ACTIVE_LOW>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcd_enable_gpio &lcd_rst_gpio>;
+		prepare-delay-ms = <120>;
+		reset-delay-ms = <120>;
+		init-delay-ms = <120>;
+		stbyb-delay-ms = <120>;
+		enable-delay-ms = <120>;
+		disable-delay-ms = <120>;
+		unprepare-delay-ms = <120>;
+		width-mm = <229>;
+		height-mm = <143>;
+		dsi,flags = <0xa03>;
+		dsi,format = <0>;
+		dsi,lanes = <4>;
 		rotation = <270>;
-		vcc-supply = <&vcc_lcd>;
-		panel_description =
-                "G size=229,143 delays=120,120,120,120,20 format=rgb888 lanes=4 flags=0xa03",
+		panel-init-sequence = [
+			39 00 04 ff 98 81 03 15 00 02 01 00 15 00 02 02
+			00 15 00 02 03 72 15 00 02 04 00 15 00 02 05 00
+			15 00 02 06 09 15 00 02 07 00 15 00 02 08 00 15
+			00 02 09 01 15 00 02 0a 00 15 00 02 0b 00 15 00
+			02 0c 01 15 00 02 0d 00 15 00 02 0e 00 15 00 02
+			0f 00 15 00 02 10 00 15 00 02 11 00 15 00 02 12
+			00 15 00 02 13 00 15 00 02 14 00 15 00 02 15 00
+			15 00 02 16 00 15 00 02 17 00 15 00 02 18 00 15
+			00 02 19 00 15 00 02 1a 00 15 00 02 1b 00 15 00
+			02 1c 00 15 00 02 1d 00 15 00 02 1e 40 15 00 02
+			1f 80 15 00 02 20 05 15 00 02 21 02 15 00 02 22
+			00 15 00 02 23 00 15 00 02 24 00 15 00 02 25 00
+			15 00 02 26 00 15 00 02 27 00 15 00 02 28 33 15
+			00 02 29 02 15 00 02 2a 00 15 00 02 2b 00 15 00
+			02 2c 00 15 00 02 2d 00 15 00 02 2e 00 15 00 02
+			2f 00 15 00 02 31 00 15 00 02 32 00 15 00 02 33
+			00 15 00 02 34 04 15 00 02 35 00 15 00 02 36 00
+			15 00 02 37 00 15 00 02 38 3c 15 00 02 39 00 15
+			00 02 3a 40 15 00 02 3b 40 15 00 02 3c 00 15 00
+			02 3d 00 15 00 02 3e 00 15 00 02 3f 00 15 00 02
+			40 00 15 00 02 41 00 15 00 02 42 00 15 00 02 43
+			00 15 00 02 44 00 15 00 02 50 01 15 00 02 51 23
+			15 00 02 52 45 15 00 02 53 67 15 00 02 54 89 15
+			00 02 55 ab 15 00 02 56 01 15 00 02 57 23 15 00
+			02 58 45 15 00 02 59 67 15 00 02 5a 89 15 00 02
+			5b ab 15 00 02 5c cd 15 00 02 5d ef 15 00 02 5e
+			11 15 00 02 5f 01 15 00 02 60 00 15 00 02 61 15
+			15 00 02 62 14 15 00 02 63 0e 15 00 02 64 0f 15
+			00 02 65 0c 15 00 02 66 0d 15 00 02 67 06 15 00
+			02 68 02 15 00 02 69 07 15 00 02 6a 02 15 00 02
+			6b 02 15 00 02 6c 02 15 00 02 6d 02 15 00 02 6e
+			02 15 00 02 6f 02 15 00 02 70 02 15 00 02 71 02
+			15 00 02 72 02 15 00 02 73 02 15 00 02 74 02 15
+			00 02 75 01 15 00 02 76 00 15 00 02 77 14 15 00
+			02 78 15 15 00 02 79 0e 15 00 02 7a 0f 15 00 02
+			7b 0c 15 00 02 7c 0d 15 00 02 7d 06 15 00 02 7e
+			02 15 00 02 7f 07 15 00 02 80 02 15 00 02 81 02
+			15 00 02 82 02 15 00 02 83 02 15 00 02 84 02 15
+			00 02 85 02 15 00 02 86 02 15 00 02 87 02 15 00
+			02 88 02 15 00 02 89 02 15 00 02 8a 02 39 00 04
+			ff 98 81 04 15 00 02 38 01 15 00 02 39 00 15 00
+			02 6c 15 15 00 02 6e 2a 15 00 02 6f 34 15 00 02
+			3a 94 15 00 02 8d 14 15 00 02 87 ba 15 00 02 26
+			76 15 00 02 b2 d1 15 00 02 b5 06 15 00 02 3b 98
+			39 00 04 ff 98 81 01 15 00 02 22 09 15 00 02 2e
+			78 15 00 02 31 00 15 00 02 53 90 15 00 02 55 a2
+			15 00 02 50 b7 15 00 02 51 b7 15 00 02 60 22 15
+			00 02 61 00 15 00 02 62 19 15 00 02 63 10 15 00
+			02 a0 08 15 00 02 a1 1a 15 00 02 a2 27 15 00 02
+			a3 15 15 00 02 a4 17 15 00 02 a5 2a 15 00 02 a6
+			1e 15 00 02 a7 1f 15 00 02 a8 8b 15 00 02 a9 1b
+			15 00 02 aa 27 15 00 02 ab 78 15 00 02 ac 18 15
+			00 02 ad 18 15 00 02 ae 4c 15 00 02 af 21 15 00
+			02 b0 27 15 00 02 b1 54 15 00 02 b2 67 15 00 02
+			b3 39 15 00 02 c0 08 15 00 02 c1 1a 15 00 02 c2
+			27 15 00 02 c3 15 15 00 02 c4 17 15 00 02 c5 2a
+			15 00 02 c6 1e 15 00 02 c7 1f 15 00 02 c8 8b 15
+			00 02 c9 1b 15 00 02 ca 27 15 00 02 cb 78 15 00
+			02 cc 18 15 00 02 cd 18 15 00 02 ce 4c 15 00 02
+			cf 21 15 00 02 d0 27 15 00 02 d1 54 15 00 02 d2
+			67 15 00 02 d3 39 39 00 04 ff 98 81 00 15 00 02
+			35 00 05 c8 01 11 05 28 01 29
+		];
+		panel-exit-sequence = <0x5dc0128 0x5780110>;
 
-		"M clock=74250 horizontal=720,462,14,20 vertical=960,30,8,20 default=1",
-                "M clock=45693 horizontal=720,144,14,20 vertical=960,30,8,20",
-		"M clock=118800 horizontal=720,530,15,20 vertical=960,30,8,20",
+		display-timings {
+			native-mode = <&panel_timing0>;
 
-                "I seq=ff988103",
-                "I seq=0100", "I seq=0200", "I seq=0372", "I seq=0400", "I seq=0500", "I seq=0609", "I seq=0700",
-                "I seq=0800", "I seq=0901", "I seq=0a00", "I seq=0b00", "I seq=0c01", "I seq=0d00", "I seq=0e00", "I seq=0f00",
-                "I seq=1000", "I seq=1100", "I seq=1200", "I seq=1300", "I seq=1400", "I seq=1500", "I seq=1600", "I seq=1700",
-                "I seq=1800", "I seq=1900", "I seq=1a00", "I seq=1b00", "I seq=1c00", "I seq=1d00", "I seq=1e40", "I seq=1f80",
-                "I seq=2005", "I seq=2102", "I seq=2200", "I seq=2300", "I seq=2400", "I seq=2500", "I seq=2600", "I seq=2700",
-                "I seq=2833", "I seq=2902", "I seq=2a00", "I seq=2b00", "I seq=2c00", "I seq=2d00", "I seq=2e00", "I seq=2f00",
-                "I seq=3100", "I seq=3200", "I seq=3300", "I seq=3404", "I seq=3500", "I seq=3600", "I seq=3700",
-                "I seq=383c", "I seq=3900", "I seq=3a40", "I seq=3b40", "I seq=3c00", "I seq=3d00", "I seq=3e00", "I seq=3f00",
-                "I seq=4000", "I seq=4100", "I seq=4200", "I seq=4300", "I seq=4400",
-                "I seq=5001", "I seq=5123", "I seq=5245", "I seq=5367", "I seq=5489", "I seq=55ab", "I seq=5601", "I seq=5723",
-                "I seq=5845", "I seq=5967", "I seq=5a89", "I seq=5bab", "I seq=5ccd", "I seq=5def", "I seq=5e11", "I seq=5f01",
-                "I seq=6000", "I seq=6115", "I seq=6214", "I seq=630e", "I seq=640f", "I seq=650c", "I seq=660d", "I seq=6706",
-                "I seq=6802", "I seq=6907", "I seq=6a02", "I seq=6b02", "I seq=6c02", "I seq=6d02", "I seq=6e02", "I seq=6f02",
-                "I seq=7002", "I seq=7102", "I seq=7202", "I seq=7302", "I seq=7402", "I seq=7501", "I seq=7600", "I seq=7714",
-                "I seq=7815", "I seq=790e", "I seq=7a0f", "I seq=7b0c", "I seq=7c0d", "I seq=7d06", "I seq=7e02", "I seq=7f07",
-                "I seq=8002", "I seq=8102", "I seq=8202", "I seq=8302", "I seq=8402", "I seq=8502", "I seq=8602", "I seq=8702",
-                "I seq=8802", "I seq=8902", "I seq=8a02",
-                "I seq=ff988104",
-                "I seq=3801", "I seq=3900",
-                "I seq=6c15", "I seq=6e2a", "I seq=6f34",
-                "I seq=3a94",
-                "I seq=8d14",
-                "I seq=87ba",
-                "I seq=2676",
-                "I seq=b2d1", "I seq=b506",
-                "I seq=3b98",
-                "I seq=ff988101",
-                "I seq=2209",
-                "I seq=2e78",
-                "I seq=3100",
-                "I seq=5390", "I seq=55a2", "I seq=50b7", "I seq=51b7",
-                "I seq=6022", "I seq=6100", "I seq=6219", "I seq=6310",
-                "I seq=a008", "I seq=a11a", "I seq=a227", "I seq=a315", "I seq=a417", "I seq=a52a", "I seq=a61e", "I seq=a71f",
-                "I seq=a88b", "I seq=a91b", "I seq=aa27", "I seq=ab78", "I seq=ac18", "I seq=ad18", "I seq=ae4c", "I seq=af21",
-                "I seq=b027", "I seq=b154", "I seq=b267", "I seq=b339",
-                "I seq=c008", "I seq=c11a", "I seq=c227", "I seq=c315", "I seq=c417", "I seq=c52a", "I seq=c61e", "I seq=c71f",
-                "I seq=c88b", "I seq=c91b", "I seq=ca27", "I seq=cb78", "I seq=cc18", "I seq=cd18", "I seq=ce4c", "I seq=cf21",
-                "I seq=d027", "I seq=d154", "I seq=d267", "I seq=d339",
-                "I seq=ff988100",
-                "I seq=3500",
-                "I seq=11 wait=200",
-                "I seq=29 wait=40";
+			panel_timing0: timing0 {
+				clock-frequency = <47104000>;
+				hactive = <720>;
+				vactive = <960>;
+				hsync-len = <14>;
+				hback-porch = <20>;
+				hfront-porch = <15>;
+				vsync-len = <8>;
+				vback-porch = <20>;
+				vfront-porch = <30>;
+				hsync-active = <0>;
+				vsync-active = <0>;
+				de-active = <0>;
+				pixelclk-active = <0>;
+			};
+		};
 
 		ports {
 			#address-cells = <1>;
@@ -494,6 +530,7 @@
 
 			port@0 {
 				reg = <0>;
+
 				mipi_in_panel: endpoint {
 					remote-endpoint = <&mipi_out_panel>;
 				};
@@ -517,7 +554,6 @@
 &gpu {
 	operating-points-v2 = <&gpu_opp_table>;
 	mali-supply = <&vdd_gpu>;
-	mem-supply = <&vdd_gpu>;
 	status = "okay";
 };
 
@@ -736,7 +772,7 @@
 				regulator-max-microvolt = <1800000>;
 				regulator-name = "vcc1v8_dvp";
 				regulator-state-mem {
-					regulator-on-in-suspend;
+					regulator-off-in-suspend;
 				};
 			};
 
@@ -752,6 +788,8 @@
 			};
 
 			dcdc_boost: BOOST {
+				regulator-always-on;
+				regulator-boot-on;
 				regulator-min-microvolt = <4700000>;
 				regulator-max-microvolt = <5400000>;
 				regulator-name = "boost";
@@ -1013,9 +1051,24 @@
 };
 
 &i2c5 {
-	pinctrl-0 = <&i2c5m1_xfer>;
+	pinctrl-0 = <&i2c5m0_xfer>;
 	pinctrl-names = "default";
-	status = "okay";
+	status = "disabled";
+	clock-frequency = <400000>;
+	i2c-scl-rising-time-ns = <144>;
+	i2c-scl-falling-time-ns = <4>;
+
+	sensor@18 {
+		compatible = "gs_sc7a20";
+		reg = <0x18>;
+		type = <2>;
+		irq_enable = <0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&sensor_gpio>;
+		irq-gpio = <&gpio3 RK_PA2 1>;
+		poll_delay_ms = <10>;
+		layout = <1>;
+	};
 };
 
 &i2s0_8ch {
@@ -1067,10 +1120,15 @@
 		};
 	};
 
-	gpio-lcd {
-		lcd_rst: lcd-rst {
+	lcd {
+		lcd_enable_gpio: lcd-enable-gpio {
 			rockchip,pins =
-				<0 RK_PD5 RK_FUNC_GPIO &pcfg_pull_none>;
+				<0 RK_PB5 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+
+		lcd_rst_gpio: lcd-rst-gpio {
+			rockchip,pins =
+				<0 RK_PB7 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 
@@ -1078,6 +1136,13 @@
 		hp_det: hp-det {
 			rockchip,pins =
 				<4 RK_PC6 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+	sensor {
+		sensor_gpio: sensor-gpio {
+			rockchip,pins =
+				<3 RK_PA2 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 
@@ -1120,13 +1185,6 @@
 			rockchip,pins =
 				<0 RK_PC0 RK_FUNC_GPIO &pcfg_pull_up>;
 		};*/
-	};
-
-	vcc-lcd {
-		vcc_lcd_en: vcc-lcd-en {
-			rockchip,pins =
-				<0 RK_PB5 RK_FUNC_GPIO &pcfg_pull_none>;
-		};
 	};
 
 	vcc-spk {
@@ -1178,23 +1236,23 @@
 
 &sdhci {
 	bus-width = <8>;
-	mmc-hs200-1_8v;
+	no-sdio;
+	no-sd;
 	non-removable;
-	pinctrl-0 = <&emmc_bus8>, <&emmc_clk>, <&emmc_cmd>,
-		    <&emmc_datastrobe>, <&emmc_rstnout>;
-	pinctrl-names = "default";
+	max-frequency = <200000000>;
 	status = "okay";
 };
 
 &sdmmc0 {
 	bus-width = <4>;
+	no-sdio;
+	no-mmc;
 	cap-mmc-highspeed;
 	cap-sd-highspeed;
 	disable-wp;
 	pinctrl-0 = <&sdmmc0_bus4>, <&sdmmc0_clk>, <&sdmmc0_cmd>,
 		    <&sdmmc0_det>;
 	pinctrl-names = "default";
-	post-power-on-delay-ms = <500>;
 	sd-uhs-sdr104;
 	vmmc-supply = <&vcc_sd>;
 	vqmmc-supply = <&vccio_sd>;
@@ -1207,11 +1265,11 @@
 	cap-sdio-irq;
 	disable-wp;
 	keep-power-in-suspend;
+	max-frequency = <200000000>;
 	mmc-pwrseq = <&sdio_pwrseq>;
 	non-removable;
 	pinctrl-0 = <&sdmmc1_bus4>, <&sdmmc1_cmd>, <&sdmmc1_clk>;
 	pinctrl-names = "default";
-	vmmc-supply = <&vcc_wifi>;
 	no-mmc;
 	no-sd;
 	sd-uhs-sdr104;
@@ -1320,14 +1378,6 @@
 
 &video_phy0 {
 	status = "okay";
-};
-
-&cpu0_opp_table {
-	/delete-property/ rockchip,supported-hw;
-};
-
-&gpu_opp_table {
-	/delete-property/ rockchip,supported-hw;
 };
 
 &dsi0_in_vp0 {

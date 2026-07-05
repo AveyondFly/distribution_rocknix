@@ -767,17 +767,8 @@
 	connect = <&vp0_out_dsi0>;
 };
 
-&cpu0_opp_table {
-	/delete-property/ rockchip,supported-hw;
-};
-
-&gpu_opp_table {
-	/delete-property/ rockchip,supported-hw;
-};
-
 &gpu {
 	mali-supply = <&vdd_gpu>;
-	mem-supply = <&vdd_gpu>;
 	status = "okay";
 	operating-points-v2 = <&gpu_opp_table>;
 };

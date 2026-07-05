@@ -188,7 +188,6 @@
 &gpu {
 	operating-points-v2 = <&gpu_opp_table>;
 	mali-supply = <&vdd_gpu_npu>;
-	mem-supply = <&vdd_gpu_npu>;
 	status = "okay";
 };
 
@@ -538,14 +537,6 @@
 
 &video_phy0 {
 	status = "okay";
-};
-
-&cpu0_opp_table {
-	/delete-property/ rockchip,supported-hw;
-};
-
-&gpu_opp_table {
-	/delete-property/ rockchip,supported-hw;
 };
 
 &dsi0_in_vp0 {

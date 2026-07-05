@@ -113,14 +113,6 @@
 	status = "okay";
 };
 
-&cpu0_opp_table {
-	/delete-property/ rockchip,supported-hw;
-};
-
-&gpu_opp_table {
-	/delete-property/ rockchip,supported-hw;
-};
-
 &dsi0_in_vp0 {
 	status = "okay";
 };

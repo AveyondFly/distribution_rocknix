@@ -112,6 +112,10 @@ get_releases() {
     '
 }
 
+UPDATE_REQUIRED_MB=2048
+UPDATE_MARKER_DIR="/storage/.update"
+UPDATE_ROMS_DIR="/storage/roms/.update"
+
 check_disk_space() {
   target_path=$1
   required_mB=$2
@@ -120,6 +124,53 @@ check_disk_space() {
     return 0
   fi
   return 1
+}
+
+# Print the block device backing $1 (e.g. /dev/mmcblk1p1).
+block_device_for_path() {
+  df "$1" 2>/dev/null | awk 'NR==2 {print $1}'
+}
+
+# Choose download dir: prefer /storage/.update, else a separate roms partition.
+select_update_dir() {
+  storage_dev=$(block_device_for_path "/storage")
+
+  if check_disk_space "/storage" "${UPDATE_REQUIRED_MB}"; then
+    printf '%s\n' "${UPDATE_MARKER_DIR}"
+    return 0
+  fi
+
+  if mountpoint -q /storage/roms 2>/dev/null; then
+    roms_dev=$(block_device_for_path "/storage/roms")
+    if [ -n "${roms_dev}" ] && [ "${roms_dev}" != "${storage_dev}" ] &&
+       check_disk_space "/storage/roms" "${UPDATE_REQUIRED_MB}"; then
+      printf '%s\n' "${UPDATE_ROMS_DIR}"
+      return 0
+    fi
+  fi
+
+  return 1
+}
+
+# Tell init where update files live when they are not on /storage.
+write_redirect_part() {
+  update_dir=$1
+
+  if [ "${update_dir}" = "${UPDATE_ROMS_DIR}" ]; then
+    roms_dev=$(block_device_for_path "/storage/roms")
+    if [ -z "${roms_dev}" ]; then
+      echo "Failed to resolve block device for /storage/roms." >&2
+      return 1
+    fi
+    echo "${roms_dev}" > "${UPDATE_MARKER_DIR}/redirect_part"
+  else
+    rm -f "${UPDATE_MARKER_DIR}/redirect_part"
+  fi
+  return 0
+}
+
+clear_redirect_part() {
+  rm -f "${UPDATE_MARKER_DIR}/redirect_part"
 }
 
 download_file() {
@@ -144,22 +195,39 @@ main_update() {
   echo "Update available: ${target_tag}"
   echo "Download: ${update_url}"
 
-  if ! check_disk_space "/storage" "2048"; then
-    echo "Not enough free space on /storage (need at least 2GB)."
-    exit 1
+  if [ ! -d "${UPDATE_MARKER_DIR}" ]; then
+    mkdir -p "${UPDATE_MARKER_DIR}" || {
+      echo "Failed to create ${UPDATE_MARKER_DIR} directory."
+      exit 1
+    }
   fi
 
-  if [ ! -d "/storage/.update" ]; then
-    mkdir -p /storage/.update || { echo "Failed to create /storage/.update directory."; exit 1; }
+  update_dir=$(select_update_dir) || {
+    echo "Not enough free space for update (need at least ${UPDATE_REQUIRED_MB}MB)."
+    echo "Free space on /storage or on the /storage/roms partition."
+    exit 1
+  }
+
+  if [ "${update_dir}" = "${UPDATE_ROMS_DIR}" ]; then
+    echo "Low space on /storage; downloading to ${UPDATE_ROMS_DIR}."
   fi
+
+  mkdir -p "${update_dir}" || {
+    echo "Failed to create ${update_dir} directory."
+    exit 1
+  }
+
+  write_redirect_part "${update_dir}" || exit 1
 
   filename=$(basename "${update_url}")
-  update_file="/storage/.update/${filename}"
-  checksum_file="/storage/.update/${filename}.sha256"
+  update_file="${update_dir}/${filename}"
+  checksum_file="${update_dir}/${filename}.sha256"
 
   echo "Downloading update file..."
   download_file "${update_url}" "${update_file}" || {
     echo "Failed to download update file."
+    rm -f "${update_file}"
+    clear_redirect_part
     exit 1
   }
 
@@ -167,7 +235,8 @@ main_update() {
   echo "Downloading checksum file..."
   download_file "${checksum_url}" "${checksum_file}" || {
     echo "Failed to download checksum file."
-    rm -f "${update_file}"
+    rm -f "${update_file}" "${checksum_file}"
+    clear_redirect_part
     exit 1
   }
 
@@ -181,6 +250,7 @@ main_update() {
   else
     echo "Checksum verification failed. Removing downloaded files."
     rm -f "${update_file}" "${checksum_file}"
+    clear_redirect_part
     exit 1
   fi
 }

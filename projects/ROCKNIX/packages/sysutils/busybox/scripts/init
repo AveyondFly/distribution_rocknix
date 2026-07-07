@@ -33,6 +33,8 @@ MODULE_DIR=/usr/lib/modules
 
 UPDATE_ROOT=/storage/.update
 UPDATE_DIR="${UPDATE_ROOT}"
+UPDATE_FILES_ROOT="${UPDATE_ROOT}"
+UPDATE_PART_MOUNT=""
 
 UPDATE_KERNEL="@KERNEL_NAME@"
 UPDATE_SYSTEM="SYSTEM"
@@ -809,6 +811,36 @@ check_out_of_space() {
   fi
 }
 
+# Mount redirected update partition when rocknix-update stored files off /storage.
+resolve_update_redirect() {
+  local redirect_dev
+
+  UPDATE_FILES_ROOT="${UPDATE_ROOT}"
+  UPDATE_DIR="${UPDATE_FILES_ROOT}"
+
+  if [ ! -f "${UPDATE_ROOT}/redirect_part" ]; then
+    return 0
+  fi
+
+  redirect_dev=$(tr -d '[:space:]' < "${UPDATE_ROOT}/redirect_part")
+  if [ -z "${redirect_dev}" ] || [ ! -b "${redirect_dev}" ]; then
+    echo "Invalid update redirect device: ${redirect_dev}"
+    rm -f "${UPDATE_ROOT}/redirect_part"
+    return 1
+  fi
+
+  progress "Mounting update partition ${redirect_dev} ..."
+  UPDATE_PART_MOUNT="/update_part"
+  mkdir -p "${UPDATE_PART_MOUNT}" &>/dev/null
+  mount_part "${redirect_dev}" "${UPDATE_PART_MOUNT}" "rw,noatime"
+
+  UPDATE_FILES_ROOT="${UPDATE_PART_MOUNT}/roms/.update"
+  UPDATE_DIR="${UPDATE_FILES_ROOT}"
+  mkdir -p "${UPDATE_FILES_ROOT}" &>/dev/null
+
+  return 0
+}
+
 do_cleanup() {
   StartProgress spinner "Cleaning up... "
 
@@ -823,17 +855,17 @@ do_cleanup() {
   fi
 
   # mnt is a partition of .img loop, it uses avfs
-  if [ -d ${UPDATE_ROOT}/.tmp/mnt ]; then
-    if mountpoint -q ${UPDATE_ROOT}/.tmp/mnt ; then
+  if [ -d ${UPDATE_FILES_ROOT}/.tmp/mnt ]; then
+    if mountpoint -q ${UPDATE_FILES_ROOT}/.tmp/mnt ; then
       # busybox umount deletes loop device automatically
-      umount ${UPDATE_ROOT}/.tmp/mnt &>/dev/null
+      umount ${UPDATE_FILES_ROOT}/.tmp/mnt &>/dev/null
     fi
   fi
 
   # among update stuff, avfs is mounted first, so, is unmounted last
-  if [ -d ${UPDATE_ROOT}/.tmp/avfs ]; then
-    if mountpoint -q ${UPDATE_ROOT}/.tmp/avfs ; then
-      umount ${UPDATE_ROOT}/.tmp/avfs &>/dev/null
+  if [ -d ${UPDATE_FILES_ROOT}/.tmp/avfs ]; then
+    if mountpoint -q ${UPDATE_FILES_ROOT}/.tmp/avfs ; then
+      umount ${UPDATE_FILES_ROOT}/.tmp/avfs &>/dev/null
     fi
   fi
 
@@ -841,8 +873,14 @@ do_cleanup() {
   rm -f "${UPDATE_IMG_GZ}" &>/dev/null
   rm -f "${UPDATE_IMG}" &>/dev/null
 
-  rm -rf ${UPDATE_ROOT}/.[0-9a-zA-Z]* &>/dev/null
-  rm -rf ${UPDATE_ROOT}/* &>/dev/null
+  rm -rf ${UPDATE_FILES_ROOT}/.[0-9a-zA-Z]* &>/dev/null
+  rm -rf ${UPDATE_FILES_ROOT}/* &>/dev/null
+
+  rm -f "${UPDATE_ROOT}/redirect_part" &>/dev/null
+
+  if [ -n "${UPDATE_PART_MOUNT}" ] && mountpoint -q "${UPDATE_PART_MOUNT}"; then
+    umount "${UPDATE_PART_MOUNT}" &>/dev/null
+  fi
 
   # All previous unmounts were needed to safely unmount storage partition
   if mountpoint -q /storage; then
@@ -856,12 +894,18 @@ do_cleanup() {
 
 check_update() {
   progress "Checking for updates"
+  resolve_update_redirect
+
   UPDATE_TAR=$(ls -1 "${UPDATE_DIR}"/*.tar 2>/dev/null | head -n 1)
   UPDATE_IMG_GZ=$(ls -1 "${UPDATE_DIR}"/*.img.gz 2>/dev/null | head -n 1)
   UPDATE_IMG=$(ls -1 "${UPDATE_DIR}"/*.img 2>/dev/null | head -n 1)
 
   if ! [ -f "${UPDATE_DIR}/${UPDATE_KERNEL}" -a -f "${UPDATE_DIR}/${UPDATE_SYSTEM}" ] &&
      ! [ -f "${UPDATE_TAR}" -o -f "${UPDATE_IMG_GZ}" -o -f "${UPDATE_IMG}" ]; then
+    if [ -n "${UPDATE_PART_MOUNT}" ] && mountpoint -q "${UPDATE_PART_MOUNT}"; then
+      umount "${UPDATE_PART_MOUNT}" &>/dev/null
+      UPDATE_PART_MOUNT=""
+    fi
     return 0
   fi
 
@@ -992,7 +1036,7 @@ check_update() {
 
     # don't make temporary files but instead copy
     # directly from mountpoint to /flash
-    UPDATE_DIR=${UPDATE_ROOT}/.tmp/mnt
+    UPDATE_DIR=${UPDATE_FILES_ROOT}/.tmp/mnt
     UPDATE_KERNEL="@KERNEL_NAME@"
   else
     UPDATE_FILENAME="${UPDATE_DIR}/${UPDATE_SYSTEM}"

@@ -16,7 +16,7 @@ PKG_RETROARCH="core-info libretro-database retroarch retroarch-assets retroarch-
 LIBRETRO_CORES="81-lr a5200-lr arduous-lr atari800-lr b2-lr beetle-gba-lr beetle-lynx-lr beetle-ngp-lr beetle-pce-lr beetle-pce-fast-lr    \
                 beetle-pcfx-lr bsnes-mercury-accuracy-lr bsnes-mercury-balanced-lr bsnes-mercury-performance-lr beetle-supafaust-lr  \
                 beetle-supergrafx-lr beetle-vb-lr beetle-wswan-lr bluemsx-lr cap32-lr crocods-lr daphne-lr doublecherrygb-lr         \
-                dosbox-core-lr dosbox-pure-lr easyrpg-lr emuscv-lr fake08-lr fbalpha2012-lr                                          \
+                dosbox-core-lr dosbox-pure-lr easyrpg-lr emuscv-lr fake08-lr fbalpha2012-lr native32emu-lr                              \
                 fbalpha2019-lr fceumm-lr flycast-lr fmsx-lr freechaf-lr freeintv-lr freej2me-lr fuse-lr gambatte-lr         \
                 gam4980-lr gearboy-lr gearcoleco-lr gearsystem-lr genesis-plus-gx-lr genesis-plus-gx-wide-lr gw-lr handy-lr hatari-lr \
                 hbmame-lr idtech-lr jaxe-lr mame-lr mame2003-plus-lr mame2010-lr mame2015-lr melonds-lr melonds-ds-lr mesen-lr mgba-lr \
@@ -783,6 +783,10 @@ makeinstall_target() {
   add_emu_core msx2 retroarch bluemsx true
   add_emu_core msx2 retroarch fmsx false
   add_es_system msx2
+
+  ### Native32Emu
+  add_emu_core native32emu retroarch native32emu true
+  add_es_system native32emu
 
   ### Sega Naomi
   case ${DEVICE} in

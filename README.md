@@ -44,15 +44,15 @@ Independent ports apps:
 | Brand | Models |
 |-------|--------|
 | BatleXP | G350 |
-| Clone R36s | Type 2 (with/without amplifier), Type 3, Type 4, Sauce V03/V04 |
+| Clone R36s | Type 2 (with/without amplifier), Type 3, Type 4, Sauce Panel 1/2/3/4 |
 | Diium | D007, D-R28S |
-| GameConsole | HG36, K36, K36S, R33S, R36S, R36S Plus, R36T, R36TMax, R36Ultra, R36XXProMax, R40S, R40XX, R40XX ProMax, R45H, R46H, R50S, RX6H, T16Max, U8, U8-V2, XGB36 |
+| GameConsole | HG36, K36, K36S, R33S, R36S, R36S Plus, R36T, R36TMax, R36Ultra,R36UltraX, R36XXProMax, R40S, R40XX, R40XX ProMax, R45H, R46H, R50S, R50H, RX6H, T16Max, U8, U8-V2, XGB36 |
 | Gameforce | CHI |
 | GameMT | E6 |
 | Generic | EE Clone |
 | MagicX | XU10, XU Mini M |
 | ODROID-GO | Advance, Advance Black Edition, Super |
-| PortableGame | A10Mini, A10Mini-V2 |
+| PortableGame | A10Mini, A10Mini-V4 |
 | Powkiddy | RGB10, RGB10X, RGB20S |
 | XiFan | DC35V, DC40V, DC45V, Mini40, MyMini, R36Max, R36Max2, R36Pro, RF35H, RF40H, RF45V, XF28, XF35H, XF40H, XF40V, XF45V |
 

@@ -1,7 +1,6 @@
 ################################################################################
 #      This file is part of OpenELEC - http://www.openelec.tv
 #      Copyright (C) 2009-2012 Stephan Raue (stephan@openelec.tv)
-#      Copyright (C) 2023 JELOS (https://github.com/JustEnoughLinuxOS)
 #
 #  This Program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -19,23 +18,27 @@
 #  http://www.gnu.org/copyleft/gpl.html
 ################################################################################
 
-PKG_NAME="core-info"
-PKG_VERSION="beb3b8bb8175f27a295bcbce922dc846f5c6362f"
-PKG_LICENSE="GPL"
-PKG_SITE="https://github.com/libretro/libretro-core-info"
-PKG_URL="https://github.com/libretro/libretro-core-info/archive/${PKG_VERSION}.tar.gz"
-PKG_DEPENDS_TARGET="toolchain"
-PKG_LONGDESC="Mirror of libretro's core info files"
+PKG_NAME="native32emu-lr"
+PKG_VERSION="d6fb25ec330fcec36b74135bac36e19fbdc16338"
+PKG_LICENSE="MPLv2.0"
+PKG_SITE="https://github.com/jiangxincode/Native32Emu"
+PKG_URL="${PKG_SITE}/archive/${PKG_VERSION}.tar.gz"
+PKG_DEPENDS_TARGET="toolchain cargo:host"
+PKG_LONGDESC="Native32 Emulator"
+PKG_PATCH_DIRS+="${DEVICE}"
+
 PKG_TOOLCHAIN="manual"
+
+make_target() {
+  cd ${PKG_BUILD}
+  cargo build \
+    --target ${TARGET_NAME} \
+    --release \
+    --locked \
+    -p native32emu-libretro
+}
 
 makeinstall_target() {
   mkdir -p ${INSTALL}/usr/lib/libretro
-  ${TOOLCHAIN}/bin/rename -v mednafen beetle ${PKG_BUILD}/*.info
-  cp ${PKG_BUILD}/*.info ${INSTALL}/usr/lib/libretro/
-  cp ${PKG_BUILD}/pcsx_rearmed_libretro.info ${INSTALL}/usr/lib/libretro/pcsx_rearmed32_libretro.info
-  cp ${PKG_BUILD}/pcsx_rearmed_libretro.info ${INSTALL}/usr/lib/libretro/pcsx_rearmed_rumble_32b_libretro.info
-  cp ${PKG_BUILD}/fbneo_libretro.info ${INSTALL}/usr/lib/libretro/fbneoplus_libretro.info
-  cp ${PKG_BUILD}/flycast_libretro.info ${INSTALL}/usr/lib/libretro/flycast2021_libretro.info
-  cp ${PKG_BUILD}/genesis_plus_gx_libretro.info ${INSTALL}/usr/lib/libretro/genesis_plus_gx_EX_libretro.info
-  cp ${PKG_BUILD}/gpsp_libretro.info ${INSTALL}/usr/lib/libretro/gpsp_ezode_32b_libretro.info
+  cp ${CARGO_TARGET_DIR}/${TARGET_NAME}/release/libnative32emu.so ${INSTALL}/usr/lib/libretro/native32emu_libretro.so
 }

@@ -253,7 +253,7 @@ fi
 cp -r "/usr/config/SDL-GameControllerDB/gamecontrollerdb.txt" "/storage/.config/SDL-GameControllerDB/gamecontrollerdb.txt"
 
 # Delete existing swap file - disabled by default on all platforms in https://github.com/ROCKNIX/distribution/pull/2223
-rm -f /storage/.cache/swapfile
+#rm -f /storage/.cache/swapfile
 
 # Move existing azahar save states to /roms/savestates/3ds
 if [[ -d "/storage/.config/azahar/states" && ! -d "/storage/roms/savestates/3ds" ]]; then
@@ -292,6 +292,14 @@ if [ -e "/storage/.config/duckstation/settings.ini" ]; then
   # no confirmation popup
   sed -i 's/ConfirmPowerOff = true/ConfirmPowerOff = false/' /storage/.config/duckstation/settings.ini
 fi
+
+cp -rf /usr/config/eka2l1/eka2l1_sdl2 /storage/.config/eka2l1/eka2l1_sdl2
+cp -rf /usr/config/eka2l1/eka2l1.gptk /storage/.config/eka2l1/eka2l1.gptk
+cp -rf /usr/config/mrp/* /storage/.config/mrp/
+cp -rf /usr/config/java/* /storage/.config/java/
+cp -rf /usr/config/ruffle/* /storage/.config/ruffle/
+
+rm -rf /storage/.cache/rocknix-stats-reported
 
 # Clean old GPU 'governor' values
 sed -i '/gpuperf=low/d' /storage/.config/system/configs/system.cfg

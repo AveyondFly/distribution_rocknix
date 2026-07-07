@@ -1,555 +1,554 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <gameList>
     <game>
         <path>./@FILEMANAGER@.sh</path>
-        <name>File Manager</name>
-        <desc>Enables you to browse the ROCKNIX filesystem and manage files directly on your device. You can also use this tool to copy files from external drives to your ROCKNIX filesystem.</desc>
+        <name>文件管理器</name>
+        <desc>浏览 ROCKNIX 文件系统并直接在设备上管理文件，也可用于将外置存储中的文件复制到 ROCKNIX 文件系统。</desc>
         <developer>Tardigrade and ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2022</releasedate>
-        <genre>Tool</genre>
+        <genre>工具</genre>
         <players>1</players>
         <image>./images/file-manager.svg</image>
     </game>
     <game>
         <path>./Start M8C.sh</path>
         <name>M8C</name>
-        <desc>Cross-platform M8 tracker headless client.</desc>
+        <desc>跨平台 M8 音轨器无界面客户端。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2022</releasedate>
-        <genre>Tool</genre>
+        <genre>工具</genre>
         <players>1</players>
         <image>./images/m8c.svg</image>
     </game>
     <game>
         <path>./Install ROCKNIX.sh</path>
-        <name>Install ROCKNIX</name>
-        <desc>Use this utility to install ROCKNIX to the local storage on your device. Note: This process will wipe the drive that you choose to install ROCKNIX on.</desc>
+        <name>安装 ROCKNIX</name>
+        <desc>将 ROCKNIX 安装到设备本地存储。注意：所选目标磁盘上的数据将被清空。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2022</releasedate>
-        <genre>Tool</genre>
+        <genre>工具</genre>
         <players>1</players>
         <image>./images/install-rocknix.svg</image>
     </game>
     <game>
         <path>./Start PortMaster.sh</path>
         <name>PortMaster</name>
-        <desc>PortMaster is a simple tool that allows you to download various game ports that are available for ROCKNIX and other ARM based devices. You can find details at portmaster.games</desc>
+        <desc>用于下载适用于 ROCKNIX 及其他 ARM 设备的移植游戏。详情见 portmaster.games。</desc>
         <developer>Portmaster</developer>
         <publisher>Portmaster</publisher>
         <rating>5.0</rating>
-        <releasedate>2022</releasedate>         
-        <genre>Tool</genre>
+        <releasedate>2022</releasedate>
+        <genre>工具</genre>
         <players>1</players>
         <image>./images/portmaster.svg</image>
     </game>
     <game>
         <path>./cloud_backup.sh</path>
-        <name>RCLONE Backup</name>
-        <desc>Backup your saves to a cloud drive using RCLONE. Please make sure you have followed the steps at rocknix.org to set up RCLONE first.</desc>
+        <name>RCLONE 备份</name>
+        <desc>使用 RCLONE 将存档备份到云盘。请先按 rocknix.org 说明完成 RCLONE 配置。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2024</releasedate>
-        <genre>Script</genre>
+        <genre>脚本</genre>
         <players>1</players>
         <image>./images/rclone-backup.svg</image>
     </game>
     <game>
         <path>./cloud_restore.sh</path>
-        <name>RCLONE Restore</name>
-        <desc>Restores your saves from a cloud drive using RCLONE. Please make sure you have followed the steps at rocknix.org to set up RCLONE first.</desc>
+        <name>RCLONE 恢复</name>
+        <desc>使用 RCLONE 从云盘恢复存档。请先按 rocknix.org 说明完成 RCLONE 配置。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2024</releasedate>
-        <genre>Script</genre>
+        <genre>脚本</genre>
         <players>1</players>
         <image>./images/rclone-restore.svg</image>
     </game>
     <game>
         <path>./Remove ._ Files.sh</path>
-        <name>Remove ._ Files</name>
-        <desc>This tool will remove hidden ._ files created by the MacOS filesystem</desc>
+        <name>删除 ._ 文件</name>
+        <desc>删除 macOS 文件系统在存储中生成的隐藏 ._ 文件。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2021</releasedate>
-        <genre>Script</genre>
+        <genre>脚本</genre>
         <players>1</players>
         <image>./images/remove-mac-files.svg</image>
     </game>
     <game>
         <path>./qterminal.sh</path>
         <name>QTerminal</name>
-        <desc>QTerminal is a lightweight Qt terminal emulator. USB keyboard required.</desc>
+        <desc>轻量级 Qt 终端模拟器，需连接 USB 键盘。</desc>
         <developer>LXQT</developer>
         <publisher>LXQTX</publisher>
         <rating>5.0</rating>
         <releasedate>2025</releasedate>
-        <genre>Tool</genre>
+        <genre>工具</genre>
         <players>1</players>
         <image>./images/qterminal.svg</image>
     </game>
     <game>
         <path>./Start AetherSX2.sh</path>
-        <name>Start AetherSX2</name>
-        <desc>Opens the AetherSX2 GUI (PS2) to enable global configuration changes to be made directly to the emulator. It's recommended to have a mouse 
-and keyboard to modify settings.</desc>
+        <name>启动 AetherSX2</name>
+        <desc>打开 AetherSX2（PS2）图形界面，直接修改模拟器全局设置。建议使用鼠标和键盘操作。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2021</releasedate>
-        <genre>Emulator</genre>
+        <genre>模拟器</genre>
         <players>1</players>
         <image>./images/aethersx2.svg</image>
     </game>
     <game>
         <path>./Start BigPEmu.sh</path>
-        <name>Start BigPEmu</name>
-        <desc>Opens the BigPEmu GUI (Jaguar) to enable global configuration changes to be made directly to the emulator. It's recommended to have a mouse and keyboard to modify settings.</desc>
+        <name>启动 BigPEmu</name>
+        <desc>打开 BigPEmu（Jaguar）图形界面，直接修改模拟器全局设置。建议使用鼠标和键盘操作。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2025</releasedate>
-        <genre>Emulator</genre>
+        <genre>模拟器</genre>
         <players>1</players>
         <image>./images/bigpemu.svg</image>
     </game>
     <game>
         <path>./Start CEMU.sh</path>
-        <name>Start Cemu</name>
-        <desc>Opens the Cemu GUI (WiiU) to enable global configuration changes to be made directly to the emulator. It's recommended to have a mouse and keyboard available to modify settings.</desc>
+        <name>启动 Cemu</name>
+        <desc>打开 Cemu（Wii U）图形界面，直接修改模拟器全局设置。建议使用鼠标和键盘操作。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2023</releasedate>
-        <genre>Emulator</genre>
+        <genre>模拟器</genre>
         <players>1</players>
         <image>./images/cemu.svg</image>
     </game>
     <game>
         <path>./Start DaedalusX64.sh</path>
-        <name>Start DaedalusX64</name>
-        <desc>Opens the DaedalusX64 GUI (N64) to enable global configuration changes to be made directly to the emulator. It's recommended to have a mouse and keyboard available to modify settings.</desc>
+        <name>启动 DaedalusX64</name>
+        <desc>打开 DaedalusX64（N64）图形界面，直接修改模拟器全局设置。建议使用鼠标和键盘操作。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2024</releasedate>
-        <genre>Emulator</genre>
+        <genre>模拟器</genre>
         <players>1</players>
         <image>./images/daedalusx64.svg</image>
     </game>
     <game>
         <path>./Start Dolphin.sh</path>
-        <name>Start Dolphin</name>
-        <desc>Opens the Dolphin GUI (Gamecube / Wii) to enable global configuration changes to be made directly to the emulator. It's recommended to have a mouse and keyboard available to modify settings.</desc>
+        <name>启动 Dolphin</name>
+        <desc>打开 Dolphin（GameCube / Wii）图形界面，直接修改模拟器全局设置。建议使用鼠标和键盘操作。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2024</releasedate>
-        <genre>Emulator</genre>
+        <genre>模拟器</genre>
         <players>1</players>
         <image>./images/dolphin.svg</image>
     </game>
     <game>
         <path>./Start Duckstation.sh</path>
-        <name>Start Duckstation</name>
-        <desc>Opens the Duckstation GUI (PS1) to enable global configuration changes to be made directly to the emulator. It's recommended to have a mouse and keyboard to modify settings.</desc>
+        <name>启动 Duckstation</name>
+        <desc>打开 Duckstation（PS1）图形界面，直接修改模拟器全局设置。建议使用鼠标和键盘操作。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2024</releasedate>
-        <genre>Emulator</genre>
+        <genre>模拟器</genre>
         <players>1</players>
         <image>./images/duckstation.svg</image>
     </game>
     <game>
         <path>./Start Flycast.sh</path>
-        <name>Start Flycast</name>
-        <desc>Opens the Flycast GUI (Dreamcast / Naomi / Atomiswave) to enable global configuration changes to be made directly to the emulator. It's recommended to have a mouse and keyboard to modify settings.</desc>
+        <name>启动 Flycast</name>
+        <desc>打开 Flycast（Dreamcast / Naomi / Atomiswave）图形界面，直接修改模拟器全局设置。建议使用鼠标和键盘操作。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2025</releasedate>
-        <genre>Emulator</genre>
+        <genre>模拟器</genre>
         <players>1</players>
         <image>./images/flycast.svg</image>
     </game>
     <game>
         <path>./Start Flycast2022.sh</path>
-        <name>Start Flycast 2022</name>
-        <desc>Opens the Flycast 2022 GUI (Dreamcast / Naomi / Atomiswave) to enable global configuration changes to be made directly to the emulator. It's recommended to have a mouse and keyboard to modify settings.</desc>
+        <name>启动 Flycast 2022</name>
+        <desc>打开 Flycast 2022（Dreamcast / Naomi / Atomiswave）图形界面，直接修改模拟器全局设置。建议使用鼠标和键盘操作。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2025</releasedate>
-        <genre>Emulator</genre>
+        <genre>模拟器</genre>
         <players>1</players>
         <image>./images/flycast.svg</image>
     </game>
     <game>
         <path>./Start HATARISA.sh</path>
-        <name>Start Hatari</name>
-        <desc>Opens the Hatari GUI to enable global configuration changes to be made directly. Hatari is an Atari ST/STE/TT/Falcon emulator for GNU/Linux, BSD, Mac OS X, Windows and other systems which are supported by the SDL library. The Atari ST was a 16/32 bit computer system which was first released by Atari in 1985. Using the Motorola 68000 CPU, it was a very popular computer having quite a lot of CPU power at that time. Unlike many other Atari ST emulators which try to give you a good environment for running GEM applications, Hatari tries to emulate the hardware of a ST as close as possible so that it is able to run most of the old ST games and demos. Hatari is open source software and is distributed under the terms of the GNU General Public License (GPL).</desc>
+        <name>启动 Hatari</name>
+        <desc>打开 Hatari 图形界面以直接修改全局配置。Hatari 是 Atari ST/STE/TT/Falcon 模拟器，力求尽可能贴近真实硬件，可运行多数经典 ST 游戏与演示程序。本软件为开源项目，遵循 GNU GPL 许可。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2023</releasedate>
-        <genre>Emulator</genre>
+        <genre>模拟器</genre>
         <players>1</players>
         <image>./images/hatari.svg</image>
     </game>
     <game>
         <path>./Start MelonDS.sh</path>
-        <name>Start MelonDS</name>
-        <desc>Opens the MelonDS GUI (Nintendo DS) to enable global configuration changes to be made directly to the emulator. It's recommended to have a mouse and keyboard to modify settings.</desc>
+        <name>启动 MelonDS</name>
+        <desc>打开 MelonDS（任天堂 DS）图形界面，直接修改模拟器全局设置。建议使用鼠标和键盘操作。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2024</releasedate>
-        <genre>Emulator</genre>
+        <genre>模拟器</genre>
         <players>1</players>
         <image>./images/melonds.svg</image>
     </game>
     <game>
         <path>./Start Moonlight.sh</path>
-        <name>Start Moonlight</name>
-        <desc>Opens the Moonlight GUI to enable global configuration changes to be made directly. Moonlight (formerly Limelight) is an open source implementation of NVIDIA's GameStream protocol. We implemented the protocol used by the NVIDIA Shield and wrote a set of 3rd party clients. You can stream your collection of PC games from your GameStream-compatible PC to any supported device and play them remotely. Moonlight is perfect for gaming on the go without sacrificing the graphics and game selection available on PC.</desc>
+        <name>启动 Moonlight</name>
+        <desc>打开 Moonlight 图形界面以直接修改全局配置。Moonlight 是 NVIDIA GameStream 协议的开源实现，可将兼容 PC 上的游戏串流到本设备远程游玩。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2023</releasedate>
-        <genre>Game Stream</genre>
+        <genre>串流</genre>
         <players>1</players>
         <image>./images/moonlight.svg</image>
     </game>
     <game>
         <path>./Start PCSX2.sh</path>
-        <name>Start PCSX2</name>
-        <desc>Opens the PCSX2 GUI (PS2) to enable global configuration changes to be made directly to the emulator. It's recommended to have a mouse and keyboard available to modify settings. PCSX2 is a free and open-source PlayStation 2 (PS2) emulator. Its purpose is to emulate the PS2's hardware, using a combination of MIPS CPU Interpreters, Recompilers and a Virtual Machine which manages hardware states and PS2 system memory.</desc>
+        <name>启动 PCSX2</name>
+        <desc>打开 PCSX2（PS2）图形界面，直接修改模拟器全局设置。建议使用鼠标和键盘操作。PCSX2 是免费开源的 PlayStation 2 模拟器。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2021</releasedate>
-        <genre>Emulator</genre>
+        <genre>模拟器</genre>
         <players>1</players>
         <image>./images/pcsx2.svg</image>
     </game>
     <game>
         <path>./Start PPSSPP.sh</path>
-        <name>Start PPSSPP</name>
-        <desc>Opens the PPSSPP GUI (PSP) to enable global configuration changes to be made directly to the emulator. PPSSPP can run your PSP games on your PC or Android phone in full HD resolution or even higher. It can also upscale textures to make them sharper, and you can enable post-processing shaders to adjust color and brightness the way you like, and other effects.</desc>
+        <name>启动 PPSSPP</name>
+        <desc>打开 PPSSPP（PSP）图形界面，直接修改模拟器全局设置。PPSSPP 可在高分辨率下运行 PSP 游戏，并支持纹理增强与后期着色器。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2021</releasedate>
-        <genre>Emulator</genre>
+        <genre>模拟器</genre>
         <players>1</players>
         <image>./images/ppsspp.svg</image>
     </game>
     <game>
         <path>./Start PPSSPP2021.sh</path>
-        <name>Start PPSSPP 2021</name>
-        <desc>Opens the PPSSPP 2021 GUI (PSP) to enable global configuration changes to be made directly to the emulator. PPSSPP can run your PSP games on your PC or Android phone in full HD resolution or even higher. It can also upscale textures to make them sharper, and you can enable post-processing shaders to adjust color and brightness the way you like, and other effects.</desc>
+        <name>启动 PPSSPP 2021</name>
+        <desc>打开 PPSSPP 2021（PSP）图形界面，直接修改模拟器全局设置。PPSSPP 可在高分辨率下运行 PSP 游戏，并支持纹理增强与后期着色器。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2021</releasedate>
-        <genre>Emulator</genre>
+        <genre>模拟器</genre>
         <players>1</players>
         <image>./images/ppsspp.svg</image>
     </game>
     <game>
         <path>./Start SkyEmu.sh</path>
-        <name>Start SkyEmu</name>
-        <desc>Opens the SkyEmu GUI (GB / GBC / GBA / NDS) to enable global configuration changes to be made directly to the emulator. It's recommended to have a mouse and keyboard to modify settings.</desc>
+        <name>启动 SkyEmu</name>
+        <desc>打开 SkyEmu（GB / GBC / GBA / NDS）图形界面，直接修改模拟器全局设置。建议使用鼠标和键盘操作。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2025</releasedate>
-        <genre>Emulator</genre>
+        <genre>模拟器</genre>
         <players>1</players>
         <image>./images/skyemu.svg</image>
     </game>
     <game>
         <path>./Start 32bit Retroarch.sh</path>
-        <name>Start RetroArch (32-bit)</name>
-        <desc>Opens the RetroArch GUI (32-bit version) to enable global configuration changes to be made directly to the emulator. RetroArch is a frontend for emulators, game engines and media players.</desc>
+        <name>启动 RetroArch（32 位）</name>
+        <desc>打开 RetroArch（32 位）图形界面，直接修改模拟器全局设置。RetroArch 是模拟器、游戏引擎与媒体播放器的前端。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2021</releasedate>
-        <genre>Emulator</genre>
+        <genre>模拟器</genre>
         <players>1</players>
         <image>./images/retroarch-32.svg</image>
     </game>
     <game>
         <path>./Start 64bit Retroarch.sh</path>
-        <name>Start RetroArch (64-bit)</name>
-        <desc>Opens the RetroArch GUI (64-bit version) to enable global configuration changes to be made directly to the emulator. RetroArch is a frontend for emulators, game engines and media players.</desc>
+        <name>启动 RetroArch（64 位）</name>
+        <desc>打开 RetroArch（64 位）图形界面，直接修改模拟器全局设置。RetroArch 是模拟器、游戏引擎与媒体播放器的前端。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2021</releasedate>
-        <genre>Emulator</genre>
+        <genre>模拟器</genre>
         <players>1</players>
         <image>./images/retroarch-64.svg</image>
     </game>
     <game>
         <path>./Start RPCS3.sh</path>
-        <name>Start RPCS3</name>
-        <desc>Opens the RPCS3 GUI (PS3) to enable configuration changes to be made directly to the emulator. You can use this to set up firmware, update controls and install packages. It's recommended to have a mouse and keyboard available to modify settings. RPCS3 is a multi-platform open-source Sony PlayStation 3 emulator and debugger written in C++ for Windows, Linux, macOS and FreeBSD.</desc>
+        <name>启动 RPCS3</name>
+        <desc>打开 RPCS3（PS3）图形界面，可配置固件、按键与安装包。建议使用鼠标和键盘操作。RPCS3 是跨平台开源的 PlayStation 3 模拟器。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2021</releasedate>
-        <genre>Emulator</genre>
+        <genre>模拟器</genre>
         <players>1</players>
         <image>./images/rpcs3.svg</image>
     </game>
     <game>
         <path>./Start ScummVM.sh</path>
-        <name>Start ScummVM</name>
-        <desc>Opens the ScummVM GUI to enable global configuration changes to be made directly to the emulator. It's recommended to have a mouse and keyboard available to modify settings. ScummVM is a program which allows you to run certain classic graphical adventure and role-playing games, provided you already have their data files. The clever part about this: ScummVM just replaces the executables shipped with the games, allowing you to play them on systems for which they were never designed! ScummVM is a complete rewrite of these games' executables and is not an emulator.</desc>
+        <name>启动 ScummVM</name>
+        <desc>打开 ScummVM 图形界面，直接修改模拟器全局设置。建议使用鼠标和键盘操作。在已有游戏数据文件的前提下，可运行经典图形冒险与角色扮演游戏；ScummVM 重写游戏可执行文件，并非传统意义上的模拟器。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2021</releasedate>
-        <genre>Emulator</genre>
+        <genre>模拟器</genre>
         <players>1</players>
         <image>./images/scummvm.svg</image>
     </game>
     <game>
         <path>./Start Xemu.sh</path>
-        <name>Start Xemu</name>
-        <desc>Opens the Xemu GUI (Xbox) to enable global configuration changes to be made directly to the emulator. It's recommended to have a mouse and keyboard available to modify settings. A free and open-source application that emulates the original Microsoft Xbox game console, enabling people to play their original Xbox games on Windows, macOS, and Linux systems.</desc>
+        <name>启动 Xemu</name>
+        <desc>打开 Xemu（Xbox）图形界面，直接修改模拟器全局设置。建议使用鼠标和键盘操作。Xemu 是免费开源的初代 Xbox 模拟器。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2023</releasedate>
-        <genre>Emulator</genre>
+        <genre>模拟器</genre>
         <players>1</players>
         <image>./images/xemu.svg</image>
     </game>
     <game>
         <path>./Scan id Tech Games.sh</path>
-        <name>Scan id Tech Games</name>
-        <desc>Creates launchers for id software games</desc>
+        <name>扫描 id Tech 游戏</name>
+        <desc>为 id Software 游戏创建启动项。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2023</releasedate>
-        <genre>Script</genre>
+        <genre>脚本</genre>
         <players>1</players>
         <image>./images/idtech.svg</image>
     </game>
     <game>
         <path>./Scan ScummVM Games.sh</path>
-        <name>Scan ScummVM Games</name>
-        <desc>Creates launchers for ScummVM games</desc>
+        <name>扫描 ScummVM 游戏</name>
+        <desc>为 ScummVM 游戏创建启动项。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2021</releasedate>
-        <genre>Emulator</genre>
+        <genre>模拟器</genre>
         <players>1</players>
         <image>./images/scummvm.svg</image>
     </game>
     <game>
         <path>./Test Gamepad.sh</path>
-        <name>Test Gamepad</name>
-        <desc>A simple SDL GUI gamepad tester to help validate gamepad inputs.</desc>
+        <name>测试手柄</name>
+        <desc>简单的 SDL 图形界面手柄测试工具，用于验证手柄输入。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2024</releasedate>
-        <genre>tool</genre>
+        <genre>工具</genre>
         <players>1</players>
         <image>./images/test-gamepad.svg</image>
     </game>
     <game>
         <path>./Test Touchscreen.sh</path>
-        <name>Test Touchscreen</name>
-        <desc>A simple SDL GUI touchscreen tester to help validate touchscreen inputs.</desc>
+        <name>测试触摸屏</name>
+        <desc>简单的 SDL 图形界面触摸屏测试工具，用于验证触摸输入。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2024</releasedate>
-        <genre>tool</genre>
+        <genre>工具</genre>
         <players>1</players>
         <image>./images/test-touchscreen.svg</image>
     </game>
     <game>
         <path>./GPcal.sh</path>
-        <name>Calibrate Gamepad</name>
-        <desc>A gamepad tool that enables the user to calibrate the analog sticks and triggers on the Retroid Pocket 5 and Mini.</desc>
+        <name>校准手柄</name>
+        <desc>用于校准 Retroid Pocket 5 与 Mini 摇杆和扳机的工具。</desc>
         <developer>CDELETRE</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2024</releasedate>
-        <genre>tool</genre>
+        <genre>工具</genre>
         <players>1</players>
         <image>./images/calibrate-gamepad.svg</image>
     </game>
     <game>
         <path>./Mount NFS.sh</path>
-        <name>Mount NFS</name>
-        <desc>Mounts an NFS share at a location defined in /storage/.nfs-mount and creates a merged storage with the games-internal card as the upper/writeable location</desc>
+        <name>挂载 NFS</name>
+        <desc>按 /storage/.nfs-mount 中的定义挂载 NFS 共享，并与机内游戏卡合并为可写的上层存储。</desc>
         <developer>ROCKNIX</developer>
         <publisher>ROCKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2024</releasedate>
-        <genre>tool</genre>
+        <genre>工具</genre>
         <players>1</players>
         <image>./images/nfs.svg</image>
-     </game>
+    </game>
     <game>
         <path>./MOD_TOOLS/Offline Upgrade.sh</path>
-        <name>Offline Upgrade</name>
-        <desc>Prepare an offline system OTA update. Place the AURKNIX update .tar file in /storage/roms/.update/ on a separate partition, then run this tool to configure the boot redirect.</desc>
+        <name>离线升级</name>
+        <desc>准备离线系统 OTA 更新。将 AURKNIX 更新包 .tar 放到独立分区的 /storage/roms/.update/ 后，运行本工具配置启动重定向。</desc>
         <developer>AURKNIX</developer>
         <publisher>AURKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2026</releasedate>
-        <genre>Tool</genre>
+        <genre>工具</genre>
         <players>1</players>
         <image>./images/install-rocknix.svg</image>
     </game>
     <game>
         <path>./MOD_TOOLS/FIX PortMaster Controller.sh</path>
-        <name>Fix PortMaster Controller</name>
-        <desc>Ensure PortMaster mapper scripts are executable so controller mappings and gamecontrollerdb generation work correctly.</desc>
+        <name>修复 PortMaster 手柄</name>
+        <desc>确保 PortMaster mapper 脚本具有可执行权限，以便手柄映射与 gamecontrollerdb 生成正常工作。</desc>
         <developer>AURKNIX</developer>
         <publisher>AURKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2025</releasedate>
-        <genre>Tool</genre>
+        <genre>工具</genre>
         <players>1</players>
         <image>./images/portmaster.svg</image>
     </game>
     <game>
         <path>./MOD_TOOLS/Generate SDL GameControllerDB.sh</path>
-        <name>Generate SDL GameControllerDB</name>
-        <desc>Regenerate the SDL game controller database from connected gamepads for use with emulators and PortMaster.</desc>
+        <name>生成 SDL 手柄数据库</name>
+        <desc>根据当前连接的手柄重新生成 SDL 游戏控制器数据库，供模拟器与 PortMaster 使用。</desc>
         <developer>AURKNIX</developer>
         <publisher>AURKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2025</releasedate>
-        <genre>Tool</genre>
+        <genre>工具</genre>
         <players>1</players>
         <image>./images/calibrate-gamepad.svg</image>
     </game>
     <game>
         <path>./MOD_TOOLS/Bezels Installer.sh</path>
-        <name>Bezels Installer</name>
-        <desc>Download and install bezels for supported screen resolutions into /storage/roms/bezels.</desc>
+        <name>边框安装器</name>
+        <desc>下载并安装支持的分辨率边框到 /storage/roms/bezels。</desc>
         <developer>AURKNIX</developer>
         <publisher>AURKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2025</releasedate>
-        <genre>Tool</genre>
+        <genre>工具</genre>
         <players>1</players>
         <image>./images/file-manager.svg</image>
     </game>
     <game>
         <path>./MOD_TOOLS/Reset Drastic Cfg.sh</path>
-        <name>Reset Drastic Cfg</name>
-        <desc>Reset the Drastic Nintendo DS emulator configuration and remap controls from the current gamepad.</desc>
+        <name>重置 Drastic 配置</name>
+        <desc>重置 Drastic 任天堂 DS 模拟器配置，并按当前手柄重新映射按键。</desc>
         <developer>AURKNIX</developer>
         <publisher>AURKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2025</releasedate>
-        <genre>Tool</genre>
+        <genre>工具</genre>
         <players>1</players>
         <image>./images/test-gamepad.svg</image>
     </game>
     <game>
         <path>./MOD_TOOLS/Reset YabaSanshiro Input.sh</path>
-        <name>Reset YabaSanshiro Input</name>
-        <desc>Run the YabaSanshiro Saturn emulator input setup to remap controls for the connected gamepad.</desc>
+        <name>重置 YabaSanshiro 按键</name>
+        <desc>运行 YabaSanshiro 土星模拟器按键设置，为当前手柄重新映射控制。</desc>
         <developer>AURKNIX</developer>
         <publisher>AURKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2025</releasedate>
-        <genre>Tool</genre>
+        <genre>工具</genre>
         <players>1</players>
         <image>./images/test-gamepad.svg</image>
     </game>
     <game>
         <path>./MOD_TOOLS/FixShutdown.sh</path>
-        <name>Fix Shutdown</name>
-        <desc>Apply shutdown fixes for RK3566 devices where power-off does not complete correctly.</desc>
+        <name>修复关机</name>
+        <desc>为 RK3566 设备应用关机修复，解决无法正常关机的问题。</desc>
         <developer>AURKNIX</developer>
         <publisher>AURKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2026</releasedate>
-        <genre>Tool</genre>
+        <genre>工具</genre>
         <players>1</players>
         <image>./images/file-manager.svg</image>
     </game>
     <game>
         <path>./MOD_TOOLS/Install AURKNIX to EMMC.sh</path>
-        <name>Install AURKNIX to EMMC</name>
-        <desc>Clone the running AURKNIX system from the SD card to internal eMMC storage. This will repartition and wipe the eMMC.</desc>
+        <name>安装 AURKNIX 到 eMMC</name>
+        <desc>将当前运行的 AURKNIX 系统从 SD 卡克隆到机内 eMMC。将重新分区并清空 eMMC。</desc>
         <developer>AURKNIX</developer>
         <publisher>AURKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2025</releasedate>
-        <genre>Tool</genre>
+        <genre>工具</genre>
         <players>1</players>
         <image>./images/install-rocknix.svg</image>
     </game>
     <game>
         <path>./MOD_TOOLS/Backup EMMC.sh</path>
-        <name>Backup EMMC</name>
-        <desc>Back up the internal eMMC AURKNIX partitions to image files on removable storage.</desc>
+        <name>备份 eMMC</name>
+        <desc>将机内 eMMC 上的 AURKNIX 分区备份为镜像文件，保存到可移动存储。</desc>
         <developer>AURKNIX</developer>
         <publisher>AURKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2025</releasedate>
-        <genre>Tool</genre>
+        <genre>工具</genre>
         <players>1</players>
         <image>./images/rclone-backup.svg</image>
     </game>
     <game>
         <path>./MOD_TOOLS/Restore EMMC.sh</path>
-        <name>Restore EMMC</name>
-        <desc>Restore internal eMMC AURKNIX partitions from backup images on removable storage.</desc>
+        <name>恢复 eMMC</name>
+        <desc>从可移动存储上的备份镜像恢复机内 eMMC 的 AURKNIX 分区。</desc>
         <developer>AURKNIX</developer>
         <publisher>AURKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2025</releasedate>
-        <genre>Tool</genre>
+        <genre>工具</genre>
         <players>1</players>
         <image>./images/rclone-restore.svg</image>
     </game>
     <game>
         <path>./MOD_TOOLS/Toggle Power Button.sh</path>
-        <name>Toggle Power Button</name>
-        <desc>Toggle whether the power button triggers suspend or shutdown via systemd logind settings.</desc>
+        <name>切换电源键</name>
+        <desc>通过 systemd logind 设置，切换电源键触发休眠或关机。</desc>
         <developer>AURKNIX</developer>
         <publisher>AURKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2025</releasedate>
-        <genre>Tool</genre>
+        <genre>工具</genre>
         <players>1</players>
         <image>./images/remove-mac-files.svg</image>
     </game>
     <game>
         <path>./MOD_TOOLS/Start Baidu Sync.sh</path>
-        <name>Start Baidu Sync</name>
-        <desc>Launch the Baidu Netdisk sync client in Commander for managing cloud storage on your device.</desc>
+        <name>启动百度同步</name>
+        <desc>在 Commander 中启动百度网盘同步客户端，管理设备上的云存储。</desc>
         <developer>AURKNIX</developer>
         <publisher>AURKNIX</publisher>
         <rating>5.0</rating>
         <releasedate>2025</releasedate>
-        <genre>Tool</genre>
+        <genre>工具</genre>
         <players>1</players>
         <image>./images/rclone-backup.svg</image>
     </game>

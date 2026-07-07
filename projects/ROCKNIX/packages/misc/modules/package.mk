@@ -39,6 +39,22 @@ makeinstall_target() {
 }
 
 post_makeinstall_target() {
+  remove_gamelist_game() {
+    python3 -c "
+import re, sys
+path = sys.argv[1]
+with open(sys.argv[2]) as f:
+    xml = f.read()
+xml = re.sub(
+    r'\s*<game>\s*<path>\./' + re.escape(path) + r'</path>.*?</game>',
+    '',
+    xml,
+    flags=re.DOTALL,
+)
+open(sys.argv[2], 'w').write(xml)
+" "${1}" "${INSTALL}/usr/config/modules/gamelist.xml"
+  }
+
   case ${ARCH} in
     x86_64)
       rm -f ${INSTALL}/usr/config/modules/*Master*
@@ -64,5 +80,20 @@ post_makeinstall_target() {
   else
     rm -rf ${INSTALL}/usr/config/modules/commander.sh
   fi
+
+  # MOD_TOOLS scripts are installed by emulators; drop gamelist entries when absent.
+  if [ "${DEVICE}" = "S905" ]; then
+    remove_gamelist_game "MOD_TOOLS/Install AURKNIX to EMMC.sh"
+    remove_gamelist_game "MOD_TOOLS/Backup EMMC.sh"
+    remove_gamelist_game "MOD_TOOLS/Restore EMMC.sh"
+  fi
+
+  case ${DEVICE} in
+    RK3566|RK356X)
+      ;;
+    *)
+      remove_gamelist_game "MOD_TOOLS/FixShutdown.sh"
+      ;;
+  esac
 }
 

@@ -2,7 +2,7 @@
 
 This manual is for users of [**distribution_rocknix**](https://github.com/AveyondFly/distribution_rocknix) ([**Issues**](https://github.com/AveyondFly/distribution_rocknix/issues), [**Pull requests**](https://github.com/AveyondFly/distribution_rocknix/pulls) are handled there). It explains how this fork differs from upstream **ROCKNIX**: **additional emulators**, **extra supported devices**, **standalone emulator tweaks**, and the **optional first-boot storage layout that reserves space for a later exFAT “GAMES” partition**.
 
-General ROCKNIX usage (Wi‑Fi, Bluetooth, updates, RetroArch, EmulationStation, etc.) is still documented by the upstream project and community; this document only covers **fork-specific** topics.**Before flashing**, check the device list in **§3** and obtain the latest build from the sources listed in **§1** (GitHub Releases or mirror via WeChat).
+General ROCKNIX usage (Wi‑Fi, Bluetooth, RetroArch, EmulationStation, etc.) is still documented by the upstream project and community; **fork OTA / offline upgrades** are in **§10**. Other fork-specific topics follow below.**Before flashing**, check the device list in **§3** and obtain the latest build from the sources listed in **§1** (GitHub Releases or mirror via WeChat).
 
 A **Chinese edition** with the same structure is **`USER_MANUAL_cn.md`**.
 
@@ -209,7 +209,7 @@ Launches **`commander-baidupcs`** rooted at **`/storage/.config/commander-baidup
 
 Cycles **`systemd-logind`** `HandlePowerKey` between **`suspend`** and **`poweroff`** inside **`/storage/.config/logind.conf.d/logind.conf`**.
 
-Other MOD entries (bezels unzip, SDL DB generator…) remain—read prompts before approving.
+Other MOD entries (bezels unzip, SDL DB generator, **Offline Upgrade** for OTA prep, …) remain—read prompts before approving. Full offline steps: **§10**.
 
 ---
 
@@ -222,7 +222,43 @@ Other MOD entries (bezels unzip, SDL DB generator…) remain—read prompts befo
 
 ---
 
-## 10. Document map
+## 10. System OTA updates (including offline)
+
+This fork ships **`AURKNIX-<device>.<arch>-<date>.tar`** packages via GitHub Releases.
+
+- **Online:** enable updates in system settings; **`rocknix-update`** downloads from GitHub (EmulationStation flow or `rocknix-update update` in a shell).
+- **Low `/storage` space:** when ~2 GiB free space is unavailable on **`/storage`**, the downloader stores files under **`/storage/roms/.update/`** instead (requires **roms on a separate partition**, e.g. external microSD) and writes the block device path to **`/storage/.update/redirect_part`** so init can mount that partition on the next boot.
+
+For **offline** upgrades (no reliable GitHub access, or you prefer downloading on a PC):
+
+### 10.1 When to use offline mode
+
+- No stable network to GitHub;
+- You already fetched a matching OTA from [**distribution-nightly Releases**](https://github.com/AveyondFly/distribution-nightly/releases) or the **「k源机」** mirror;
+- **`/storage` is tight** and you want the large `.tar` on the **games partition** backing **`/storage/roms`**.
+
+### 10.2 Prepare files
+
+1. Copy the OTA **`.tar`** to **`/storage/roms/.update/`** on the device (create the folder if needed).  
+   Example name: **`AURKNIX-RK3326.aarch64-20260601.tar`** — must match your SoC/arch/build.
+2. **Recommended:** place the companion **`*.sha256`** file next to it; the tool verifies before writing the redirect marker.
+3. Ensure **`/storage/roms`** is mounted and **`df /storage/roms`** reports a **different** block device than **`/storage`**. If both live on the same partition, put the package in **`/storage/.update/`** instead and skip the offline redirect tool.
+
+### 10.3 Run **`Offline Upgrade`**
+
+1. In EmulationStation open **MOD_TOOLS → Offline Upgrade** (`MOD_TOOLS/Offline Upgrade.sh`).
+2. A fullscreen hint image is shown while the script automatically finds **`/storage/roms/.update/*.tar`**, optionally checks SHA256, and writes **`/storage/.update/redirect_part`** with the roms partition device (e.g. **`/dev/mmcblk1p1`**).
+3. Success/failure screens are shown via mpv; errors (missing tar, bad checksum, roms not on a separate disk) are printed to the console/log.
+
+### 10.4 Apply the update
+
+**Reboot.** Early boot reads **`redirect_part`**, mounts that partition, and applies the payload from **`roms/.update/`** (same path as the online “redirect to roms” flow). Temporary files are removed after a successful update.
+
+**Caution:** packages must match your **device and architecture**; a wrong tar can brick boot. Back up **`/storage`** first. A lone **`*.tar`** in **`/storage/.update/`** without **`redirect_part`** follows the normal on-storage upgrade path.
+
+---
+
+## 11. Document map
 
 | Item | Notes |
 |------|-------|

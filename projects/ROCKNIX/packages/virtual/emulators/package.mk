@@ -1545,4 +1545,7 @@ makeinstall_target() {
   fi
   install_script "MOD_TOOLS/Toggle Power Button.sh"
   install_script "MOD_TOOLS/Start Baidu Sync.sh"
+  install_script "MOD_TOOLS/Offline Upgrade.sh"
+  mkdir -p ${INSTALL}/usr/share/misc/offline-update
+  cp ${PKG_DIR}/sources/MOD_TOOLS/offline-update/*.png ${INSTALL}/usr/share/misc/offline-update/
 }

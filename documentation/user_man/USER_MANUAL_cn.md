@@ -4,7 +4,7 @@
 
 本手册面向[**distribution_rocknix**](https://github.com/AveyondFly/distribution_rocknix) 用户撰写（[**Issues**](https://github.com/AveyondFly/distribution_rocknix/issues)、[**Pull requests**](https://github.com/AveyondFly/distribution_rocknix/pulls) 均在该仓库办理），说明其与 **ROCKNIX 主线**的主要差异：**额外模拟器**、**额外机型支持**、**独立模拟器增强说明**，以及**首次启动时对存储分区的可调布局（为 exFAT 游戏分区留出空间）**。
 
-更通用的 ROCKNIX 使用方式（Wi‑Fi、蓝牙、更新、RetroArch、EmulationStation 等）仍以官方文档与社区为准；本文只补充本改版特有的内容。**刷写镜像请先对照 §3 机型表，并从 §1 所列地址获取最新构建（GitHub 或微信公众号分流）。**
+更通用的 ROCKNIX 使用方式（Wi‑Fi、蓝牙、RetroArch、EmulationStation 等）仍以官方文档与社区为准；**本改版 OTA／离线升级**见 **§10**，其余特有内容见下文。**刷写镜像请先对照 §3 机型表，并从 §1 所列地址获取最新构建（GitHub 或微信公众号分流）。**
 
 ---
 
@@ -243,7 +243,7 @@ RK3326 等平台上**山寨／克隆机型批次多**，即便名称与 §3 列�
 - **作用**：在 **`/storage/.config/logind.conf.d/logind.conf`** 中切换 **`systemd-logind`** 项 **`HandlePowerKey`**：**`suspend`（休眠）** 与 **`poweroff`（关机）**，运行一次即从当前策略切到另一种；界面会简要提示当前将切换到的含义。
 - **注意**：仅在采用该 drop-in 配置的 ROCKNIX 环境下生效；部分机型休眠／唤醒表现因内核与 ACPI 而异，请以实机为准。
 
-镜像中 **`MOD_TOOLS`** 下还可能包含 **Bezels 安装**、**SDL GameControllerDB 生成** 等脚本，使用前同样建议先了解是否会覆盖现有配置。
+镜像中 **`MOD_TOOLS`** 下还可能包含 **Bezels 安装**、**SDL GameControllerDB 生成**、**Offline Upgrade（离线 OTA 准备）** 等脚本，使用前同样建议先了解是否会覆盖现有配置。离线升级完整步骤见 **§10**。
 
 ---
 
@@ -256,7 +256,43 @@ RK3326 等平台上**山寨／克隆机型批次多**，即便名称与 §3 列�
 
 ---
 
-## 10. 文档与仓库索引
+## 10. 系统 OTA 升级（含离线方式）
+
+本改版支持通过 GitHub Releases 拉取 **`AURKNIX-<机型>.<架构>-<日期>.tar`** 进行 OTA。常见方式：
+
+- **在线升级**：在系统设置中启用更新后，由 **`rocknix-update`** 从 GitHub 下载；联网正常时可在 EmulationStation 更新流程或终端执行 `rocknix-update update`。
+- **空间不足时的自动回退**：若 **`/storage`** 剩余空间不足（约需 2 GiB），在线下载会自动改存 **`/storage/roms/.update/`**（要求 **roms 落在外置 SD 等独立分区**），并在 **`/storage/.update/redirect_part`** 写入该分区设备名，供下次启动时 init 挂载并应用更新。
+
+若 **无法联网**（或习惯在电脑上下载），可使用 **离线升级**：
+
+### 10.1 适用场景
+
+- 设备不能稳定访问 GitHub；
+- 已在 PC 上从 [**distribution-nightly Releases**](https://github.com/AveyondFly/distribution-nightly/releases) 或 **「k源机」** 分流渠道下载好与本机 **SoC／架构／日期** 匹配的 OTA 包；
+- **`/storage` 空间紧张**，希望把大包放在 **外置游戏分区**（`/storage/roms` 所在独立分区）。
+
+### 10.2 准备文件
+
+1. 将 OTA 包复制到设备上的 **`/storage/roms/.update/`**（目录不存在时可自行创建）。  
+   文件名形如 **`AURKNIX-RK3326.aarch64-20260601.tar`**（以你机型与发布页为准）。
+2. **建议**同时放入同名的 **`*.sha256`** 校验文件（与在线升级相同）；脚本会在写入重定向前自动校验。
+3. 确认 **`/storage/roms`** 已挂载，且 **`df /storage/roms`** 显示的块设备与 **`/storage`** **不是同一分区**（例如外置 SD 为 `mmcblk1p1`）。若 roms 与 storage 同盘，请改将包放到 **`/storage/.update/`**，无需离线重定向脚本。
+
+### 10.3 运行 `Offline Upgrade.sh`
+
+1. 在 EmulationStation 中进入 **MOD_TOOLS**，运行 **`Offline Upgrade`**（源码：`MOD_TOOLS/Offline Upgrade.sh`）。
+2. 脚本会全屏显示操作提示图，并自动：检查 **`/storage/roms/.update/*.tar`**、可选校验 **SHA256**、在 **`/storage/.update/redirect_part`** 写入 roms 分区设备路径（如 **`/dev/mmcblk1p1`**）。
+3. 成功时显示成功提示图；失败时显示失败图并在日志中说明原因（无 tar、校验失败、roms 非独立分区等）。
+
+### 10.4 应用更新
+
+**重启设备**。启动阶段 init 会读取 **`redirect_part`**，挂载对应分区并从其上的 **`roms/.update/`** 解压并刷写 **SYSTEM／KERNEL**（与在线下载到 roms 分区的行为一致）。更新完成后相关临时文件会被清理。
+
+**注意：** 离线包必须与当前已安装系统 **机型与架构兼容**；错误刷写可能导致无法启动。刷写前请备份 **`/storage`** 与重要 ROM。仅将 **`*.tar`** 放在 **`/storage/.update/`** 且 **无** `redirect_part` 时，按常规 ROCKNIX 路径升级（占用 `/storage` 空间）。
+
+---
+
+## 11. 文档与仓库索引
 
 | 文档／入口 | 内容 |
 |------------|------|

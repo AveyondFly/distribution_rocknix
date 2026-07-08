@@ -92,8 +92,8 @@ Map each controller button to the keyboard key that represents the desired MRP k
 | Keyboard output | MRP result |
 | --- | --- |
 | `0`-`9` | Phone keypad `0`-`9` |
-| `shift+8` | `*` |
-| `shift+3` | `#` |
+| `s`, also compatible with `shift+8` | `*` |
+| `d`, also compatible with `shift+3` | `#` |
 | `f1` | Left soft key |
 | `f2` or `backspace` | Right soft key/back |
 | `f3` | Send |
@@ -101,11 +101,14 @@ Map each controller button to the keyboard key that represents the desired MRP k
 | `enter` or `space` | Select/confirm |
 | `pageup` | Volume up |
 | `pagedown` | Volume down |
+| `m` | Toggle the SDL OSD menu |
 
 After changing `mrp.gptk`, restart the frontend/emulator session so the new mapping is loaded.
 
 ## Notes
 
 - The normal DPad and analog directions intentionally use phone keypad `2/4/6/8`, because many MRP games use numeric keypad directions directly.
+- The OSD menu supports host-side rotation and a `2468 -> DPad` mode. Use Up/Down to select a row, Left/Right to change it, and `m`/Enter/Escape to close.
+- When `2468 -> DPad` is enabled, keyboard `2/4/6/8` are converted to `MR_KEY_UP/LEFT/RIGHT/DOWN`.
 - A/B are mapped to `5/0`; X/Y provide direct `* / #` input.
 - The previous A/B functions (`enter/backspace`) are kept on Hotkey + L2/R2.

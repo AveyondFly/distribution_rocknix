@@ -15,6 +15,7 @@ ASSET_DIR="/usr/share/misc/offline-update"
 UPDATE_MARKER_DIR="/storage/.update"
 UPDATE_ROMS_DIR="/storage/roms/.update"
 REDIRECT_FILE="${UPDATE_MARKER_DIR}/redirect_part"
+DISTRO_PREFIX="AURKNIX"
 
 show_image() {
   local img="${1}"
@@ -41,10 +42,23 @@ block_device_for_path() {
 }
 
 find_update_tar() {
-  local tar
+  local tar pkg_prefix
 
-  tar=$(ls -1 "${UPDATE_ROMS_DIR}"/*.tar 2>/dev/null | head -n 1)
-  [ -n "${tar}" ] || return 1
+  if [ -z "${HW_DEVICE}" ] || [ -z "${HW_ARCH}" ]; then
+    echo "Error: HW_DEVICE or HW_ARCH not set (source /etc/profile)." >&2
+    return 1
+  fi
+
+  pkg_prefix="${DISTRO_PREFIX}-${HW_DEVICE}.${HW_ARCH}-"
+  tar=$(ls -1 "${UPDATE_ROMS_DIR}/${pkg_prefix}"*.tar 2>/dev/null | sort -r | head -n 1)
+
+  if [ -z "${tar}" ]; then
+    echo "Error: no OTA package matching ${pkg_prefix}*.tar in ${UPDATE_ROMS_DIR}" >&2
+    echo "Available packages:" >&2
+    ls -1 "${UPDATE_ROMS_DIR}"/*.tar 2>/dev/null | sed 's/^/  /' >&2 || true
+    return 1
+  fi
+
   printf '%s\n' "${tar}"
 }
 
@@ -106,7 +120,6 @@ echo "=== AURKNIX Offline Upgrade ==="
 show_image "preparing-upgrade.png"
 
 update_tar=$(find_update_tar) || {
-  echo "Error: no OTA .tar found in ${UPDATE_ROMS_DIR}"
   show_failure
   exit 1
 }

@@ -846,6 +846,29 @@ resolve_update_redirect() {
   return 0
 }
 
+# Match OTA package AURKNIX-{HW_DEVICE}.{HW_ARCH}-{DATE}.tar (same as rocknix-update).
+load_hw_identity() {
+  if [ -f /sysroot/etc/os-release ]; then
+    . /sysroot/etc/os-release
+  fi
+}
+
+find_device_update_tar() {
+  local update_dir="${1}"
+  local tar pkg_prefix
+
+  load_hw_identity
+
+  if [ -z "${HW_DEVICE}" ] || [ -z "${HW_ARCH}" ]; then
+    return 1
+  fi
+
+  pkg_prefix="@DISTRONAME@-${HW_DEVICE}.${HW_ARCH}-"
+  tar=$(ls -1 "${update_dir}/${pkg_prefix}"*.tar 2>/dev/null | sort -r | head -n 1)
+  [ -n "${tar}" ] || return 1
+  printf '%s\n' "${tar}"
+}
+
 do_cleanup() {
   StartProgress spinner "Cleaning up... "
 
@@ -901,7 +924,7 @@ check_update() {
   progress "Checking for updates"
   resolve_update_redirect
 
-  UPDATE_TAR=$(ls -1 "${UPDATE_DIR}"/*.tar 2>/dev/null | head -n 1)
+  UPDATE_TAR=$(find_device_update_tar "${UPDATE_DIR}")
   UPDATE_IMG_GZ=$(ls -1 "${UPDATE_DIR}"/*.img.gz 2>/dev/null | head -n 1)
   UPDATE_IMG=$(ls -1 "${UPDATE_DIR}"/*.img 2>/dev/null | head -n 1)
 

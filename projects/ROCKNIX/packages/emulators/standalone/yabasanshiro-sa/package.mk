@@ -34,6 +34,8 @@ post_unpack() {
   sed -i "s|COMMAND m68kmake|COMMAND ${PKG_BUILD}/m68kmake_host|" ${PKG_BUILD}/yabause/src/musashi/CMakeLists.txt
   sed -i "s|COMMAND ./bin2c|COMMAND ${PKG_BUILD}/bin2c_host|" ${PKG_BUILD}/yabause/src/retro_arena/nanogui-sdl/CMakeLists.txt
   find ${PKG_BUILD} -type f -name "CMakeLists.txt" -exec sed -i 's/^\s*cmake_minimum_required.*$/cmake_minimum_required(VERSION 3.5)/' {} +
+  # convert CRLF to LF for vidogl.c (source file has Windows line endings)
+  sed -i 's/\r$//' ${PKG_BUILD}/yabause/src/vidogl.c
 }
 
 pre_make_target() {

@@ -1,0 +1,44 @@
+diff --git a/yabause/src/vidogl.c b/yabause/src/vidogl.c
+--- a/yabause/src/vidogl.c
++++ b/yabause/src/vidogl.c
+@@ -4379,32 +4379,32 @@
+         if (_Ygl->rotate_screen) {
+           if (_Ygl->isFullScreen) {
+             if (  (GlHeight * hrate) > GlWidth) {
+-              _Ygl->originy = (GlHeight - GlWidth  * wrate);
+-              GlHeight = _Ygl->screen_width * wrate;
++              GlHeight = GlWidth * wrate;
++              _Ygl->originy = (_Ygl->screen_height - GlHeight) / 2.0f;
+             }
+             else {
+-              _Ygl->originx = (GlWidth - GlHeight * hrate) / 2.0f;
+               GlWidth = GlHeight * hrate;
++              _Ygl->originx = (_Ygl->screen_width - GlWidth) / 2.0f;
+             }
+           }
+           else {
+-            _Ygl->originx = (GlWidth - GlHeight * hrate) / 2.0f;
+             GlWidth = GlHeight * hrate;
++            _Ygl->originx = (_Ygl->screen_width - GlWidth) / 2.0f;
+           }
+         }
+         else {
+           if (_Ygl->isFullScreen) {
+             if (  (GlHeight * wrate) > GlWidth) {
+-              _Ygl->originy = (GlHeight - GlWidth  * hrate);
+-              GlHeight = _Ygl->screen_width * hrate;
++              GlHeight = GlWidth * hrate;
++              _Ygl->originy = (_Ygl->screen_height - GlHeight) / 2.0f;
+             }
+             else {
+-              _Ygl->originx = (GlWidth - GlHeight * wrate) / 2.0f;
+               GlWidth = GlHeight * wrate;
++              _Ygl->originx = (_Ygl->screen_width - GlWidth) / 2.0f;
+             }
+           }
+           else {
+-            _Ygl->originy = (GlHeight - GlWidth  * hrate) / 2.0f;
+             GlHeight = GlWidth * hrate;
++            _Ygl->originy = (_Ygl->screen_height - GlHeight) / 2.0f;
+           }
+         }

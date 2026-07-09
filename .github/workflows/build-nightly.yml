@@ -383,6 +383,8 @@ jobs:
            REMOTE_DIR="/aurknix/nightly/${{ env.DATE }}"
          fi
          BaiduPCS-Go mkdir "$REMOTE_DIR" || echo "Directory may already exist"
+         UPDATE_REMOTE_DIR="${REMOTE_DIR}/update"
+         BaiduPCS-Go mkdir "$UPDATE_REMOTE_DIR" || echo "Directory may already exist"
          chmod +x .github/scripts/prepare-s905-zh-cn-img.sh
          mapfile -t FILES < <(find . -type f -name "*.img.gz" | sort)
          for FILE in "${FILES[@]}"; do
@@ -393,6 +395,11 @@ jobs:
            fi
            echo "Uploading: ${UPLOAD_FILE}"
            BaiduPCS-Go upload --norapid "${UPLOAD_FILE}" "$REMOTE_DIR"
+         done
+         mapfile -t UPDATE_FILES < <(find . -type f \( -name "*.tar" -o -name "*.tar.sha256" \) | sort)
+         for FILE in "${UPDATE_FILES[@]}"; do
+           echo "Uploading: ${FILE}"
+           BaiduPCS-Go upload --norapid "${FILE}" "$UPDATE_REMOTE_DIR"
          done
 
   release-official:
@@ -477,8 +484,15 @@ jobs:
           BaiduPCS-Go mkdir "/aurknix/stable" 2>/dev/null || true
           REMOTE_DIR="/aurknix/stable/${{ env.DATE }}"
           BaiduPCS-Go mkdir "$REMOTE_DIR" || echo "Directory may already exist"
-          FILES=$(find . -type f -name "*.img.gz")
-          for FILE in $FILES; do
-            echo "Uploading: $FILE"
-            BaiduPCS-Go upload --norapid "$FILE" "$REMOTE_DIR"
+          UPDATE_REMOTE_DIR="${REMOTE_DIR}/update"
+          BaiduPCS-Go mkdir "$UPDATE_REMOTE_DIR" || echo "Directory may already exist"
+          mapfile -t FILES < <(find . -type f -name "*.img.gz" | sort)
+          for FILE in "${FILES[@]}"; do
+            echo "Uploading: ${FILE}"
+            BaiduPCS-Go upload --norapid "${FILE}" "$REMOTE_DIR"
+          done
+          mapfile -t UPDATE_FILES < <(find . -type f \( -name "*.tar" -o -name "*.tar.sha256" \) | sort)
+          for FILE in "${UPDATE_FILES[@]}"; do
+            echo "Uploading: ${FILE}"
+            BaiduPCS-Go upload --norapid "${FILE}" "$UPDATE_REMOTE_DIR"
           done

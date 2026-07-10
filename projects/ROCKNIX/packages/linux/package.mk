@@ -22,13 +22,7 @@ PKG_PATCH_DIRS="${LINUX} mainline ${DEVICE} default"
 [[ "${DEVICE}" == SM* || "${BUILD_ANDROID_BOOTIMG}" == "yes" ]] && PKG_DEPENDS_TARGET+=" mkbootimg:host"
 
 case ${DEVICE} in
-  RK3326S)
-    PKG_VERSION="1ba51b059f25533c5529b7f68186190b47d6a7b3"
-    PKG_URL="https://github.com/rockchip-linux/kernel/archive/${PKG_VERSION}.tar.gz"
-    PKG_GIT_CLONE_BRANCH="develop-6.6"
-    PKG_PATCH_DIRS="${LINUX} ${DEVICE} default"
-    ;;
-  RK356X)
+  RK3326S|RK356X)
     PKG_VERSION="0c1ad27d20bb8d84a41cd8ac913829a7bd934329"
     PKG_URL="https://github.com/bmdhacks/kernel_rk3562/archive/${PKG_VERSION}.tar.gz"
     PKG_GIT_CLONE_BRANCH="master"
@@ -229,7 +223,7 @@ make_host() {
 
 makeinstall_host() {
   # Vendor BSP headers must not replace the mainline sysroot UAPI used by glibc.
-  if [ "${DEVICE}" = "S905" -o "${DEVICE}" = "RK356X" ]; then
+  if [ "${DEVICE}" = "S905" -o "${DEVICE}" = "RK356X" -o "${DEVICE}" = "RK3326S" ]; then
     return 0
   fi
   make \

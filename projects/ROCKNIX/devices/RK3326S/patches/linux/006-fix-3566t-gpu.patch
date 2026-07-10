@@ -1,0 +1,78 @@
+diff --git a/drivers/gpu/arm/bifrost/platform/rk/mali_kbase_config_rk.c b/drivers/gpu/arm/bifrost/platform/rk/mali_kbase_config_rk.c
+--- a/drivers/gpu/arm/bifrost/platform/rk/mali_kbase_config_rk.c
++++ b/drivers/gpu/arm/bifrost/platform/rk/mali_kbase_config_rk.c
+@@ -33,6 +33,7 @@
+ #include <linux/thermal.h>
+ #include <soc/rockchip/rockchip_opp_select.h>
+ #include <soc/rockchip/rockchip_system_monitor.h>
++#include <soc/rockchip/rk3566t.h>
+ 
+ #include "mali_kbase_config_platform.h"
+ #include "mali_kbase_rk.h"
+@@ -617,8 +618,17 @@ static const struct of_device_id rockchip_mali_of_match[] = {
+ 
+ int kbase_platform_rk_init_opp_table(struct kbase_device *kbdev)
+ {
++	int ret;
++
+ 	rockchip_get_opp_data(rockchip_mali_of_match, &kbdev->opp_info);
+ 
+-	return rockchip_init_opp_table(kbdev->dev, &kbdev->opp_info,
+-				       "gpu_leakage", "mali");
++	ret = rockchip_init_opp_table(kbdev->dev, &kbdev->opp_info,
++				      "gpu_leakage", "mali");
++	if (ret)
++		return ret;
++
++	if (IS_ENABLED(CONFIG_ROCKCHIP_RK3566T))
++		rockchip_rk3566t_adjust_gpu_opps(kbdev->dev);
++
++	return 0;
+ }
+diff --git a/drivers/soc/rockchip/rk3566t.c b/drivers/soc/rockchip/rk3566t.c
+--- a/drivers/soc/rockchip/rk3566t.c
++++ b/drivers/soc/rockchip/rk3566t.c
+@@ -27,6 +27,12 @@ static int rk3566t_gpu_retries;
+ 
+ static int rk3566t_register_gpu_notifier(void);
+ 
++static bool rk3566t_is_gpu_node(struct device_node *np)
++{
++	return of_device_is_compatible(np, "arm,mali-bifrost") ||
++	       of_device_is_compatible(np, "rockchip,rk3568-mali");
++}
++
+ static void rk3566t_mark_detected(u8 performance)
+ {
+ 	soc_is_rk3566t = performance & 0x0f;
+@@ -156,7 +162,9 @@ static void rk3566t_gpu_work_fn(struct work_struct *work)
+ 	if (!dev) {
+ 		struct device_node *np;
+ 
+-		np = of_find_compatible_node(NULL, NULL, "rockchip,rk3568-mali");
++		np = of_find_compatible_node(NULL, NULL, "arm,mali-bifrost");
++		if (!np)
++			np = of_find_compatible_node(NULL, NULL, "rockchip,rk3568-mali");
+ 		if (np) {
+ 			dev = bus_find_device_by_of_node(&platform_bus_type, np);
+ 			of_node_put(np);
+@@ -180,8 +188,7 @@ static int rk3566t_gpu_bus_notifier(struct notifier_block *nb,
+ 	if (action != BUS_NOTIFY_BOUND_DRIVER)
+ 		return NOTIFY_OK;
+ 
+-	if (!dev->of_node ||
+-	    !of_device_is_compatible(dev->of_node, "rockchip,rk3568-mali"))
++	if (!dev->of_node || !rk3566t_is_gpu_node(dev->of_node))
+ 		return NOTIFY_OK;
+ 
+ 	if (gpu_opps_adjusted)
+@@ -195,8 +202,7 @@ static int rk3566t_gpu_bus_notifier(struct notifier_block *nb,
+ 
+ static int rk3566t_match_gpu(struct device *dev, const void *data)
+ {
+-	return dev->of_node &&
+-	       of_device_is_compatible(dev->of_node, "rockchip,rk3568-mali");
++	return dev->of_node && rk3566t_is_gpu_node(dev->of_node);
+ }
+ 
+ static void rk3566t_scan_gpu(void)

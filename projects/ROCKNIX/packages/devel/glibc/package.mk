@@ -13,10 +13,7 @@ PKG_LONGDESC="The Glibc package contains the main C library."
 PKG_BUILD_FLAGS="+bfd -gold"
 
 case "${DEVICE}" in
-  RK3326S)
-    OPT_ENABLE_KERNEL=6.6.0
-  ;;
-  RK356X)
+  RK3326S|RK356X)
     OPT_ENABLE_KERNEL=5.10.0
   ;;
   RK3588*)
@@ -33,7 +30,7 @@ case "${DEVICE}" in
   ;;
 esac
 
-if [ "${DEVICE}" = "S905" -o "${DEVICE}" = "RK356X" ]; then
+if [ "${DEVICE}" = "S905" -o "${DEVICE}" = "RK356X" -o "${DEVICE}" = "RK3326S" ]; then
   PKG_DEPENDS_TARGET="${PKG_DEPENDS_TARGET/linux:host/linux-uapi:host}"
 fi
 

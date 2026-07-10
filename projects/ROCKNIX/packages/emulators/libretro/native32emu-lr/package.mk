@@ -19,26 +19,21 @@
 ################################################################################
 
 PKG_NAME="native32emu-lr"
-PKG_VERSION="d6fb25ec330fcec36b74135bac36e19fbdc16338"
+PKG_VERSION="0.9"
+PKG_ARCH="aarch64"
 PKG_LICENSE="MPLv2.0"
-PKG_SITE="https://github.com/jiangxincode/Native32Emu"
-PKG_URL="${PKG_SITE}/archive/${PKG_VERSION}.tar.gz"
-PKG_DEPENDS_TARGET="toolchain cargo:host"
+PKG_SITE="https://github.com/AveyondFly/console_mod_res"
+PKG_URL="https://github.com/AveyondFly/console_mod_res/releases/download/v${PKG_VERSION}/native32emu_libretro.zip"
+PKG_DEPENDS_TARGET="toolchain"
 PKG_LONGDESC="Native32 Emulator"
-PKG_PATCH_DIRS+="${DEVICE}"
-
 PKG_TOOLCHAIN="manual"
 
-make_target() {
-  cd ${PKG_BUILD}
-  cargo build \
-    --target ${TARGET_NAME} \
-    --release \
-    --locked \
-    -p native32emu-libretro
+unpack() {
+  mkdir -p ${PKG_BUILD}
+  unzip -o ${SOURCES}/${PKG_NAME}/${PKG_SOURCE_NAME} -d ${PKG_BUILD}
 }
 
 makeinstall_target() {
   mkdir -p ${INSTALL}/usr/lib/libretro
-  cp ${CARGO_TARGET_DIR}/${TARGET_NAME}/release/libnative32emu.so ${INSTALL}/usr/lib/libretro/native32emu_libretro.so
+  cp -v ${PKG_BUILD}/native32emu_libretro.so ${INSTALL}/usr/lib/libretro/
 }

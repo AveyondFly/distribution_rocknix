@@ -1,0 +1,53 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+
+# GKD Pixel2 battery bar LEDs (:status + :status_1..4).
+# ES toggles led.color; battery_led_status.service owns runtime display.
+
+. /etc/profile.d/001-functions
+
+LED_ROOT=/sys/class/leds
+LED_STATUS=${LED_ROOT}/:status/brightness
+LED_BAR_1=${LED_ROOT}/:status_1/brightness
+LED_BAR_2=${LED_ROOT}/:status_2/brightness
+LED_BAR_3=${LED_ROOT}/:status_3/brightness
+LED_BAR_4=${LED_ROOT}/:status_4/brightness
+LED_ON=255
+LED_OFF=0
+
+all_leds_off() {
+  for led in "${LED_STATUS}" "${LED_BAR_1}" "${LED_BAR_2}" "${LED_BAR_3}" "${LED_BAR_4}"; do
+    echo ${LED_OFF} >"${led}" 2>/dev/null
+  done
+}
+
+restart_battery_leds() {
+  nohup systemctl restart batteryledstatus.service >/dev/null 2>&1 &
+}
+
+case ${1} in
+  default|on)
+    del_setting powerled.disabled
+    set_setting led.color on
+    restart_battery_leds
+    ;;
+  off)
+    set_setting powerled.disabled 1
+    set_setting led.color off
+    restart_battery_leds
+    ;;
+  poweroff)
+    all_leds_off
+    ;;
+  discharging|charging|brightness|"")
+    restart_battery_leds
+    ;;
+  list)
+    cat <<EOF
+default
+off
+on
+EOF
+    ;;
+esac

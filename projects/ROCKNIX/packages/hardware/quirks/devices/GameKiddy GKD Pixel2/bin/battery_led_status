@@ -1,0 +1,117 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+
+# GKD Pixel2 five-segment battery LEDs:
+#   :status     — charging or low-battery indicator
+#   :status_1..4 — level bars (1 = smallest, 4 = largest)
+#
+# Discharging: bars show capacity; largest bar turns off first as level drops.
+# At <=20% only :status stays on. Full charge lights all four bars.
+# ES powerled.disabled / led.color=off hides bars while discharging; :status
+# still lights during charge.
+
+. /etc/profile.d/001-functions
+
+LED_ROOT=/sys/class/leds
+LED_STATUS=${LED_ROOT}/:status
+LED_BARS="${LED_ROOT}/:status_1 ${LED_ROOT}/:status_2 ${LED_ROOT}/:status_3 ${LED_ROOT}/:status_4"
+LED_ON=255
+LED_OFF=0
+LOW_BATTERY=20
+
+led_trigger_none() {
+  for led in ${LED_STATUS} ${LED_BARS}; do
+    { echo none >"${led}/trigger"; } 2>/dev/null
+  done
+}
+
+set_brightness() {
+  echo "${2}" >"${1}/brightness" 2>/dev/null
+}
+
+all_leds_off() {
+  set_brightness "${LED_STATUS}" ${LED_OFF}
+  for led in ${LED_BARS}; do
+    set_brightness "${led}" ${LED_OFF}
+  done
+}
+
+led_display_disabled() {
+  ISDISABLED=$(get_setting powerled.disabled)
+  LED_COLOR=$(get_setting led.color)
+  [ "${ISDISABLED}" = "1" ] || [ "${LED_COLOR}" = "off" ]
+}
+
+bar_count_for_capacity() {
+  if (( $1 > 80 )); then
+    echo 4
+  elif (( $1 > 60 )); then
+    echo 3
+  elif (( $1 > 40 )); then
+    echo 2
+  elif (( $1 > ${LOW_BATTERY} )); then
+    echo 1
+  else
+    echo 0
+  fi
+}
+
+apply_bars() {
+  local count=$1
+  local idx=1
+
+  for led in ${LED_BARS}; do
+    if (( idx <= count )); then
+      set_brightness "${led}" ${LED_ON}
+    else
+      set_brightness "${led}" ${LED_OFF}
+    fi
+    idx=$(( idx + 1 ))
+  done
+}
+
+apply_battery_leds() {
+  local cap=$1
+  local stat=$2
+  local bars
+  local charging=false
+
+  [[ ${stat} != "Discharging" ]] && charging=true
+  bars=$(bar_count_for_capacity "${cap}")
+
+  if ${charging}; then
+    set_brightness "${LED_STATUS}" ${LED_ON}
+    if led_display_disabled; then
+      apply_bars 0
+    else
+      apply_bars "${bars}"
+    fi
+    return
+  fi
+
+  if led_display_disabled; then
+    all_leds_off
+    return
+  fi
+
+  if (( cap <= LOW_BATTERY )); then
+    set_brightness "${LED_STATUS}" ${LED_ON}
+    apply_bars 0
+    return
+  fi
+
+  set_brightness "${LED_STATUS}" ${LED_OFF}
+  apply_bars "${bars}"
+}
+
+led_trigger_none
+
+while true; do
+  CAP=$(cat /sys/class/power_supply/battery/capacity 2>/dev/null)
+  STAT=$(cat /sys/class/power_supply/battery/status 2>/dev/null)
+  CAP=${CAP:-0}
+
+  apply_battery_leds "${CAP}" "${STAT}"
+  sleep 15
+done

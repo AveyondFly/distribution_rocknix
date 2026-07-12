@@ -1,0 +1,382 @@
+diff -Naur a/sound/soc/codecs/rk817_codec.c b/sound/soc/codecs/rk817_codec.c
+--- a/sound/soc/codecs/rk817_codec.c	2026-06-15 07:50:16.000000000 +0800
++++ b/sound/soc/codecs/rk817_codec.c	2026-07-12 10:02:13.285533232 +0800
+@@ -95,6 +95,7 @@
+ 	bool resume_path;
+ 
+ 	bool out_l2spk_r2hp;
++	bool spk_path_warmed;
+ 	long int playback_path;
+ 	long int capture_path;
+ 
+@@ -132,6 +133,7 @@
+ 	bool resume_path;
+ 
+ 	bool out_l2spk_r2hp;
++	bool spk_path_warmed;
+ 	long int playback_path;
+ 	long int capture_path;
+ 
+@@ -836,6 +838,9 @@
+ 	return 0;
+ }
+ 
++int rk817_codec_set_playback_path(struct snd_soc_component *component,
++				  bool headphone);
++
+ static int rk817_playback_path_get(struct snd_kcontrol *kcontrol,
+ 				   struct snd_ctl_elem_value *ucontrol)
+ {
+@@ -872,6 +877,16 @@
+ 		return 0;
+ 	}
+ 
++	/*
++	 * These are the only two physical output choices used by handheld
++	 * boards.  Hand the transition to the DAPM mux so its supplies own
++	 * the Class-D and headphone registers.
++	 */
++	if (ucontrol->value.integer.value[0] == SPK_PATH ||
++	    ucontrol->value.integer.value[0] == HP_PATH)
++		return rk817_codec_set_playback_path(component,
++			ucontrol->value.integer.value[0] == HP_PATH);
++
+ 	ret = rk817_playback_path_config(component, rk817->playback_path,
+ 					 ucontrol->value.integer.value[0]);
+ 	if (!ret) 
+@@ -880,6 +895,49 @@
+ 	return ret;
+ }
+ 
++/*
++ * Select the DAPM-owned RK817 output after a machine-driver jack event.
++ * Playback Path remains a backwards-compatible ALSA control and calls this
++ * helper for its SPK/HP values, so manual amixer overrides work as well.
++ */
++int rk817_codec_set_playback_path(struct snd_soc_component *component,
++				  bool headphone)
++{
++	struct rk817_codec_priv *rk817 = snd_soc_component_get_drvdata(component);
++	struct snd_kcontrol *kcontrol;
++	struct snd_ctl_elem_value ucontrol = {};
++	long target_path = headphone ? HP_PATH : SPK_PATH;
++	int ret;
++
++	kcontrol = snd_soc_card_get_kcontrol(component->card, "Playback Mux");
++	if (!kcontrol)
++		return -ENODEV;
++
++	/*
++	 * Invoke the DAPM control callback rather than updating codec
++	 * registers directly.  Besides selecting the route this stores the
++	 * virtual mux state, allowing amixer to accurately report it.
++	 */
++	ucontrol.value.enumerated.item[0] = headphone ? 0 : 1;
++	rk817->playback_path = target_path;
++	ret = kcontrol->put(kcontrol, &ucontrol);
++	if (ret >= 0) {
++		unsigned int volume = headphone ? rk817->hp_volume :
++						   rk817->spk_volume;
++
++		/*
++		 * The legacy path programmed the board-specific gain whenever
++		 * it selected an output.  DAPM owns the power registers now,
++		 * but retains this non-power gain programming.
++		 */
++		snd_soc_component_write(component, RK817_CODEC_DDAC_VOLL, volume);
++		snd_soc_component_write(component, RK817_CODEC_DDAC_VOLR, volume);
++	}
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(rk817_codec_set_playback_path);
++
+ static int rk817_capture_path_config(struct snd_soc_component *component,
+ 				     long pre_path, long target_path)
+ {
+@@ -1333,6 +1391,28 @@
+ 		default:
+ 			break;
+ 		}
++
++		/*
++		 * On this RK817 board the Class-D output only reaches its
++		 * calibrated gain after an HP -> SPK transition while a PCM
++		 * stream is active.  The initial jack sync happens before any
++		 * stream exists, so perform that one-time DAPM transition on
++		 * the first playback unmute instead.
++		 */
++		if (!rk817->spk_path_warmed &&
++		    rk817->playback_path == SPK_PATH) {
++			int ret;
++
++			ret = rk817_codec_set_playback_path(component, true);
++			if (ret >= 0)
++				ret = rk817_codec_set_playback_path(component, false);
++			if (ret >= 0)
++				rk817->spk_path_warmed = true;
++			else
++				dev_warn(component->dev,
++					 "failed to warm RK817 speaker path: %d\n",
++					 ret);
++		}
+ 	}
+ 
+ 	return 0;
+@@ -1453,7 +1533,10 @@
+ 
+ static int rk817_suspend(struct snd_soc_component *component)
+ {
++	struct rk817_codec_priv *rk817 = snd_soc_component_get_drvdata(component);
++
+ 	/* Let ASoC/DAPM manage power; avoids resume I2C deadlocks */
++	rk817->spk_path_warmed = false;
+ 	snd_soc_component_force_bias_level(component, SND_SOC_BIAS_OFF);
+ 	snd_soc_component_disable_pin(component, "Playback");
+ 	snd_soc_component_disable_pin(component, "Capture");
+@@ -1534,16 +1617,157 @@
+ 
+ }
+ 
++/*
++ * SPKO and the left headphone path share analogue hardware in RK817.
++ * Keep the paths mutually exclusive so DAPM owns the Class-D/HP register
++ * sequence instead of relying on Playback Path register scripts.
++ */
++static const char * const rk817_dac_mux_text[] = {
++	"HP",
++	"SPK",
++};
++
++static SOC_ENUM_SINGLE_VIRT_DECL(rk817_dac_mux_enum, rk817_dac_mux_text);
++
++static const struct snd_kcontrol_new rk817_dac_mux =
++	SOC_DAPM_ENUM("Playback Mux", rk817_dac_mux_enum);
++
+ static const struct snd_soc_dapm_widget rk817_dapm_widgets[] = {
+ 	SND_SOC_DAPM_AIF_IN("AIF1 Playback", "HiFi Playback", 0,
+ 			    SND_SOC_NOPM, 0, 0),
++	/* Playback path shared supplies. */
++	SND_SOC_DAPM_SUPPLY("LDO Regulator", RK817_CODEC_AREF_RTCFG1,
++			    6, 0, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("IBIAS Block", RK817_CODEC_AREF_RTCFG1,
++			    2, 1, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("VAvg Buffer", RK817_CODEC_AREF_RTCFG1,
++			    1, 1, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("PLL Power", RK817_CODEC_APLL_CFG5,
++			    0, 1, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("I2S TX1 Transfer Start",
++			    RK817_CODEC_DI2S_RXCMD_TSD, 5, 0, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("DAC Clock", RK817_CODEC_DTOP_DIGEN_CLKE,
++			    3, 0, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("I2S RX Clock", RK817_CODEC_DTOP_DIGEN_CLKE,
++			    2, 0, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("DAC Channel Enable", RK817_CODEC_DTOP_DIGEN_CLKE,
++			    1, 0, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("I2S RX Channel Enable", RK817_CODEC_DTOP_DIGEN_CLKE,
++			    0, 0, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("DAC Bias", RK817_CODEC_ADAC_CFG1,
++			    3, 1, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("DAC Mute Off", RK817_CODEC_DDAC_MUTE_MIXCTL,
++			    0, 1, NULL, 0),
++
++	/* Class-D speaker path. */
++	SND_SOC_DAPM_SUPPLY("Class D Mode", RK817_CODEC_DDAC_MUTE_MIXCTL,
++			    4, 0, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("High Pass Filter", RK817_CODEC_DDAC_MUTE_MIXCTL,
++			    7, 0, NULL, 0),
++	SND_SOC_DAPM_DAC("SPK DAC", "HiFi Playback", RK817_CODEC_ADAC_CFG1,
++			 2, 1),
++	SND_SOC_DAPM_SUPPLY("Enable Class D", RK817_CODEC_ACLASSD_CFG1,
++			    7, 0, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("Disable Class D Mute Ramp", RK817_CODEC_ACLASSD_CFG1,
++			    6, 1, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("Class D Mute Rate 1", RK817_CODEC_ACLASSD_CFG1,
++			    3, 0, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("Class D Mute Rate 2", RK817_CODEC_ACLASSD_CFG1,
++			    2, 1, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("Class D OCPP 2", RK817_CODEC_ACLASSD_CFG2,
++			    5, 0, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("Class D OCPP 3", RK817_CODEC_ACLASSD_CFG2,
++			    4, 0, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("Class D OCPN 2", RK817_CODEC_ACLASSD_CFG2,
++			    1, 0, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("Class D OCPN 3", RK817_CODEC_ACLASSD_CFG2,
++			    0, 0, NULL, 0),
++
++	/* Headphone path. */
++	SND_SOC_DAPM_SUPPLY("Headphone Charge Pump", RK817_CODEC_AHP_CP,
++			    4, 0, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("Headphone CP Discharge LDO", RK817_CODEC_AHP_CP,
++			    3, 1, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("Headphone OStage", RK817_CODEC_AHP_CFG0,
++			    6, 1, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("Headphone Pre Amp", RK817_CODEC_AHP_CFG0,
++			    5, 1, NULL, 0),
++	SND_SOC_DAPM_DAC("DAC L", "HiFi Playback", RK817_CODEC_ADAC_CFG1,
++			 1, 1),
++	SND_SOC_DAPM_DAC("DAC R", "HiFi Playback", RK817_CODEC_ADAC_CFG1,
++			 0, 1),
++
++	SND_SOC_DAPM_MUX("Playback Mux", SND_SOC_NOPM, 1, 0, &rk817_dac_mux),
++	SND_SOC_DAPM_OUTPUT("SPKO"),
+ 	SND_SOC_DAPM_OUTPUT("HPOL"),
+ 	SND_SOC_DAPM_OUTPUT("HPOR"),
+ };
+ 
+ static const struct snd_soc_dapm_route rk817_dapm_routes[] = {
+-	{ "HPOL", NULL, "AIF1 Playback" },
+-	{ "HPOR", NULL, "AIF1 Playback" },
++	/* Class-D speaker path. */
++	{ "SPK DAC", NULL, "AIF1 Playback" },
++	{ "SPK DAC", NULL, "LDO Regulator" },
++	{ "SPK DAC", NULL, "IBIAS Block" },
++	{ "SPK DAC", NULL, "VAvg Buffer" },
++	{ "SPK DAC", NULL, "PLL Power" },
++	{ "SPK DAC", NULL, "I2S TX1 Transfer Start" },
++	{ "SPK DAC", NULL, "DAC Clock" },
++	{ "SPK DAC", NULL, "I2S RX Clock" },
++	{ "SPK DAC", NULL, "DAC Channel Enable" },
++	{ "SPK DAC", NULL, "I2S RX Channel Enable" },
++	{ "SPK DAC", NULL, "Class D Mode" },
++	{ "SPK DAC", NULL, "DAC Bias" },
++	{ "SPK DAC", NULL, "DAC Mute Off" },
++	{ "SPK DAC", NULL, "Enable Class D" },
++	{ "SPK DAC", NULL, "Disable Class D Mute Ramp" },
++	{ "SPK DAC", NULL, "Class D Mute Rate 1" },
++	{ "SPK DAC", NULL, "Class D Mute Rate 2" },
++	{ "SPK DAC", NULL, "Class D OCPP 2" },
++	{ "SPK DAC", NULL, "Class D OCPP 3" },
++	{ "SPK DAC", NULL, "Class D OCPN 2" },
++	{ "SPK DAC", NULL, "Class D OCPN 3" },
++	{ "SPK DAC", NULL, "High Pass Filter" },
++
++	/* Headphone path. */
++	{ "DAC L", NULL, "AIF1 Playback" },
++	{ "DAC L", NULL, "LDO Regulator" },
++	{ "DAC L", NULL, "IBIAS Block" },
++	{ "DAC L", NULL, "VAvg Buffer" },
++	{ "DAC L", NULL, "PLL Power" },
++	{ "DAC L", NULL, "I2S TX1 Transfer Start" },
++	{ "DAC L", NULL, "DAC Clock" },
++	{ "DAC L", NULL, "I2S RX Clock" },
++	{ "DAC L", NULL, "DAC Channel Enable" },
++	{ "DAC L", NULL, "I2S RX Channel Enable" },
++	{ "DAC L", NULL, "DAC Bias" },
++	{ "DAC L", NULL, "DAC Mute Off" },
++	{ "DAC L", NULL, "Headphone Charge Pump" },
++	{ "DAC L", NULL, "Headphone CP Discharge LDO" },
++	{ "DAC L", NULL, "Headphone OStage" },
++	{ "DAC L", NULL, "Headphone Pre Amp" },
++	{ "DAC R", NULL, "AIF1 Playback" },
++	{ "DAC R", NULL, "LDO Regulator" },
++	{ "DAC R", NULL, "IBIAS Block" },
++	{ "DAC R", NULL, "VAvg Buffer" },
++	{ "DAC R", NULL, "PLL Power" },
++	{ "DAC R", NULL, "I2S TX1 Transfer Start" },
++	{ "DAC R", NULL, "DAC Clock" },
++	{ "DAC R", NULL, "I2S RX Clock" },
++	{ "DAC R", NULL, "DAC Channel Enable" },
++	{ "DAC R", NULL, "I2S RX Channel Enable" },
++	{ "DAC R", NULL, "DAC Bias" },
++	{ "DAC R", NULL, "DAC Mute Off" },
++	{ "DAC R", NULL, "Headphone Charge Pump" },
++	{ "DAC R", NULL, "Headphone CP Discharge LDO" },
++	{ "DAC R", NULL, "Headphone OStage" },
++	{ "DAC R", NULL, "Headphone Pre Amp" },
++
++	{ "Playback Mux", "HP", "DAC L" },
++	{ "Playback Mux", "HP", "DAC R" },
++	{ "Playback Mux", "SPK", "SPK DAC" },
++	{ "SPKO", NULL, "Playback Mux" },
++	{ "HPOL", NULL, "Playback Mux" },
++	{ "HPOR", NULL, "Playback Mux" },
+ };
+ 
+ static const struct snd_soc_component_driver soc_codec_dev_rk817 = {
+diff -Naur a/sound/soc/rockchip/rockchip_multicodecs.c b/sound/soc/rockchip/rockchip_multicodecs.c
+--- a/sound/soc/rockchip/rockchip_multicodecs.c	2026-06-15 07:50:16.000000000 +0800
++++ b/sound/soc/rockchip/rockchip_multicodecs.c	2026-07-12 10:02:13.480749029 +0800
+@@ -43,6 +43,9 @@
+ #define DEFAULT_MCLK_FS	256
+ #define DAI_FMT_BASE	(SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF)
+ 
++int rk817_codec_set_playback_path(struct snd_soc_component *component,
++				  bool headphone);
++
+ struct adc_keys_button {
+ 	u32 voltage;
+ 	u32 keycode;
+@@ -65,9 +68,11 @@
+ 	struct gpio_desc *hp_det_gpio;
+ 	struct iio_channel *adc;
+ 	struct extcon_dev *extcon;
++	struct snd_soc_component *codec_component;
+ 	struct delayed_work handler;
+ 	unsigned int mclk_fs;
+ 	bool codec_hp_det;
++	bool auto_playback_path;
+ 	u32 num_keys;
+ 	u32 last_key;
+ 	u32 keyup_voltage;
+@@ -223,9 +228,19 @@
+ 						  struct multicodecs_data,
+ 						  handler);
+ 	struct snd_soc_jack *jack_headset = mc_data->jack_headset;
++	bool headphone = gpiod_get_value(mc_data->hp_det_gpio);
+ 	int adc, ret = 0;
+ 
+-	if (!gpiod_get_value(mc_data->hp_det_gpio)) {
++	if (mc_data->auto_playback_path && mc_data->codec_component) {
++		ret = rk817_codec_set_playback_path(mc_data->codec_component,
++						   headphone);
++		if (ret < 0)
++			dev_warn(mc_data->snd_card.dev,
++				 "failed to select %s output path: %d\n",
++				 headphone ? "headphone" : "speaker", ret);
++	}
++
++	if (!headphone) {
+ 		snd_soc_jack_report(jack_headset, 0, SND_JACK_HEADSET);
+ 		extcon_set_state_sync(mc_data->extcon,
+ 				EXTCON_JACK_HEADPHONE, false);
+@@ -437,6 +452,15 @@
+ 		}
+ 	}
+ 
++	if (mc_data->auto_playback_path) {
++		for_each_rtd_codec_dais(rtd, i, codec_dai) {
++			mc_data->codec_component = codec_dai->component;
++			break;
++		}
++		if (!mc_data->codec_component)
++			return -ENODEV;
++	}
++
+ 	if ((!mc_data->codec_hp_det) && (gpiod_to_irq(mc_data->hp_det_gpio) < 0)) {
+ 		dev_info(card->dev, "Don't need to map headset detect gpio to irq\n");
+ 		return 0;
+@@ -468,6 +492,14 @@
+ 
+ 	mc_data->jack_headset = jack_headset;
+ 
++	/*
++	 * No GPIO edge is generated if the headset is absent (or already
++	 * present) at boot. Synchronize the RK817 output with the initial
++	 * jack level after the jack, extcon, and codec component are ready.
++	 */
++	if (mc_data->auto_playback_path)
++		schedule_delayed_work(&mc_data->handler, msecs_to_jiffies(100));
++
+ 	if (mc_data->codec_hp_det) {
+ 		struct snd_soc_dai *codec_dai;
+ 		int i;
+@@ -855,6 +887,8 @@
+ 
+ 	mc_data->codec_hp_det =
+ 		of_property_read_bool(np, "rockchip,codec-hp-det");
++	mc_data->auto_playback_path =
++		of_property_read_bool(np, "rocknix,auto-playback-path");
+ 
+ 	mc_data->adc = devm_iio_channel_get(&pdev->dev, "adc-detect");
+ 

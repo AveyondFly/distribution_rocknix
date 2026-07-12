@@ -122,6 +122,33 @@ jobs:
             echo "No dtbselect-rk3326-windows artifact; building image without DtbselectWin64.exe on /flash"
           fi
 
+      - name: Get DtbselectWin64 (PyInstaller) for RK3326S /flash
+        if: inputs.DEVICE == 'RK3326S'
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: dtbselect-rk3326s-windows
+          path: /tmp/dtbw3326s-art
+
+      - name: Stage DtbselectWin64.exe (RK3326S prebuilt for package)
+        if: inputs.DEVICE == 'RK3326S'
+        run: |
+          set -e
+          PRE=projects/ROCKNIX/devices/RK3326S/packages/rk3326s-dtb-select/prebuilt
+          rm -rf "${PRE}"
+          mkdir -p "${PRE}"
+          if [ -f /tmp/dtbw3326s-art/dtbselect-rk3326s-windows-x64.zip ]; then
+            unzip -o /tmp/dtbw3326s-art/dtbselect-rk3326s-windows-x64.zip -d /tmp/dtbw3326s-ex
+            if [ -f /tmp/dtbw3326s-ex/DtbselectWin64.exe ]; then
+              cp -a /tmp/dtbw3326s-ex/DtbselectWin64.exe "${PRE}/DtbselectWin64.exe"
+              ls -la "${PRE}/DtbselectWin64.exe"
+            else
+              echo "Zip has no DtbselectWin64.exe; Windows build skipped in image"
+            fi
+          else
+            echo "No dtbselect-rk3326s-windows artifact; building image without DtbselectWin64.exe on /flash"
+          fi
+
       - name: Get DtbselectWin64 (PyInstaller) for RK3566 /flash
         if: inputs.DEVICE == 'RK3566'
         continue-on-error: true

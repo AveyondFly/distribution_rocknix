@@ -1,0 +1,749 @@
+From: ROCKNIX <rocknix@rocknix.org>
+Subject: [PATCH] Pixel2: USB OTG WiFi, charge switch, PMIC plug detect
+
+GKD Pixel2 (and compatible RK3326S boards) share one Type-C port for OTG
+WiFi and charging. Combined fix merging former 005, 017, and 022:
+
+* rk817: PMIC PLUG_IN_STS poll, CHRG_IN reset on replug, keep OTG VBUS at
+  boot, OTG plug-IRQ balance, charger plug clears host extcon (DTS:
+  rockchip,charger-use-pmic-plug)
+* phy: skip self-VBUS DCP false charge icon (DTS: rocknix,skip-host-charger-
+  detect), iddig host handoff, clear/release forced iddig for role switch
+* dwc2: U-Boot gadget to host handoff, enumeration retry fallback
+
+diff -Naur a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+--- a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c	2026-06-15 07:50:16.000000000 +0800
++++ b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c	2026-07-12 10:09:11.925170881 +0800
+@@ -283,6 +283,7 @@
+ 	bool		vbus_always_on;
+ 	bool		vbus_enabled;
+ 	bool		bypass_uart_en;
++	bool		skip_host_charger_detect;
+ 	bool		host_disconnect;
+ 	bool		dis_u2_susphy;
+ 	int		bvalid_irq;
+@@ -293,6 +294,7 @@
+ 	struct		delayed_work bypass_uart_work;
+ 	struct		delayed_work chg_work;
+ 	struct		delayed_work otg_sm_work;
++	struct		delayed_work release_iddig_work;
+ 	struct		delayed_work sm_work;
+ 	struct		regulator *vbus;
+ 	struct		typec_switch *sw;
+@@ -828,7 +830,10 @@
+ 				goto out;
+ 			}
+ 			schedule_delayed_work(&rport->otg_sm_work,
+-					      rport->typec_vbus_det ? 0 : OTG_SCHEDULE_DELAY);
++					      (rport->port_cfg->utmi_iddig.enable &&
++					       !property_enabled(rphy->grf,
++								 &rport->port_cfg->utmi_iddig)) ? 0 :
++					      (rport->typec_vbus_det ? 0 : OTG_SCHEDULE_DELAY));
+ 		}
+ 	} else if (rport->port_id == USB2PHY_PORT_HOST) {
+ 		if (rport->port_cfg->disfall_en.offset) {
+@@ -1206,6 +1211,94 @@
+ 	.attrs = usb2_phy_attrs,
+ };
+ 
++/*
++ * Check if we should be in USB host mode.
++ * When utmi_iddig is available, use the hardware/f forced GRF state.
++ * Do not treat stale EXTCON_USB_HOST as host when iddig says device.
++ */
++static bool rockchip_usb2phy_is_host_mode(struct rockchip_usb2phy *rphy,
++					  struct rockchip_usb2phy_port *rport)
++{
++	if (rport->port_cfg->utmi_iddig.enable) {
++		/* PHY reads the ID pin directly */
++		if (!property_enabled(rphy->grf, &rport->port_cfg->iddig_en))
++			return !property_enabled(rphy->grf,
++						 &rport->port_cfg->utmi_iddig);
++
++		/* GRF forces iddig for cold-boot host handoff */
++		return !property_enabled(rphy->grf,
++					 &rport->port_cfg->iddig_output);
++	}
++
++	if (extcon_get_state(rphy->edev, EXTCON_USB_HOST) > 0)
++		return true;
++
++	if (extcon_get_state(rphy->edev, EXTCON_USB_VBUS_EN) > 0)
++		return true;
++
++	return false;
++}
++
++static void rockchip_usb2phy_apply_host_iddig(struct rockchip_usb2phy *rphy,
++					      struct rockchip_usb2phy_port *rport)
++{
++	struct regmap *base = get_reg_base(rphy);
++
++	property_enable(base, &rport->port_cfg->iddig_output, false);
++	property_enable(base, &rport->port_cfg->iddig_en, true);
++}
++
++static void rockchip_usb2phy_clear_host_mode(struct rockchip_usb2phy *rphy,
++					     struct rockchip_usb2phy_port *rport)
++{
++	struct regmap *base = get_reg_base(rphy);
++
++	cancel_delayed_work_sync(&rport->release_iddig_work);
++	property_enable(base, &rport->port_cfg->iddig_en, false);
++	extcon_set_state(rphy->edev, EXTCON_USB_HOST, false);
++	if (rport->vbus)
++		extcon_set_state(rphy->edev, EXTCON_USB_VBUS_EN, false);
++	rockchip_set_vbus_power(rport, false);
++	rport->prev_iddig =
++		property_enabled(rphy->grf, &rport->port_cfg->utmi_iddig);
++}
++
++static void rockchip_usb2phy_release_iddig_work(struct work_struct *work)
++{
++	struct rockchip_usb2phy_port *rport =
++		container_of(work, struct rockchip_usb2phy_port,
++			     release_iddig_work.work);
++	struct rockchip_usb2phy *rphy = dev_get_drvdata(rport->phy->dev.parent);
++	struct regmap *base = get_reg_base(rphy);
++
++	if (!property_enabled(rphy->grf, &rport->port_cfg->iddig_en))
++		return;
++
++	property_enable(base, &rport->port_cfg->iddig_en, false);
++	dev_info(&rport->phy->dev,
++		 "released forced iddig, hardware ID detection active\n");
++	schedule_delayed_work(&rport->otg_sm_work, 0);
++}
++
++static void rockchip_usb2phy_sync_host_from_iddig(struct rockchip_usb2phy *rphy,
++						  struct rockchip_usb2phy_port *rport)
++{
++	if (extcon_get_state(rphy->edev, EXTCON_USB_HOST) > 0 ||
++	    extcon_get_state(rphy->edev, EXTCON_USB_VBUS_EN) > 0)
++		return;
++
++	if (!rport->port_cfg->utmi_iddig.enable ||
++	    property_enabled(rphy->grf, &rport->port_cfg->utmi_iddig))
++		return;
++
++	rockchip_usb2phy_apply_host_iddig(rphy, rport);
++	extcon_set_state(rphy->edev, EXTCON_USB_HOST, true);
++	if (rport->vbus)
++		extcon_set_state(rphy->edev, EXTCON_USB_VBUS_EN, true);
++	rockchip_set_vbus_power(rport, true);
++	rport->prev_iddig = false;
++}
++
+ static void rockchip_usb2phy_otg_sm_work(struct work_struct *work)
+ {
+ 	struct rockchip_usb2phy_port *rport =
+@@ -1245,12 +1338,14 @@
+ 		}
+ 		fallthrough;
+ 	case OTG_STATE_B_IDLE:
+-		if (extcon_get_state(rphy->edev, EXTCON_USB_HOST) > 0 ||
+-		    extcon_get_state(rphy->edev, EXTCON_USB_VBUS_EN) > 0) {
++		if (rockchip_usb2phy_is_host_mode(rphy, rport)) {
++			rockchip_usb2phy_sync_host_from_iddig(rphy, rport);
+ 			dev_dbg(&rport->phy->dev, "usb otg host connect\n");
+ 			rport->state = OTG_STATE_A_HOST;
+ 			rphy->chg_state = USB_CHG_STATE_UNDEFINED;
+ 			rphy->chg_type = POWER_SUPPLY_TYPE_UNKNOWN;
++			schedule_delayed_work(&rport->release_iddig_work,
++					      msecs_to_jiffies(5000));
+ 			mutex_unlock(&rport->mutex);
+ 			rockchip_usb2phy_power_on(rport->phy);
+ 			if (extcon_get_state(rphy->edev, cable)) {
+@@ -1314,13 +1409,14 @@
+ 	case OTG_STATE_B_PERIPHERAL:
+ 		sch_work = true;
+ 
+-		if (extcon_get_state(rphy->edev, EXTCON_USB_HOST) > 0 ||
+-		    extcon_get_state(rphy->edev,
+-					    EXTCON_USB_VBUS_EN) > 0) {
++		if (rockchip_usb2phy_is_host_mode(rphy, rport)) {
++			rockchip_usb2phy_sync_host_from_iddig(rphy, rport);
+ 			dev_dbg(&rport->phy->dev, "usb otg host connect\n");
+ 			rport->state = OTG_STATE_A_HOST;
+ 			rphy->chg_state = USB_CHG_STATE_UNDEFINED;
+ 			rphy->chg_type = POWER_SUPPLY_TYPE_UNKNOWN;
++			schedule_delayed_work(&rport->release_iddig_work,
++					      msecs_to_jiffies(5000));
+ 			rport->perip_connected = false;
+ 			sch_work = false;
+ 			wake_unlock(&rport->wakelock);
+@@ -1335,10 +1431,22 @@
+ 		}
+ 		break;
+ 	case OTG_STATE_A_HOST:
+-		if (extcon_get_state(rphy->edev, EXTCON_USB_HOST) == 0) {
++		if (!rockchip_usb2phy_is_host_mode(rphy, rport)) {
+ 			dev_dbg(&rport->phy->dev, "usb otg host disconnect\n");
++			rockchip_usb2phy_clear_host_mode(rphy, rport);
+ 			rport->state = OTG_STATE_B_IDLE;
+ 			sch_work = true;
++			delay = 0;
++		} else if (rport->skip_host_charger_detect) {
++			/*
++			 * This port is sourcing VBUS to an OTG adapter. Its own
++			 * VBUS-valid signal must not be reported as a DCP charger.
++			 */
++			if (cable != EXTCON_NONE)
++				extcon_set_state_sync(rphy->edev, cable, false);
++			cable = EXTCON_NONE;
++			mutex_unlock(&rport->mutex);
++			return;
+ 		} else {
+ 			mutex_unlock(&rport->mutex);
+ 			return;
+@@ -1778,7 +1886,7 @@
+ 	    !property_enabled(rphy->grf, &rport->port_cfg->idrise_det_st))
+ 		return IRQ_NONE;
+ 
+-	dev_dbg(&rport->phy->dev, "id interrupt\n");
++	dev_info(&rport->phy->dev, "id interrupt\n");
+ 
+ 	mutex_lock(&rport->mutex);
+ 
+@@ -1797,18 +1905,25 @@
+ 		property_enable(rphy->grf, &rport->port_cfg->idrise_det_clr,
+ 				true);
+ 		cable_vbus_state = false;
++		rockchip_usb2phy_clear_host_mode(rphy, rport);
+ 	}
+ 
+-	extcon_set_state(rphy->edev, EXTCON_USB_HOST, cable_vbus_state);
+-	extcon_set_state(rphy->edev, EXTCON_USB_VBUS_EN, cable_vbus_state);
+-
+-	extcon_sync(rphy->edev, EXTCON_USB_HOST);
+-	extcon_sync(rphy->edev, EXTCON_USB_VBUS_EN);
+-
+-	rockchip_set_vbus_power(rport, cable_vbus_state);
++	if (cable_vbus_state) {
++		extcon_set_state(rphy->edev, EXTCON_USB_HOST, cable_vbus_state);
++		if (rport->vbus)
++			extcon_set_state(rphy->edev, EXTCON_USB_VBUS_EN,
++					 cable_vbus_state);
++		extcon_sync(rphy->edev, EXTCON_USB_HOST);
++		if (rport->vbus)
++			extcon_sync(rphy->edev, EXTCON_USB_VBUS_EN);
++		rockchip_set_vbus_power(rport, cable_vbus_state);
++	}
+ 
+ 	mutex_unlock(&rport->mutex);
+ 
++	if (rport->otg_sm_work.work.func)
++		schedule_delayed_work(&rport->otg_sm_work, 0);
++
+ 	return IRQ_HANDLED;
+ }
+ 
+@@ -2153,6 +2268,9 @@
+ 	/* For type-c with vbus_det always pull up */
+ 	rport->typec_vbus_det =
+ 		of_property_read_bool(child_np, "rockchip,typec-vbus-det");
++	rport->skip_host_charger_detect =
++		of_property_read_bool(child_np,
++				      "rocknix,skip-host-charger-detect");
+ 
+ 	rport->sel_pipe_phystatus =
+ 		of_property_read_bool(child_np, "rockchip,sel-pipe-phystatus");
+@@ -2183,6 +2301,8 @@
+ 	iddig = property_enabled(rphy->grf, &rport->port_cfg->utmi_iddig);
+ 	if (rphy->edev_self && (rport->mode == USB_DR_MODE_HOST ||
+ 	    rport->mode == USB_DR_MODE_UNKNOWN || !iddig)) {
++		if (!iddig)
++			rockchip_usb2phy_apply_host_iddig(rphy, rport);
+ 		/* Enable VBUS supply for otg port */
+ 		extcon_set_state(rphy->edev, EXTCON_USB, false);
+ 		extcon_set_state(rphy->edev, EXTCON_USB_HOST, true);
+@@ -2247,6 +2367,8 @@
+ 			  rockchip_usb_bypass_uart_work);
+ 	INIT_DELAYED_WORK(&rport->chg_work, rockchip_chg_detect_work);
+ 	INIT_DELAYED_WORK(&rport->otg_sm_work, rockchip_usb2phy_otg_sm_work);
++	INIT_DELAYED_WORK(&rport->release_iddig_work,
++			  rockchip_usb2phy_release_iddig_work);
+ 
+ 	if (!IS_ERR(rphy->edev)) {
+ 		rport->event_nb.notifier_call = rockchip_otg_event;
+diff -Naur a/drivers/power/supply/rk817_charger.c b/drivers/power/supply/rk817_charger.c
+--- a/drivers/power/supply/rk817_charger.c	2026-06-15 07:50:16.000000000 +0800
++++ b/drivers/power/supply/rk817_charger.c	2026-07-12 10:09:11.925620876 +0800
+@@ -17,6 +17,7 @@
+ 
+ #include <linux/delay.h>
+ #include <linux/extcon.h>
++#include <linux/extcon-provider.h>
+ #include <linux/gpio.h>
+ #include <linux/iio/consumer.h>
+ #include <linux/iio/iio.h>
+@@ -304,6 +305,9 @@
+ 	struct delayed_work host_work;
+ 	struct delayed_work discnt_work;
+ 	struct delayed_work irq_work;
++	struct delayed_work plug_poll_work;
++	int last_plug_in_sts;
++	bool charger_use_pmic_plug;
+ 	struct notifier_block bc_nb;
+ 	struct notifier_block cable_cg_nb;
+ 	struct notifier_block cable_host_nb;
+@@ -331,6 +335,8 @@
+ 	u8 otg_slp_state;
+ 	u8 plugin_trigger;
+ 	u8 plugout_trigger;
++	bool otg_plug_irqs_disabled;
++	bool otg_boot_host;
+ 	int plugin_irq;
+ 	int plugout_irq;
+ };
+@@ -856,39 +862,35 @@
+ {
+ 	switch (state) {
+ 	case USB_OTG_POWER_ON:
+-		if (charge->otg_in) {
+-			DBG("otg5v is on yet, ignore..\n");
+-		} else {
+-
++		if (!rk817_charge_get_otg_state(charge)) {
++			rk817_charge_otg_enable(charge);
+ 			if (!rk817_charge_get_otg_state(charge)) {
+-				rk817_charge_otg_enable(charge);
+-				if (!rk817_charge_get_otg_state(charge)) {
+-					DBG("enable otg5v failed\n");
+-					return;
+-				}
++				DBG("enable otg5v failed\n");
++				return;
+ 			}
++		}
++		if (!charge->otg_plug_irqs_disabled) {
+ 			disable_irq(charge->plugin_irq);
+ 			disable_irq(charge->plugout_irq);
+-			DBG("enable otg5v\n");
++			charge->otg_plug_irqs_disabled = true;
+ 		}
++		DBG("enable otg5v\n");
+ 		break;
+ 
+ 	case USB_OTG_POWER_OFF:
+-		if (!charge->otg_in) {
+-			DBG("otg5v is off yet, ignore..\n");
+-		} else {
+-
++		if (rk817_charge_get_otg_state(charge)) {
++			rk817_charge_otg_disable(charge);
+ 			if (rk817_charge_get_otg_state(charge)) {
+-				rk817_charge_otg_disable(charge);
+-				if (rk817_charge_get_otg_state(charge)) {
+-					DBG("disable otg5v failed\n");
+-					return;
+-				}
++				DBG("disable otg5v failed\n");
++				return;
+ 			}
++		}
++		if (charge->otg_plug_irqs_disabled) {
+ 			enable_irq(charge->plugin_irq);
+ 			enable_irq(charge->plugout_irq);
+-			DBG("disable otg5v\n");
++			charge->otg_plug_irqs_disabled = false;
+ 		}
++		DBG("disable otg5v\n");
+ 		break;
+ 	default:
+ 		dev_err(charge->dev, "error otg type\n");
+@@ -1015,7 +1017,8 @@
+ 	struct extcon_dev *edev = charge->cable_edev;
+ 
+ 	/* Determine cable/charger type */
+-	if (extcon_get_state(edev, EXTCON_USB_VBUS_EN) > 0) {
++	if (extcon_get_state(edev, EXTCON_USB_VBUS_EN) > 0 ||
++	    extcon_get_state(edev, EXTCON_USB_HOST) > 0) {
+ 		DBG("receive type-c notifier event: OTG ON...\n");
+ 		if (charge->dc_in && charge->pdata->power_dc2otg) {
+ 			if (charge->otg_in)
+@@ -1026,7 +1029,8 @@
+ 			rk817_charge_set_otg_state(charge, USB_OTG_POWER_ON);
+ 		}
+ 		rk817_charge_set_otg_in(charge, ONLINE);
+-	} else if (extcon_get_state(edev, EXTCON_USB_VBUS_EN) == 0) {
++	} else if (extcon_get_state(edev, EXTCON_USB_VBUS_EN) == 0 &&
++		   extcon_get_state(edev, EXTCON_USB_HOST) == 0) {
+ 		DBG("receive type-c notifier event: OTG OFF...\n");
+ 		rk817_charge_set_otg_state(charge, USB_OTG_POWER_OFF);
+ 		rk817_charge_set_otg_in(charge, OFFLINE);
+@@ -1303,10 +1307,19 @@
+ 
+ 	rk817_charge_set_chrg_finish_condition(charge);
+ 
+-	if (rk817_charge_get_otg_state(charge))
+-		rk817_charge_otg_disable(charge);
+-	rk817_charge_field_write(charge, OTG_EN, OTG_DISABLE);
+-	rk817_charge_set_otg_in(charge, OFFLINE);
++	if (rk817_charge_get_otg_state(charge)) {
++		/*
++		 * USB PHY may already have enabled OTG VBUS for a host
++		 * cable at boot. Do not regulator_disable() here: that causes
++		 * an unbalanced disable and drops VBUS before enumeration.
++		 */
++		rk817_charge_field_write(charge, OTG_EN, OTG_ENABLE);
++		rk817_charge_set_otg_in(charge, ONLINE);
++		charge->otg_boot_host = true;
++	} else {
++		rk817_charge_field_write(charge, OTG_EN, OTG_DISABLE);
++		rk817_charge_set_otg_in(charge, OFFLINE);
++	}
+ 
+ 	if (!charge->pdata->gate_function_disable)
+ 		rk817_charge_sys_can_sd_disable(charge);
+@@ -1473,6 +1486,59 @@
+ }
+ #endif
+ 
++#define PLUG_POLL_INTERVAL_MS	1000
++#define RK817_SYS_STS		0xf0
++#define RK817_PLUG_IN_STS_BIT	BIT(6)
++
++static void rk817_charge_plug_poll_work(struct work_struct *work)
++{
++	struct rk817_charger *charge = container_of(work,
++			struct rk817_charger, plug_poll_work.work);
++	unsigned int reg_val;
++	int plug_in_sts;
++	int ret;
++
++	/* Read RK817_SYS_STS directly without cache to get real hardware state */
++	ret = regmap_read(charge->regmap, RK817_SYS_STS, &reg_val);
++	if (ret) {
++		dev_err(charge->dev, "failed to read SYS_STS: %d\n", ret);
++		goto reschedule;
++	}
++
++	plug_in_sts = !!(reg_val & RK817_PLUG_IN_STS_BIT);
++
++	if (plug_in_sts != charge->last_plug_in_sts) {
++		charge->last_plug_in_sts = plug_in_sts;
++		if (plug_in_sts) {
++			dev_info(charge->dev, "charger plugged in (poll, reg=0x%x)\n", reg_val);
++			if (charge->pdata->extcon && charge->cable_edev) {
++				extcon_set_state(charge->cable_edev,
++						 EXTCON_USB_HOST, false);
++				extcon_set_state(charge->cable_edev,
++						 EXTCON_USB_VBUS_EN, false);
++			}
++			if (rk817_charge_get_otg_state(charge))
++				rk817_charge_set_otg_state(charge,
++							   USB_OTG_POWER_OFF);
++			rk817_charge_set_chrg_param(charge, USB_TYPE_AC_CHARGER);
++		} else {
++			dev_info(charge->dev, "charger unplugged (poll, reg=0x%x)\n", reg_val);
++			rk817_charge_set_chrg_param(charge, USB_TYPE_NONE_CHARGER);
++			/*
++			 * Re-enable USB voltage/current limits so that charging
++			 * detection works when charger is plugged in again.
++			 * Write 0xdb directly: VLIM_EN=1, VLIM_SEL=5, ILIM_EN=1, ILIM_SEL=3
++			 */
++			regmap_write(charge->regmap, RK817_CHRG_IN, 0xdb);
++			dev_info(charge->dev, "reset CHRG_IN to 0xdb\n");
++		}
++	}
++
++reschedule:
++	schedule_delayed_work(&charge->plug_poll_work,
++			      msecs_to_jiffies(PLUG_POLL_INTERVAL_MS));
++}
++
+ static void rk817_charge_irq_delay_work(struct work_struct *work)
+ {
+ 	struct rk817_charger *charge = container_of(work,
+@@ -1512,6 +1578,16 @@
+ 
+ 	charge = (struct rk817_charger *)cg;
+ 	charge->plugout_trigger = 1;
++
++	/*
++	 * For some reason the bits of RK817_CHRG_IN reset whenever the
++	 * power cord is unplugged. Re-enable USB voltage/current limits so
++	 * that charging detection works when charger is plugged in again.
++	 * Write 0xdb directly: VLIM_EN=1, VLIM_SEL=5, ILIM_EN=1, ILIM_SEL=3
++	 */
++	if (charge->charger_use_pmic_plug)
++		regmap_write(charge->regmap, RK817_CHRG_IN, 0xdb);
++
+ 	queue_delayed_work(charge->usb_charger_wq, &charge->irq_work,
+ 			   msecs_to_jiffies(10));
+ 
+@@ -1644,11 +1720,38 @@
+ 		goto irq_fail;
+ 	}
+ 
++	if (charge->otg_boot_host && !charge->otg_plug_irqs_disabled) {
++		disable_irq(charge->plugin_irq);
++		disable_irq(charge->plugout_irq);
++		charge->otg_plug_irqs_disabled = true;
++	}
++
+ 	if (charge->pdata->extcon) {
+-		schedule_delayed_work(&charge->host_work, 0);
++		schedule_delayed_work(&charge->host_work,
++				      msecs_to_jiffies(1500));
+ 		schedule_delayed_work(&charge->usb_work, 0);
+ 	}
+ 
++	charge->charger_use_pmic_plug =
++		of_property_read_bool(pdev->dev.of_node,
++				      "rockchip,charger-use-pmic-plug");
++	if (charge->charger_use_pmic_plug) {
++		/*
++		 * Initialize plug status polling. This handles cases where:
++		 * 1. Charger is already plugged in at boot (edge-triggered IRQ won't fire)
++		 * 2. IRQ masking issues prevent plug_in/plug_out interrupts from working
++		 */
++		charge->last_plug_in_sts = rk817_charge_get_plug_in_status(charge);
++		if (charge->last_plug_in_sts) {
++			dev_info(charge->dev, "charger already plugged in at boot\n");
++			rk817_charge_set_chrg_param(charge, USB_TYPE_AC_CHARGER);
++		}
++
++		INIT_DELAYED_WORK(&charge->plug_poll_work, rk817_charge_plug_poll_work);
++		schedule_delayed_work(&charge->plug_poll_work,
++				      msecs_to_jiffies(PLUG_POLL_INTERVAL_MS));
++	}
++
+ 	rk817_chage_debug(charge);
+ 	DBG("driver version: %s\n", CHARGE_DRIVER_VERSION);
+ 
+@@ -1662,6 +1765,8 @@
+ 	cancel_delayed_work_sync(&charge->usb_work);
+ 	cancel_delayed_work_sync(&charge->dc_work);
+ 	cancel_delayed_work_sync(&charge->irq_work);
++	if (charge->charger_use_pmic_plug)
++		cancel_delayed_work_sync(&charge->plug_poll_work);
+ 	destroy_workqueue(charge->usb_charger_wq);
+ 	destroy_workqueue(charge->dc_charger_wq);
+ 
+@@ -1739,13 +1844,18 @@
+ 	}
+ 
+ 	rk817_charge_set_otg_state(charge, USB_OTG_POWER_OFF);
++	rk817_charge_set_otg_in(charge, OFFLINE);
+ 	rk817_charge_boost_disable(charge);
+-	disable_irq(charge->plugin_irq);
+-	disable_irq(charge->plugout_irq);
++	if (!charge->otg_plug_irqs_disabled) {
++		disable_irq(charge->plugin_irq);
++		disable_irq(charge->plugout_irq);
++	}
+ 
+ 	cancel_delayed_work_sync(&charge->usb_work);
+ 	cancel_delayed_work_sync(&charge->dc_work);
+ 	cancel_delayed_work_sync(&charge->irq_work);
++	if (charge->charger_use_pmic_plug)
++		cancel_delayed_work_sync(&charge->plug_poll_work);
+ 	flush_workqueue(charge->usb_charger_wq);
+ 	flush_workqueue(charge->dc_charger_wq);
+ 
+diff -Naur a/drivers/usb/dwc2/core.h b/drivers/usb/dwc2/core.h
+--- a/drivers/usb/dwc2/core.h	2026-07-12 10:09:11.919627731 +0800
++++ b/drivers/usb/dwc2/core.h	2026-07-12 10:09:11.925801311 +0800
+@@ -1185,7 +1185,9 @@
+ 
+ 	struct delayed_work start_work;
+ 	struct delayed_work reset_work;
++	struct delayed_work enum_retry_work;
+ 	struct work_struct phy_reset_work;
++	u8 cold_boot_enum_retries;
+ 	u8 otg_port;
+ 	u32 *frame_list;
+ 	dma_addr_t frame_list_dma;
+@@ -1327,6 +1329,7 @@
+ int dwc2_phy_init(struct dwc2_hsotg *hsotg, bool select_phy);
+ 
+ void dwc2_force_mode(struct dwc2_hsotg *hsotg, bool host);
++void dwc2_clear_force_mode(struct dwc2_hsotg *hsotg);
+ void dwc2_force_dr_mode(struct dwc2_hsotg *hsotg);
+ 
+ bool dwc2_is_controller_alive(struct dwc2_hsotg *hsotg);
+diff -Naur a/drivers/usb/dwc2/core.c b/drivers/usb/dwc2/core.c
+--- a/drivers/usb/dwc2/core.c	2026-06-15 07:50:16.000000000 +0800
++++ b/drivers/usb/dwc2/core.c	2026-07-12 11:54:00.000000000 +0800
+@@ -633,7 +633,7 @@
+  *
+  * @hsotg: Programming view of DWC_otg controller
+  */
+-static void dwc2_clear_force_mode(struct dwc2_hsotg *hsotg)
++void dwc2_clear_force_mode(struct dwc2_hsotg *hsotg)
+ {
+ 	u32 gusbcfg;
+ 
+diff -Naur a/drivers/usb/dwc2/hcd.c b/drivers/usb/dwc2/hcd.c
+--- a/drivers/usb/dwc2/hcd.c	2026-07-12 10:09:11.920779449 +0800
++++ b/drivers/usb/dwc2/hcd.c	2026-07-12 10:09:11.926051708 +0800
+@@ -4196,6 +4196,87 @@
+ 	usb_hcd_giveback_urb(dwc2_hsotg_to_hcd(hsotg), urb, status);
+ }
+ 
++static bool dwc2_port_child_ready(struct dwc2_hsotg *hsotg)
++{
++	struct usb_hcd *hcd = dwc2_hsotg_to_hcd(hsotg);
++	struct usb_device *udev;
++
++	if (!hcd || !hcd->self.root_hub)
++		return false;
++
++	udev = usb_hub_find_child(hcd->self.root_hub, 1);
++	return udev && udev->descriptor.bLength;
++}
++
++static void dwc2_kick_cold_boot_port_reset(struct dwc2_hsotg *hsotg)
++{
++	unsigned long flags;
++	u32 hprt0;
++	struct usb_hcd *hcd = dwc2_hsotg_to_hcd(hsotg);
++
++	if (!dwc2_is_host_mode(hsotg))
++		return;
++
++	if (dwc2_port_child_ready(hsotg)) {
++		dev_info(hsotg->dev,
++			 "cold boot: device already enumerated, skip port reset\n");
++		return;
++	}
++
++	dev_info(hsotg->dev, "cold boot: port reset before enumeration\n");
++
++	spin_lock_irqsave(&hsotg->lock, flags);
++	if (hsotg->flags.b.port_connect_status)
++		dwc2_hcd_disconnect(hsotg, true);
++	spin_unlock_irqrestore(&hsotg->lock, flags);
++
++	msleep(50);
++
++	spin_lock_irqsave(&hsotg->lock, flags);
++	hprt0 = dwc2_read_hprt0(hsotg);
++	if (hprt0 & HPRT0_CONNSTS) {
++		hprt0 |= HPRT0_PWR | HPRT0_RST;
++		dwc2_writel(hsotg, hprt0, HPRT0);
++		spin_unlock_irqrestore(&hsotg->lock, flags);
++		msleep(60);
++		spin_lock_irqsave(&hsotg->lock, flags);
++		hprt0 = dwc2_read_hprt0(hsotg);
++		hprt0 &= ~HPRT0_RST;
++		dwc2_writel(hsotg, hprt0, HPRT0);
++		hsotg->flags.b.port_reset_change = 1;
++		dwc2_hcd_connect(hsotg);
++	}
++	spin_unlock_irqrestore(&hsotg->lock, flags);
++
++	if (hcd)
++		usb_hcd_resume_root_hub(hcd);
++}
++
++static void dwc2_enum_retry_func(struct work_struct *work)
++{
++	struct dwc2_hsotg *hsotg = container_of(work, struct dwc2_hsotg,
++						enum_retry_work.work);
++
++	if (!dwc2_is_host_mode(hsotg))
++		return;
++
++	if (dwc2_port_child_ready(hsotg))
++		return;
++
++	if (hsotg->cold_boot_enum_retries >= 3)
++		return;
++
++	hsotg->cold_boot_enum_retries++;
++	dev_info(hsotg->dev, "cold boot: retry enumeration (%u)\n",
++		 hsotg->cold_boot_enum_retries);
++
++	dwc2_kick_cold_boot_port_reset(hsotg);
++	dwc2_host_start(hsotg);
++
++	schedule_delayed_work(&hsotg->enum_retry_work,
++			      msecs_to_jiffies(5000));
++}
++
+ /*
+  * Work queue function for starting the HCD when A-Cable is connected
+  */
+@@ -5169,6 +5250,7 @@
+ 	/* Initialize work */
+ 	INIT_DELAYED_WORK(&hsotg->start_work, dwc2_hcd_start_func);
+ 	INIT_DELAYED_WORK(&hsotg->reset_work, dwc2_hcd_reset_func);
++	INIT_DELAYED_WORK(&hsotg->enum_retry_work, dwc2_enum_retry_func);
+ 	INIT_WORK(&hsotg->phy_reset_work, dwc2_hcd_phy_reset_func);
+ 
+ 	/*
+diff -Naur a/drivers/usb/dwc2/platform.c b/drivers/usb/dwc2/platform.c
+--- a/drivers/usb/dwc2/platform.c	2026-07-12 10:09:11.921758159 +0800
++++ b/drivers/usb/dwc2/platform.c	2026-07-12 10:09:11.926410651 +0800
+@@ -50,6 +50,10 @@
+ 
+ #include <linux/usb/of.h>
+ 
++#if IS_ENABLED(CONFIG_EXTCON)
++#include <linux/extcon.h>
++#endif
++
+ #include "core.h"
+ #include "hcd.h"
+ #include "debug.h"
+@@ -633,6 +637,8 @@
+ 	}
+ 
+ 	if (hsotg->dr_mode != USB_DR_MODE_PERIPHERAL) {
++		hsotg->cold_boot_enum_retries = 0;
++
+ 		retval = dwc2_hcd_init(hsotg);
+ 		if (retval) {
+ 			if (hsotg->gadget_enabled)
+@@ -640,6 +646,48 @@
+ 			goto error_drd;
+ 		}
+ 		hsotg->hcd_enabled = 1;
++
++		/*
++		 * U-Boot leaves the core in device mode while a host cable may
++		 * already be present. _dwc2_hcd_start() is a no-op in device
++		 * mode and conn_id IRQ will not fire without an ID edge.
++		 */
++		if (hsotg->dr_mode == USB_DR_MODE_OTG && hsotg->wq_otg &&
++		    dwc2_is_device_mode(hsotg)) {
++			u32 gotgctl = dwc2_readl(hsotg, GOTGCTL);
++			bool host_cable = !(gotgctl & GOTGCTL_CONID_B);
++
++#if IS_ENABLED(CONFIG_EXTCON)
++			struct extcon_dev *extcon =
++				extcon_get_edev_by_phandle(hsotg->dev, 0);
++
++			if (!IS_ERR(extcon) && extcon) {
++				if (extcon_get_state(extcon, EXTCON_USB_HOST) > 0 ||
++				    extcon_get_state(extcon, EXTCON_USB_VBUS_EN) > 0)
++					host_cable = true;
++			}
++#endif
++
++			if (host_cable) {
++				dev_info(hsotg->dev,
++					 "host handoff: GOTGCTL=0x%x kick conn_id\n",
++					 gotgctl);
++				dwc2_force_mode(hsotg, true);
++				dwc2_clear_force_mode(hsotg);
++				queue_work(hsotg->wq_otg, &hsotg->wf_otg);
++			}
++		} else if (hsotg->dr_mode == USB_DR_MODE_OTG &&
++			   hsotg->hcd_enabled && dwc2_is_host_mode(hsotg)) {
++			u32 hprt0 = dwc2_readl(hsotg, HPRT0);
++
++			/*
++			 * If early enumeration fails, retry with a port reset
++			 * only when no child device is present yet.
++			 */
++			if (hprt0 & HPRT0_CONNSTS)
++				schedule_delayed_work(&hsotg->enum_retry_work,
++						      msecs_to_jiffies(10000));
++		}
+ 	}
+ 
+ 	platform_set_drvdata(dev, hsotg);

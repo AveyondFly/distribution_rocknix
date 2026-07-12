@@ -33,9 +33,9 @@ post_install() {
   if [ "${DEVICE}" = "RK3326" -o "${DEVICE}" = "RK3566" -o "${DEVICE}" = "RK356X" ]; then
     enable_service volume-fixup.service
   fi
-  if [ "${DEVICE}" = "RK356X" ]; then
+  if [ "${DEVICE}" = "RK356X" -o "${DEVICE}" = "RK3326S" ]; then
     mkdir -p ${INSTALL}/usr/share/wireplumber/wireplumber.conf.d
-    cp ${PKG_DIR}/platforms/RK356X/wireplumber/51-rk817-pro-audio.conf \
+    cp ${PKG_DIR}/platforms/${DEVICE}/wireplumber/51-rk817-pro-audio.conf \
       ${INSTALL}/usr/share/wireplumber/wireplumber.conf.d/
   fi
   if [ "${DEVICE}" = "S905" ]; then

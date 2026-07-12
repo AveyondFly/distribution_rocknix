@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026-present ROCKNIX (https://github.com/ROCKNIX)
+
+PKG_NAME="rk3326s-dtb-select"
+PKG_VERSION="1.0"
+PKG_LICENSE="GPL"
+PKG_SITE=""
+PKG_URL=""
+PKG_LONGDESC="Interactive RK3326S DTB selection (FDT line) for ROCKNIX"
+PKG_TOOLCHAIN="manual"
+PKG_DEPENDS_TARGET="toolchain Python3"
+
+makeinstall_target() {
+  mkdir -p ${INSTALL}/usr/share/rk3326s-dtb-select
+  cp -a ${PKG_DIR}/dtb_selector.py ${INSTALL}/usr/share/rk3326s-dtb-select/
+  mkdir -p ${INSTALL}/usr/bin
+  install -m 0755 ${PKG_DIR}/scripts/rk3326s-dtb-select.in ${INSTALL}/usr/bin/rk3326s-dtb-select
+
+  # Staged under a dedicated subdir; mkimage copies to /flash root per sub-image.
+  mkdir -p ${INSTALL}/usr/share/bootloader/rk3326s-dtb-select
+  cp -a ${PKG_DIR}/dtb_selector.py ${INSTALL}/usr/share/bootloader/rk3326s-dtb-select/
+  install -m 0755 ${PKG_DIR}/scripts/dtb-select-flash.in ${INSTALL}/usr/share/bootloader/rk3326s-dtb-select/dtbselect
+  if [ -f ${PKG_DIR}/prebuilt/DtbselectWin64.exe ]; then
+    install -m 644 ${PKG_DIR}/prebuilt/DtbselectWin64.exe ${INSTALL}/usr/share/bootloader/rk3326s-dtb-select/DtbselectWin64.exe
+  fi
+}

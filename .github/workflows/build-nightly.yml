@@ -223,6 +223,16 @@ jobs:
       include_rk3326: "${{ contains(needs.set-envs.outputs.matrix, 'RK3326') }}"
     secrets: inherit
 
+  rk3326s-dtbselect-windows:
+    if: needs.set-envs.outputs.SHOULD_BUILD == 'yes' && ((github.event_name != 'schedule') || (github.repository == 'AveyondFly/distribution_rocknix' && github.ref_name == 'next'))
+    needs:
+      - set-envs
+      - build-docker
+    uses: ./.github/workflows/build-rk3326s-dtbselect-windows.yml
+    with:
+      include_rk3326s: "${{ contains(needs.set-envs.outputs.matrix, 'RK3326S') }}"
+    secrets: inherit
+
   rk3566-dtbselect-windows:
     if: needs.set-envs.outputs.SHOULD_BUILD == 'yes' && ((github.event_name != 'schedule') || (github.repository == 'AveyondFly/distribution_rocknix' && github.ref_name == 'next'))
     needs:
@@ -258,6 +268,7 @@ jobs:
       - set-envs
       - build-docker
       - rk3326-dtbselect-windows
+      - rk3326s-dtbselect-windows
       - rk3566-dtbselect-windows
       - rk356x-dtbselect-windows
       - user-manual-pdfs

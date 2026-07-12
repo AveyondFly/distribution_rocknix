@@ -737,12 +737,14 @@
 			
 			vcc_sd: LDO_REG6 {
 				regulator-name = "vcc_sd";
-				regulator-min-microvolt = <3300000>;
-				regulator-max-microvolt = <3300000>;
-				
+				regulator-min-microvolt = <2800000>;
+				regulator-max-microvolt = <3000000>;
+				regulator-always-on;
+				regulator-boot-on;
+
 				regulator-state-mem {
 					regulator-on-in-suspend;
-					regulator-suspend-microvolt = <3300000>;
+					regulator-suspend-microvolt = <3000000>;
 				};
 			};
 			
@@ -841,6 +843,7 @@
 			sample_res = <10>;
 			/* USB is host-mode; use PMIC PLUG_IN_STS for charge UI */
 			rockchip,charger-use-pmic-plug;
+			rocknix,fixed-usb-host-vbus;
 		};
 		
 		rk817_codec: codec {

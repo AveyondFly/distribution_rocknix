@@ -2,11 +2,13 @@ From: ROCKNIX <rocknix@rocknix.org>
 Subject: [PATCH] Pixel2: USB OTG WiFi, charge switch, PMIC plug detect
 
 GKD Pixel2 (and compatible RK3326S boards) share one Type-C port for OTG
-WiFi and charging. Combined fix merging former 005, 017, and 022:
+WiFi and charging. Combined fix merging former 005, 017, 022, and 023:
 
 * rk817: PMIC PLUG_IN_STS poll, CHRG_IN reset on replug, keep OTG VBUS at
   boot, OTG plug-IRQ balance, charger plug clears host extcon (DTS:
   rockchip,charger-use-pmic-plug)
+* E6: skip otg_switch on fixed USB-A host ports, CHRG_IN init at probe
+  (DTS: rocknix,fixed-usb-host-vbus)
 * phy: skip self-VBUS DCP false charge icon (DTS: rocknix,skip-host-charger-
   detect), iddig host handoff, clear/release forced iddig for role switch
 * dwc2: U-Boot gadget to host handoff, enumeration retry fallback
@@ -268,7 +270,7 @@ diff -Naur a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c b/drivers/phy/rockchi
  		rport->event_nb.notifier_call = rockchip_otg_event;
 diff -Naur a/drivers/power/supply/rk817_charger.c b/drivers/power/supply/rk817_charger.c
 --- a/drivers/power/supply/rk817_charger.c	2026-06-15 07:50:16.000000000 +0800
-+++ b/drivers/power/supply/rk817_charger.c	2026-07-12 10:09:11.925620876 +0800
++++ b/drivers/power/supply/rk817_charger.c	2026-07-12 21:32:00.000000000 +0800
 @@ -17,6 +17,7 @@
  
  #include <linux/delay.h>
@@ -277,17 +279,18 @@ diff -Naur a/drivers/power/supply/rk817_charger.c b/drivers/power/supply/rk817_c
  #include <linux/gpio.h>
  #include <linux/iio/consumer.h>
  #include <linux/iio/iio.h>
-@@ -304,6 +305,9 @@
+@@ -304,6 +305,10 @@
  	struct delayed_work host_work;
  	struct delayed_work discnt_work;
  	struct delayed_work irq_work;
 +	struct delayed_work plug_poll_work;
 +	int last_plug_in_sts;
 +	bool charger_use_pmic_plug;
++	bool fixed_usb_host_vbus;
  	struct notifier_block bc_nb;
  	struct notifier_block cable_cg_nb;
  	struct notifier_block cable_host_nb;
-@@ -331,6 +335,8 @@
+@@ -331,6 +336,8 @@
  	u8 otg_slp_state;
  	u8 plugin_trigger;
  	u8 plugout_trigger;
@@ -296,7 +299,7 @@ diff -Naur a/drivers/power/supply/rk817_charger.c b/drivers/power/supply/rk817_c
  	int plugin_irq;
  	int plugout_irq;
  };
-@@ -856,39 +862,35 @@
+@@ -856,39 +863,35 @@
  {
  	switch (state) {
  	case USB_OTG_POWER_ON:
@@ -352,9 +355,17 @@ diff -Naur a/drivers/power/supply/rk817_charger.c b/drivers/power/supply/rk817_c
  		break;
  	default:
  		dev_err(charge->dev, "error otg type\n");
-@@ -1015,7 +1017,8 @@
+@@ -1014,8 +1017,16 @@
+ 			struct rk817_charger, host_work.work);
  	struct extcon_dev *edev = charge->cable_edev;
  
++	/*
++	 * Fixed USB-A host ports (vcc_host) must not enable otg_switch here.
++	 * Doing so masks PMIC PLUG_IN_STS used for the charge icon.
++	 */
++	if (charge->fixed_usb_host_vbus)
++		return;
++
  	/* Determine cable/charger type */
 -	if (extcon_get_state(edev, EXTCON_USB_VBUS_EN) > 0) {
 +	if (extcon_get_state(edev, EXTCON_USB_VBUS_EN) > 0 ||
@@ -362,7 +373,7 @@ diff -Naur a/drivers/power/supply/rk817_charger.c b/drivers/power/supply/rk817_c
  		DBG("receive type-c notifier event: OTG ON...\n");
  		if (charge->dc_in && charge->pdata->power_dc2otg) {
  			if (charge->otg_in)
-@@ -1026,7 +1029,8 @@
+@@ -1026,7 +1037,8 @@
  			rk817_charge_set_otg_state(charge, USB_OTG_POWER_ON);
  		}
  		rk817_charge_set_otg_in(charge, ONLINE);
@@ -372,7 +383,7 @@ diff -Naur a/drivers/power/supply/rk817_charger.c b/drivers/power/supply/rk817_c
  		DBG("receive type-c notifier event: OTG OFF...\n");
  		rk817_charge_set_otg_state(charge, USB_OTG_POWER_OFF);
  		rk817_charge_set_otg_in(charge, OFFLINE);
-@@ -1303,10 +1307,19 @@
+@@ -1303,10 +1315,19 @@
  
  	rk817_charge_set_chrg_finish_condition(charge);
  
@@ -396,7 +407,7 @@ diff -Naur a/drivers/power/supply/rk817_charger.c b/drivers/power/supply/rk817_c
  
  	if (!charge->pdata->gate_function_disable)
  		rk817_charge_sys_can_sd_disable(charge);
-@@ -1473,6 +1486,59 @@
+@@ -1473,6 +1494,59 @@
  }
  #endif
  
@@ -456,7 +467,7 @@ diff -Naur a/drivers/power/supply/rk817_charger.c b/drivers/power/supply/rk817_c
  static void rk817_charge_irq_delay_work(struct work_struct *work)
  {
  	struct rk817_charger *charge = container_of(work,
-@@ -1512,6 +1578,16 @@
+@@ -1512,6 +1586,16 @@
  
  	charge = (struct rk817_charger *)cg;
  	charge->plugout_trigger = 1;
@@ -473,7 +484,7 @@ diff -Naur a/drivers/power/supply/rk817_charger.c b/drivers/power/supply/rk817_c
  	queue_delayed_work(charge->usb_charger_wq, &charge->irq_work,
  			   msecs_to_jiffies(10));
  
-@@ -1644,11 +1720,38 @@
+@@ -1644,11 +1728,44 @@
  		goto irq_fail;
  	}
  
@@ -493,12 +504,18 @@ diff -Naur a/drivers/power/supply/rk817_charger.c b/drivers/power/supply/rk817_c
 +	charge->charger_use_pmic_plug =
 +		of_property_read_bool(pdev->dev.of_node,
 +				      "rockchip,charger-use-pmic-plug");
++	charge->fixed_usb_host_vbus =
++		of_property_read_bool(pdev->dev.of_node,
++				      "rocknix,fixed-usb-host-vbus");
 +	if (charge->charger_use_pmic_plug) {
 +		/*
 +		 * Initialize plug status polling. This handles cases where:
 +		 * 1. Charger is already plugged in at boot (edge-triggered IRQ won't fire)
 +		 * 2. IRQ masking issues prevent plug_in/plug_out interrupts from working
 +		 */
++		if (charge->fixed_usb_host_vbus)
++			regmap_write(charge->regmap, RK817_CHRG_IN, 0xdb);
++
 +		charge->last_plug_in_sts = rk817_charge_get_plug_in_status(charge);
 +		if (charge->last_plug_in_sts) {
 +			dev_info(charge->dev, "charger already plugged in at boot\n");
@@ -513,7 +530,7 @@ diff -Naur a/drivers/power/supply/rk817_charger.c b/drivers/power/supply/rk817_c
  	rk817_chage_debug(charge);
  	DBG("driver version: %s\n", CHARGE_DRIVER_VERSION);
  
-@@ -1662,6 +1765,8 @@
+@@ -1662,6 +1779,8 @@
  	cancel_delayed_work_sync(&charge->usb_work);
  	cancel_delayed_work_sync(&charge->dc_work);
  	cancel_delayed_work_sync(&charge->irq_work);
@@ -522,7 +539,7 @@ diff -Naur a/drivers/power/supply/rk817_charger.c b/drivers/power/supply/rk817_c
  	destroy_workqueue(charge->usb_charger_wq);
  	destroy_workqueue(charge->dc_charger_wq);
  
-@@ -1739,13 +1844,18 @@
+@@ -1739,13 +1858,18 @@
  	}
  
  	rk817_charge_set_otg_state(charge, USB_OTG_POWER_OFF);

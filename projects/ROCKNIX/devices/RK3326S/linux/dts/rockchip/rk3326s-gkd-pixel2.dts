@@ -129,10 +129,11 @@
 
 	joypad: rocknix-singleadc-joypad {
 		compatible = "rocknix-singleadc-joypad";
-		joypad-name = "retro_gamepad";
-		joypad-vendor = <0x484B>;
+
+		joypad-name = "retrogame_joypad";
 		joypad-product = <0x1101>;
 		joypad-revision = <0x0100>;
+		joypad-vendor = <0x484B>;
 		status = "okay";
 		pinctrl-names = "default";
 		pinctrl-0 = <&btn_pins>;

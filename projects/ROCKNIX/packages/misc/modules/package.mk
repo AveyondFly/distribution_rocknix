@@ -75,6 +75,7 @@ open(sys.argv[2], 'w').write(xml)
 
 # Set filemanger
   sed -e "s/@FILEMANAGER@/${FILEMANAGER}/g" -i ${INSTALL}/usr/config/modules/gamelist.xml
+  sed -e "s/@FILEMANAGER@/${FILEMANAGER}/g" -i ${INSTALL}/usr/config/modules/gamelist_zh.xml
   if [ ${FILEMANAGER} == "commander" ]; then
     rm -rf ${INSTALL}/usr/config/modules/fileman.sh
   else

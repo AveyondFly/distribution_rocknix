@@ -80,10 +80,13 @@ Independent ports apps:
 |-------|--------|-------|
 | AISLPC | RG52 Mini, RG43H Pro, RG43V Pro | Single image; use `/flash/dtbselect` (Linux) or `DtbselectWin64.exe` (Windows) to pick the device tree. **v1** entries (**RG52 Mini v1**, **RG43H Pro v1**, **RG43V Pro v1**) are for the **RK915 WiFi** hardware revision; the default entries are for other WiFi variants (AIC8800D80). |
 
-#### RK3326S Devices (6.6 BSP Kernel)
-| Brand | Models |
-|-------|--------|
-| TBD | TBD |
+#### RK3326S Devices (unified image, PX30S, 5.10 BSP Kernel)
+| Brand | Models | Notes |
+|-------|--------|-------|
+| GameMT | E6 | RK3326S / PX30S variant. |
+| GameKiddy | GKD Pixel 2 (P2) | |
+
+Use `/flash/dtbselect` (Linux) or `DtbselectWin64.exe` (Windows) on the boot partition to select the correct device tree.
 
 ## Features
 
@@ -97,7 +100,7 @@ Independent ports apps:
 * Device to device and device to cloud sync with Syncthing and rclone.
 * VPN support with Wireguard, Tailscale, and ZeroTier.
 * Includes built-in support for scraping and retroachievements.
-* Screen color adjustment (brightness / contrast / saturation / hue) on RK3326, RK3566, and RK356X devices.
+* Screen color adjustment (brightness / contrast / saturation / hue) on RK3326, RK3326S, RK3566, and RK356X devices.
 
 ## User manuals
 

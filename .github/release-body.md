@@ -14,6 +14,7 @@ AURKNIX is made up of many open-source components. Components are provided under
 | **Device/Platform** | **Download Package** | **Documentation** |
 |---------------------|----------------------|---------------------|
 | **RK3326** (unified image) | [AURKNIX-RK3326.aarch64-$DATE.img.gz](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK3326.aarch64-$DATE.img.gz) | [documentation](/documentation/PER_DEVICE_DOCUMENTATION/RK3326/) |
+| **RK3326S** (unified image)<br>*GameMT E6; GameKiddy GKD Pixel 2 (P2)*<br>*Use `/flash/dtbselect` or `DtbselectWin64.exe` on the boot partition to pick the device tree* | [AURKNIX-RK3326S.aarch64-$DATE.img.gz](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK3326S.aarch64-$DATE.img.gz) | [documentation](/documentation/PER_DEVICE_DOCUMENTATION/RK3326S/) |
 | **RK3566 (Generic)**<br>*Powkiddy RGB10 Max 3, RGB20 Pro, RGB20 SX, RGB30, RK2023* | [AURKNIX-RK3566.aarch64-$DATE-Generic.img.gz](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK3566.aarch64-$DATE-Generic.img.gz) | [documentation](/documentation/PER_DEVICE_DOCUMENTATION/RK3566/) |
 | **RK3566 (Specific)**<br>*Powkiddy X55, X35S, X35H; GameMT E5P / E6P; Diium D50 Plus; MiniLoong Pocket 1* | [AURKNIX-RK3566.aarch64-$DATE-Specific.img.gz](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK3566.aarch64-$DATE-Specific.img.gz) | [documentation](/documentation/PER_DEVICE_DOCUMENTATION/RK3566/) |
 | **RK356X**<br>*AISLPC RG52 Mini, RG43H Pro, RG43V Pro (unified image)*<br>*Use `/flash/dtbselect` or `DtbselectWin64.exe` on the boot partition: default entries for AIC8800 WiFi; **v1** entries (**RG52 Mini v1**, **RG43H Pro v1**, **RG43V Pro v1**) for **RK915 WiFi*** | [AURKNIX-RK356X.aarch64-$DATE.img.gz](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK356X.aarch64-$DATE.img.gz) | [documentation](/documentation/PER_DEVICE_DOCUMENTATION/RK356X/) |
@@ -30,6 +31,7 @@ AURKNIX is made up of many open-source components. Components are provided under
 | **Device/Platform** | **Download Package** |
 |---------------------|----------------------|
 | **RK3326** | [AURKNIX-RK3326.aarch64-$DATE.tar](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK3326.aarch64-$DATE.tar) |
+| **RK3326S** | [AURKNIX-RK3326S.aarch64-$DATE.tar](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK3326S.aarch64-$DATE.tar) |
 | **RK3566** (Generic & Specific) | [AURKNIX-RK3566.aarch64-$DATE.tar](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK3566.aarch64-$DATE.tar) |
 | **RK356X** | [AURKNIX-RK356X.aarch64-$DATE.tar](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK356X.aarch64-$DATE.tar) |
 | **S905** | [AURKNIX-S905.aarch64-$DATE.tar](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-S905.aarch64-$DATE.tar) |
@@ -45,7 +47,7 @@ AURKNIX is made up of many open-source components. Components are provided under
 ## Change Log
 
 ### New Features
-* Added...?
+* **RK3326S** unified image: initial support for **GameMT E6** and **GameKiddy GKD Pixel 2 (P2)** (PX30S). Select the device tree with `/flash/dtbselect` (Linux) or `DtbselectWin64.exe` (Windows) on the boot partition.
 
 ### Updates
 * Updated...?

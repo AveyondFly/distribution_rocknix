@@ -106,6 +106,21 @@ Use `/flash/dtbselect` (Linux) or `DtbselectWin64.exe` (Windows) on the boot par
 
 Guides for this fork live in [`documentation/user_man/`](documentation/user_man/) as paired Chinese and English Markdown files (`*_cn.md` / `*_en.md`): general fork usage, drastic_adv `layout.json`, and J2ME controls. PDFs shipped in release images are built in CI from those sources.
 
+## Contributing
+
+Pull requests can request **automatic image builds** in GitHub Actions. Add a `build:` line to the PR description (the [PR template](.github/PULL_REQUEST_TEMPLATE.md) includes this section by default):
+
+```
+build:RK3326/RK3566
+```
+
+- **Supported devices:** `RK3326`, `RK3326S`, `RK3566`, `S905`, `RK356X`
+- **Multiple devices:** separate with `/`, `,`, `;`, or spaces (e.g. `build:RK3326/RK3566`)
+- **All devices:** `build:ALL`
+- **Skip builds:** leave `build:` empty or omit the line
+
+CI runs when the PR is opened, updated, or when you edit the description. After a successful build, download `AURKNIX-image-*` and `AURKNIX-update-*` artifacts from the workflow run on the **Checks** tab. PR builds are for testing only and are not published as releases.
+
 ## Screenshots
 
 <table>

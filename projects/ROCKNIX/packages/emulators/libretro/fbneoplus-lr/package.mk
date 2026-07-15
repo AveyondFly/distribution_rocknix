@@ -2,7 +2,7 @@
 # Copyright (C) 2024 ROCKNIX (https://github.com/ROCKNIX)
 
 PKG_NAME="fbneoplus-lr"
-PKG_VERSION="ce0aae7135d83badf0be59f8babc55853d10b194"
+PKG_VERSION="8ebb4eea9dd7d84d150efb46c264600319a70108"
 PKG_LICENSE="Non-commercial"
 PKG_SITE="https://github.com/lrf739146825/FBNeo"
 PKG_URL="${PKG_SITE}.git"
@@ -11,9 +11,9 @@ PKG_LONGDESC="Port of Final Burn Neo Plus to Libretro."
 PKG_TOOLCHAIN="make"
 
 pre_configure_target() {
-  sed -i "s|LDFLAGS += -static-libgcc -static-libstdc++|LDFLAGS += -static-libgcc|" ./src/burner/libretro/Makefile
+  sed -i "s|LDFLAGS += -static-libgcc -static-libstdc++|LDFLAGS += -static-libgcc|" ${PKG_BUILD}/src/burner/libretro/Makefile
 
-  PKG_MAKE_OPTS_TARGET=" -C ./src/burner/libretro USE_CYCLONE=0 profile=performance"
+  PKG_MAKE_OPTS_TARGET=" -C ${PKG_BUILD}/src/burner/libretro USE_CYCLONE=0 profile=performance"
 
   if [[ "${TARGET_FPU}" =~ "neon" ]]; then
     PKG_MAKE_OPTS_TARGET+=" HAVE_NEON=1"

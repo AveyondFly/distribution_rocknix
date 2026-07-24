@@ -1,0 +1,100 @@
+diff --git a/drivers/power/supply/rk817_battery.c b/drivers/power/supply/rk817_battery.c
+index f41e7107d..f08ff8b92 100644
+--- a/drivers/power/supply/rk817_battery.c
++++ b/drivers/power/supply/rk817_battery.c
+@@ -1634,9 +1634,30 @@ static void rk817_bat_not_first_pwron(struct rk817_battery_device *battery)
+ 			 pre_cap, now_cap);
+ 		if (now_cap < 0)
+ 			now_cap = 0;
++		/*
++		 * After image flash / hard power-cut the coulomb registers are
++		 * often cleared (now_cap≈0) while the pack is still charged.
++		 * battery->rsoc is not initialized yet here either, so the old
++		 * "pre_soc = battery->rsoc" always forced a 0% UI.
++		 *
++		 * If coulomb disagrees with boot voltage by >10% FCC, trust OCV.
++		 */
++		ocv_vol = battery->pwron_voltage;
++		if (ocv_vol <= 0)
++			ocv_vol = rk817_bat_get_battery_voltage(battery);
++		ocv_soc = rk817_bat_vol_to_soc(battery, ocv_vol);
++		ocv_cap = rk817_bat_vol_to_cap(battery, ocv_vol);
++		if (ocv_cap > 0 &&
++		    abs(now_cap - ocv_cap) > (battery->fcc / 10)) {
++			BAT_INFO("halt: coulomb=%d implausible vs OCV cap=%d (vol=%d), use OCV soc=%d\n",
++				 now_cap, ocv_cap, ocv_vol, ocv_soc);
++			now_cap = ocv_cap;
++			pre_soc = ocv_soc * 1000;
++		} else {
++			pre_soc = now_cap * 1000 * 100 / DIV(battery->fcc);
++		}
+ 		rk817_bat_init_coulomb_cap(battery, now_cap);
+ 		pre_cap = now_cap;
+-		pre_soc = battery->rsoc;
+ 		goto finish;
+ 	} else if (battery->is_initialized) {
+ 		/* uboot initialized */
+@@ -1649,14 +1670,16 @@ static void rk817_bat_not_first_pwron(struct rk817_battery_device *battery)
+ 		ocv_cap = rk817_bat_vol_to_cap(battery, ocv_vol);
+ 		pre_cap = ocv_cap;
+ 		battery->ocv_pre_dsoc = pre_soc;
+-		battery->ocv_new_dsoc = ocv_soc;
+-		if (abs(ocv_soc - pre_soc) >= battery->pdata->max_soc_offset) {
++		/* ocv_soc is 0..100; dsoc/pre_soc are milli-percent (0..100000) */
++		battery->ocv_new_dsoc = ocv_soc * 1000;
++		if (abs(ocv_soc * 1000 - pre_soc) >=
++		    battery->pdata->max_soc_offset * 1000) {
+ 			battery->ocv_pre_dsoc = pre_soc;
+-			battery->ocv_new_dsoc = ocv_soc;
++			battery->ocv_new_dsoc = ocv_soc * 1000;
+ 			battery->is_max_soc_offset = true;
+ 			BAT_INFO("trigger max soc offset, dsoc: %d -> %d\n",
+-				 pre_soc, ocv_soc);
+-			pre_soc = ocv_soc;
++				 pre_soc, ocv_soc * 1000);
++			pre_soc = ocv_soc * 1000;
+ 		}
+ 		BAT_INFO("OCV calib: cap=%d, rsoc=%d\n", ocv_cap, ocv_soc);
+ 	} else if (battery->pwroff_min > 0) {
+@@ -1664,16 +1687,37 @@ static void rk817_bat_not_first_pwron(struct rk817_battery_device *battery)
+ 		ocv_soc = rk817_bat_vol_to_soc(battery, ocv_vol);
+ 		ocv_cap = rk817_bat_vol_to_cap(battery, ocv_vol);
+ 		battery->force_pre_dsoc = pre_soc;
+-		battery->force_new_dsoc = ocv_soc;
+-		if (abs(ocv_soc - pre_soc) >= 80) {
++		battery->force_new_dsoc = ocv_soc * 1000;
++		if (abs(ocv_soc * 1000 - pre_soc) >= 80 * 1000) {
+ 			battery->is_force_calib = true;
+ 			BAT_INFO("dsoc force calib: %d -> %d\n",
+-				 pre_soc, ocv_soc);
+-			pre_soc = ocv_soc;
++				 pre_soc, ocv_soc * 1000);
++			pre_soc = ocv_soc * 1000;
+ 			pre_cap = ocv_cap;
+ 		}
+ 	}
+ finish:
++	/*
++	 * A previous unit bug could save dsoc as percent (0..100) into the PMIC
++	 * SOC registers. On the next boot that yields capacity=(dsoc+500)/1000==0
++	 * even when OCV says the pack is fine. Promote to milli-percent via OCV.
++	 */
++	if (pre_soc <= 100) {
++		int fix_vol = battery->pwron_voltage;
++
++		if (fix_vol <= 0)
++			fix_vol = rk817_bat_get_battery_voltage(battery);
++		ocv_soc = rk817_bat_vol_to_soc(battery, fix_vol);
++		ocv_cap = rk817_bat_vol_to_cap(battery, fix_vol);
++		if (ocv_soc > pre_soc + 5) {
++			BAT_INFO("fix dsoc scale: %d -> %d (ocv_soc=%d vol=%d)\n",
++				 pre_soc, ocv_soc * 1000, ocv_soc, fix_vol);
++			pre_soc = ocv_soc * 1000;
++			if (pre_cap < ocv_cap / 2)
++				pre_cap = ocv_cap;
++		}
++	}
++
+ 	battery->dsoc = pre_soc;
+ 	battery->nac = pre_cap;
+ 	if (battery->nac < 0)

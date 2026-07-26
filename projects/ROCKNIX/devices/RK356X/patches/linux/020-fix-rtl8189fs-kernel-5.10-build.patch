@@ -1,0 +1,378 @@
+diff -Naur a/drivers/net/wireless/rockchip_wlan/rtl8189fs/Makefile b/drivers/net/wireless/rockchip_wlan/rtl8189fs/Makefile
+--- a/drivers/net/wireless/rockchip_wlan/rtl8189fs/Makefile	2026-06-15 07:50:16.000000000 +0800
++++ b/drivers/net/wireless/rockchip_wlan/rtl8189fs/Makefile	2026-07-26 21:58:49.089369896 +0800
+@@ -15,6 +15,9 @@
+ EXTRA_CFLAGS += -Wno-unused-function
+ EXTRA_CFLAGS += -Wno-unused
+ #EXTRA_CFLAGS += -Wno-uninitialized
++EXTRA_CFLAGS += -w
++EXTRA_CFLAGS += -Wno-error=address
++EXTRA_CFLAGS += -Wno-error=misleading-indentation
+ 
+ GCC_VER_49 := $(shell echo `$(CC) -dumpversion | cut -f1-2 -d.` \>= 4.9 | bc )
+ ifeq ($(GCC_VER_49),1)
+diff -Naur a/drivers/net/wireless/rockchip_wlan/rtl8189fs/core/efuse/rtw_efuse.c b/drivers/net/wireless/rockchip_wlan/rtl8189fs/core/efuse/rtw_efuse.c
+--- a/drivers/net/wireless/rockchip_wlan/rtl8189fs/core/efuse/rtw_efuse.c	2026-06-15 07:50:16.000000000 +0800
++++ b/drivers/net/wireless/rockchip_wlan/rtl8189fs/core/efuse/rtw_efuse.c	2026-07-26 21:58:49.093405325 +0800
+@@ -887,8 +887,9 @@
+ 	j = 0;
+ 
+ 	for (i = 0; i < mapLen; i++) {
+-		if (i % 16 == 0)
++		if (i % 16 == 0) {
+ 			RTW_PRINT_SEL(RTW_DBGDUMP, "0x%03x: ", i);
++		}
+ 			_RTW_PRINT_SEL(RTW_DBGDUMP, "%02X%s"
+ 				, pEfuseHal->fakeEfuseInitMap[i]
+ 				, ((i + 1) % 16 == 0) ? "\n" : (((i + 1) % 8 == 0) ? "	  " : " ")
+diff -Naur a/drivers/net/wireless/rockchip_wlan/rtl8189fs/core/rtw_mlme.c b/drivers/net/wireless/rockchip_wlan/rtl8189fs/core/rtw_mlme.c
+--- a/drivers/net/wireless/rockchip_wlan/rtl8189fs/core/rtw_mlme.c	2026-06-15 07:50:16.000000000 +0800
++++ b/drivers/net/wireless/rockchip_wlan/rtl8189fs/core/rtw_mlme.c	2026-07-26 21:52:32.690160548 +0800
+@@ -3180,8 +3180,10 @@
+ 			RTW_INFO(FUNC_ADPT_FMT" need to roam, don't care BusyTraffic\n", FUNC_ADPT_ARG(padapter));
+ 		else
+ 		#endif
++		{
+ 			RTW_INFO(FUNC_ADPT_FMT" exit BusyTraffic\n", FUNC_ADPT_ARG(padapter));
+ 			goto exit;
++		}
+ 	}
+ 	else if (ssc_chk != SS_ALLOW)
+ 		goto exit;
+diff -Naur a/drivers/net/wireless/rockchip_wlan/rtl8189fs/core/rtw_recv.c b/drivers/net/wireless/rockchip_wlan/rtl8189fs/core/rtw_recv.c
+--- a/drivers/net/wireless/rockchip_wlan/rtl8189fs/core/rtw_recv.c	2026-06-15 07:50:16.000000000 +0800
++++ b/drivers/net/wireless/rockchip_wlan/rtl8189fs/core/rtw_recv.c	2026-07-26 21:53:14.614039420 +0800
+@@ -3556,9 +3556,10 @@
+ 			int i;
+ 			RTW_INFO("############ type:0x%02x subtype:0x%02x #################\n", type, subtype);
+ 
+-			for (i = 0; i < precv_frame->u.hdr.len; i = i + 8)
++			for (i = 0; i < precv_frame->u.hdr.len; i = i + 8) {
+ 				RTW_INFO("%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:\n", *(ptr + i),
+ 					*(ptr + i + 1), *(ptr + i + 2) , *(ptr + i + 3) , *(ptr + i + 4), *(ptr + i + 5), *(ptr + i + 6), *(ptr + i + 7));
++			}
+ 				RTW_INFO("#############################\n");
+ 				_rtw_memset(pmppriv->mplink_buf, '\0' , sizeof(pmppriv->mplink_buf));
+ 				_rtw_memcpy(pmppriv->mplink_buf, ptr, precv_frame->u.hdr.len);
+diff -Naur a/drivers/net/wireless/rockchip_wlan/rtl8189fs/core/rtw_security.c b/drivers/net/wireless/rockchip_wlan/rtl8189fs/core/rtw_security.c
+--- a/drivers/net/wireless/rockchip_wlan/rtl8189fs/core/rtw_security.c	2026-06-15 07:50:16.000000000 +0800
++++ b/drivers/net/wireless/rockchip_wlan/rtl8189fs/core/rtw_security.c	2026-07-26 21:52:25.054625833 +0800
+@@ -2134,7 +2134,7 @@
+ #ifndef PLATFORM_FREEBSD
+ #if defined(CONFIG_TDLS)
+ /* compress 512-bits */
+-static int sha256_compress(struct sha256_state *md, unsigned char *buf)
++static int sha256_compress(struct rtl_sha256_state *md, unsigned char *buf)
+ {
+ 	u32 S[8], W[64], t0, t1;
+ 	u32 t;
+@@ -2182,7 +2182,7 @@
+ }
+ 
+ /* Initialize the hash state */
+-static void sha256_init(struct sha256_state *md)
++static void sha256_init(struct rtl_sha256_state *md)
+ {
+ 	md->curlen = 0;
+ 	md->length = 0;
+@@ -2203,7 +2203,7 @@
+    @param inlen  The length of the data (octets)
+    @return CRYPT_OK if successful
+ */
+-static int sha256_process(struct sha256_state *md, unsigned char *in,
++static int sha256_process(struct rtl_sha256_state *md, unsigned char *in,
+ 			  unsigned long inlen)
+ {
+ 	unsigned long n;
+@@ -2244,7 +2244,7 @@
+    @param out [out] The destination of the hash (32 bytes)
+    @return CRYPT_OK if successful
+ */
+-static int sha256_done(struct sha256_state *md, unsigned char *out)
++static int sha256_done(struct rtl_sha256_state *md, unsigned char *out)
+ {
+ 	int i;
+ 
+@@ -2294,7 +2294,7 @@
+ static int sha256_vector(size_t num_elem, u8 *addr[], size_t *len,
+ 			 u8 *mac)
+ {
+-	struct sha256_state ctx;
++	struct rtl_sha256_state ctx;
+ 	size_t i;
+ 
+ 	sha256_init(&ctx);
+diff -Naur a/drivers/net/wireless/rockchip_wlan/rtl8189fs/core/rtw_sta_mgt.c b/drivers/net/wireless/rockchip_wlan/rtl8189fs/core/rtw_sta_mgt.c
+--- a/drivers/net/wireless/rockchip_wlan/rtl8189fs/core/rtw_sta_mgt.c	2026-06-15 07:50:16.000000000 +0800
++++ b/drivers/net/wireless/rockchip_wlan/rtl8189fs/core/rtw_sta_mgt.c	2026-07-26 21:53:12.853855879 +0800
+@@ -382,8 +382,7 @@
+ void rtw_mfree_stainfo(struct sta_info *psta)
+ {
+ 
+-	if (&psta->lock != NULL)
+-		_rtw_spinlock_free(&psta->lock);
++	_rtw_spinlock_free(&psta->lock);
+ 
+ 	_rtw_free_sta_xmit_priv_lock(&psta->sta_xmitpriv);
+ 	_rtw_free_sta_recv_priv_lock(&psta->sta_recvpriv);
+diff -Naur a/drivers/net/wireless/rockchip_wlan/rtl8189fs/include/rtw_security.h b/drivers/net/wireless/rockchip_wlan/rtl8189fs/include/rtw_security.h
+--- a/drivers/net/wireless/rockchip_wlan/rtl8189fs/include/rtw_security.h	2026-06-15 07:50:16.000000000 +0800
++++ b/drivers/net/wireless/rockchip_wlan/rtl8189fs/include/rtw_security.h	2026-07-26 21:52:25.054355829 +0800
+@@ -247,7 +247,7 @@
+ #define SEC_IS_BIP_KEY_INSTALLED(sec) _FALSE
+ #endif
+ 
+-struct sha256_state {
++struct rtl_sha256_state {
+ 	u64 length;
+ 	u32 state[8], curlen;
+ 	u8 buf[64];
+diff -Naur a/drivers/net/wireless/rockchip_wlan/rtl8189fs/os_dep/linux/ioctl_cfg80211.c b/drivers/net/wireless/rockchip_wlan/rtl8189fs/os_dep/linux/ioctl_cfg80211.c
+--- a/drivers/net/wireless/rockchip_wlan/rtl8189fs/os_dep/linux/ioctl_cfg80211.c	2026-06-15 07:50:16.000000000 +0800
++++ b/drivers/net/wireless/rockchip_wlan/rtl8189fs/os_dep/linux/ioctl_cfg80211.c	2026-07-26 21:57:18.657008039 +0800
+@@ -7366,12 +7366,20 @@
+ #else
+ 	struct net_device *ndev,
+ #endif
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0))
++	struct mgmt_frame_regs *upd)
++#else
+ 	u16 frame_type, bool reg)
++#endif
+ {
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0))
+ 	struct net_device *ndev = wdev_to_ndev(wdev);
+ #endif
+ 	_adapter *adapter;
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0))
++	u16 frame_type = BIT(upd->global_stypes << 4);
++	bool reg = false;
++#endif
+ 
+ 	struct rtw_wdev_priv *pwdev_priv;
+ 
+@@ -9691,7 +9699,11 @@
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)) || defined(COMPAT_KERNEL_RELEASE)
+ 	.mgmt_tx = cfg80211_rtw_mgmt_tx,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
++	.update_mgmt_frame_registrations = cfg80211_rtw_mgmt_frame_register,
++#else
+ 	.mgmt_frame_register = cfg80211_rtw_mgmt_frame_register,
++#endif
+ #elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34) && LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 35))
+ 	.action = cfg80211_rtw_mgmt_tx,
+ #endif
+diff -Naur a/drivers/net/wireless/rockchip_wlan/rtl8189fs/os_dep/linux/ioctl_linux.c b/drivers/net/wireless/rockchip_wlan/rtl8189fs/os_dep/linux/ioctl_linux.c
+--- a/drivers/net/wireless/rockchip_wlan/rtl8189fs/os_dep/linux/ioctl_linux.c	2026-06-15 07:50:16.000000000 +0800
++++ b/drivers/net/wireless/rockchip_wlan/rtl8189fs/os_dep/linux/ioctl_linux.c	2026-07-26 21:57:18.659340464 +0800
+@@ -8057,7 +8057,7 @@
+ 	struct wowlan_ioctl_param poidparam;
+ 	int ret = 0, len = 0, i = 0;
+ 	systime start_time = rtw_get_current_time();
+-	u8 input[wrqu->data.length];
++	u8 input[MAX_WKFM_PATTERN_SIZE];
+ 	u8 index = 0;
+ 
+ 	poidparam.subcode = 0;
+diff -Naur a/drivers/net/wireless/rockchip_wlan/rtl8189fs/os_dep/linux/os_intfs.c b/drivers/net/wireless/rockchip_wlan/rtl8189fs/os_dep/linux/os_intfs.c
+--- a/drivers/net/wireless/rockchip_wlan/rtl8189fs/os_dep/linux/os_intfs.c	2026-06-15 07:50:16.000000000 +0800
++++ b/drivers/net/wireless/rockchip_wlan/rtl8189fs/os_dep/linux/os_intfs.c	2026-07-26 21:59:56.225544143 +0800
+@@ -18,6 +18,10 @@
+ #include <drv_types.h>
+ #include <hal_data.h>
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(6, 13, 0))
++MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
++#endif
++
+ MODULE_LICENSE("GPL");
+ MODULE_DESCRIPTION("Realtek Wireless Lan Driver");
+ MODULE_AUTHOR("Realtek Semiconductor Corp.");
+diff -Naur a/drivers/net/wireless/rockchip_wlan/rtl8189fs/os_dep/linux/rtw_proc.c b/drivers/net/wireless/rockchip_wlan/rtl8189fs/os_dep/linux/rtw_proc.c
+--- a/drivers/net/wireless/rockchip_wlan/rtl8189fs/os_dep/linux/rtw_proc.c	2026-06-15 07:50:16.000000000 +0800
++++ b/drivers/net/wireless/rockchip_wlan/rtl8189fs/os_dep/linux/rtw_proc.c	2026-07-26 21:57:18.657879337 +0800
+@@ -62,8 +62,14 @@
+ 	return entry;
+ }
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0))
++#define struct_proc_ops proc_ops
++#else
++#define struct_proc_ops file_operations
++#endif
++
+ inline struct proc_dir_entry *rtw_proc_create_entry(const char *name, struct proc_dir_entry *parent,
+-	const struct file_operations *fops, void * data)
++	const struct struct_proc_ops *fops, void * data)
+ {
+ 	struct proc_dir_entry *entry;
+ 
+@@ -239,6 +245,15 @@
+ 	return -EROFS;
+ }
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0))
++static const struct proc_ops rtw_drv_proc_seq_fops = {
++	.proc_open = rtw_drv_proc_open,
++	.proc_read = seq_read,
++	.proc_lseek = seq_lseek,
++	.proc_release = seq_release,
++	.proc_write = rtw_drv_proc_write,
++};
++#else
+ static const struct file_operations rtw_drv_proc_seq_fops = {
+ 	.owner = THIS_MODULE,
+ 	.open = rtw_drv_proc_open,
+@@ -247,7 +262,17 @@
+ 	.release = seq_release,
+ 	.write = rtw_drv_proc_write,
+ };
++#endif
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0))
++static const struct proc_ops rtw_drv_proc_sseq_fops = {
++	.proc_open = rtw_drv_proc_open,
++	.proc_read = seq_read,
++	.proc_lseek = seq_lseek,
++	.proc_release = single_release,
++	.proc_write = rtw_drv_proc_write,
++};
++#else
+ static const struct file_operations rtw_drv_proc_sseq_fops = {
+ 	.owner = THIS_MODULE,
+ 	.open = rtw_drv_proc_open,
+@@ -256,6 +281,7 @@
+ 	.release = single_release,
+ 	.write = rtw_drv_proc_write,
+ };
++#endif
+ 
+ int rtw_drv_proc_init(void)
+ {
+@@ -4433,6 +4459,15 @@
+ 	return -EROFS;
+ }
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0))
++static const struct proc_ops rtw_adapter_proc_seq_fops = {
++	.proc_open = rtw_adapter_proc_open,
++	.proc_read = seq_read,
++	.proc_lseek = seq_lseek,
++	.proc_release = seq_release,
++	.proc_write = rtw_adapter_proc_write,
++};
++#else
+ static const struct file_operations rtw_adapter_proc_seq_fops = {
+ 	.owner = THIS_MODULE,
+ 	.open = rtw_adapter_proc_open,
+@@ -4441,7 +4476,17 @@
+ 	.release = seq_release,
+ 	.write = rtw_adapter_proc_write,
+ };
++#endif
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0))
++static const struct proc_ops rtw_adapter_proc_sseq_fops = {
++	.proc_open = rtw_adapter_proc_open,
++	.proc_read = seq_read,
++	.proc_lseek = seq_lseek,
++	.proc_release = single_release,
++	.proc_write = rtw_adapter_proc_write,
++};
++#else
+ static const struct file_operations rtw_adapter_proc_sseq_fops = {
+ 	.owner = THIS_MODULE,
+ 	.open = rtw_adapter_proc_open,
+@@ -4450,6 +4495,7 @@
+ 	.release = single_release,
+ 	.write = rtw_adapter_proc_write,
+ };
++#endif
+ 
+ int proc_get_odm_adaptivity(struct seq_file *m, void *v)
+ {
+@@ -4602,6 +4648,15 @@
+ 	return -EROFS;
+ }
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0))
++static const struct proc_ops rtw_odm_proc_seq_fops = {
++	.proc_open = rtw_odm_proc_open,
++	.proc_read = seq_read,
++	.proc_lseek = seq_lseek,
++	.proc_release = seq_release,
++	.proc_write = rtw_odm_proc_write,
++};
++#else
+ static const struct file_operations rtw_odm_proc_seq_fops = {
+ 	.owner = THIS_MODULE,
+ 	.open = rtw_odm_proc_open,
+@@ -4610,7 +4665,17 @@
+ 	.release = seq_release,
+ 	.write = rtw_odm_proc_write,
+ };
++#endif
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0))
++static const struct proc_ops rtw_odm_proc_sseq_fops = {
++	.proc_open = rtw_odm_proc_open,
++	.proc_read = seq_read,
++	.proc_lseek = seq_lseek,
++	.proc_release = single_release,
++	.proc_write = rtw_odm_proc_write,
++};
++#else
+ static const struct file_operations rtw_odm_proc_sseq_fops = {
+ 	.owner = THIS_MODULE,
+ 	.open = rtw_odm_proc_open,
+@@ -4619,6 +4684,7 @@
+ 	.release = single_release,
+ 	.write = rtw_odm_proc_write,
+ };
++#endif
+ 
+ struct proc_dir_entry *rtw_odm_proc_init(struct net_device *dev)
+ {
+@@ -4746,6 +4812,15 @@
+ 	return -EROFS;
+ }
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0))
++static const struct proc_ops rtw_mcc_proc_seq_fops = {
++	.proc_open = rtw_mcc_proc_open,
++	.proc_read = seq_read,
++	.proc_lseek = seq_lseek,
++	.proc_release = seq_release,
++	.proc_write = rtw_mcc_proc_write,
++};
++#else
+ static const struct file_operations rtw_mcc_proc_seq_fops = {
+ 	.owner = THIS_MODULE,
+ 	.open = rtw_mcc_proc_open,
+@@ -4754,7 +4829,17 @@
+ 	.release = seq_release,
+ 	.write = rtw_mcc_proc_write,
+ };
++#endif
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0))
++static const struct proc_ops rtw_mcc_proc_sseq_fops = {
++	.proc_open = rtw_mcc_proc_open,
++	.proc_read = seq_read,
++	.proc_lseek = seq_lseek,
++	.proc_release = single_release,
++	.proc_write = rtw_mcc_proc_write,
++};
++#else
+ static const struct file_operations rtw_mcc_proc_sseq_fops = {
+ 	.owner = THIS_MODULE,
+ 	.open = rtw_mcc_proc_open,
+@@ -4763,6 +4848,7 @@
+ 	.release = single_release,
+ 	.write = rtw_mcc_proc_write,
+ };
++#endif
+ 
+ struct proc_dir_entry *rtw_mcc_proc_init(struct net_device *dev)
+ {

@@ -1,0 +1,601 @@
+--- a/drivers/gpu/drm/panel/Makefile
++++ b/drivers/gpu/drm/panel/Makefile
+@@ -57,3 +57,4 @@
+ obj-$(CONFIG_DRM_PANEL_VISIONOX_RM69299) += panel-visionox-rm69299.o
+ obj-$(CONFIG_DRM_PANEL_XINPENG_XPP055C272) += panel-xinpeng-xpp055c272.o
+ obj-$(CONFIG_DRM_PANEL_NEWVISION_NV3051D) += panel-newvision-nv3051d.o
++obj-y += panel-e555hbm2.o
+--- a/drivers/gpu/drm/panel/panel-e555hbm2.c	1970-01-01 08:00:00.000000000 +0800
++++ b/drivers/gpu/drm/panel/panel-e555hbm2.c	2026-07-27 00:27:18.210238114 +0800
+@@ -0,0 +1,591 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * E555HBM2 AMOLED panel driver (Chip Blueprint / Coolboy)
++ *
++ * Prepare/reset choreography matches vendor U-Boot e555hbm2_panel
++ * (not generic rockchip_panel).
++ */
++
++#include <linux/backlight.h>
++#include <linux/delay.h>
++#include <linux/gpio/consumer.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/regulator/consumer.h>
++#include <linux/suspend.h>
++
++#include <drm/drm_modes.h>
++#include <video/mipi_display.h>
++#include <video/of_display_timing.h>
++#include <video/videomode.h>
++
++#include <drm/drm_connector.h>
++#include <drm/drm_mipi_dsi.h>
++#include <drm/drm_panel.h>
++
++struct e555_cmd_header {
++	u8 data_type;
++	u8 delay;
++	u8 payload_length;
++} __packed;
++
++struct e555_cmd_desc {
++	struct e555_cmd_header header;
++	const u8 *payload;
++};
++
++struct e555_cmd_seq {
++	struct e555_cmd_desc *cmds;
++	unsigned int cmd_cnt;
++};
++
++struct e555_panel {
++	struct drm_panel base;
++	struct mipi_dsi_device *dsi;
++	struct regulator *supply;
++	struct gpio_desc *enable_gpio;
++	struct gpio_desc *reset_gpio;
++	struct backlight_device *backlight;
++
++	struct drm_display_mode mode;
++	u32 dsi_flags;
++	enum mipi_dsi_pixel_format format;
++	unsigned int lanes;
++
++	struct e555_cmd_seq *init_seq;
++
++	struct {
++		unsigned int prepare;
++		unsigned int enable;
++		unsigned int disable;
++		unsigned int unprepare;
++		unsigned int reset;
++		unsigned int init;
++	} delay;
++
++	bool prepared;
++	bool enabled;
++	/*
++	 * After first successful cold init (U-Boot-equivalent), behave like
++	 * vendor panel_dsi: prepare/unprepare/enable/disable are flag-only.
++	 */
++	bool brought_up;
++	enum drm_panel_orientation orientation;
++};
++
++static inline struct e555_panel *to_e555_panel(struct drm_panel *panel)
++{
++	return container_of(panel, struct e555_panel, base);
++}
++
++static void e555_msleep(unsigned int ms)
++{
++	if (!ms)
++		return;
++
++	if (ms > 20)
++		msleep(ms);
++	else
++		usleep_range(ms * 1000, (ms + 1) * 1000);
++}
++
++static int e555_parse_byte_seq(struct device *dev, const u8 *data, int len,
++			       struct e555_cmd_seq **seq_out)
++{
++	struct e555_cmd_seq *seq;
++	struct e555_cmd_header *hdr;
++	unsigned int i, cnt = 0;
++	const u8 *d;
++	int rem;
++
++	if (!data || !len)
++		return 0;
++
++	d = data;
++	rem = len;
++	while (rem > (int)sizeof(*hdr)) {
++		hdr = (struct e555_cmd_header *)d;
++		d += sizeof(*hdr);
++		rem -= sizeof(*hdr);
++		if (hdr->payload_length > rem)
++			return -EINVAL;
++		d += hdr->payload_length;
++		rem -= hdr->payload_length;
++		cnt++;
++	}
++	if (rem)
++		return -EINVAL;
++
++	seq = devm_kzalloc(dev, sizeof(*seq), GFP_KERNEL);
++	if (!seq)
++		return -ENOMEM;
++
++	seq->cmds = devm_kcalloc(dev, cnt, sizeof(*seq->cmds), GFP_KERNEL);
++	if (!seq->cmds)
++		return -ENOMEM;
++
++	d = data;
++	rem = len;
++	for (i = 0; i < cnt; i++) {
++		hdr = (struct e555_cmd_header *)d;
++		d += sizeof(*hdr);
++		rem -= sizeof(*hdr);
++		seq->cmds[i].header = *hdr;
++		seq->cmds[i].payload = d;
++		d += hdr->payload_length;
++		rem -= hdr->payload_length;
++	}
++	seq->cmd_cnt = cnt;
++	*seq_out = seq;
++
++	return 0;
++}
++
++static int e555_dsi_send(struct mipi_dsi_device *dsi, u8 type,
++			 const u8 *payload, u8 len)
++{
++	switch (type) {
++	case MIPI_DSI_GENERIC_SHORT_WRITE_0_PARAM:
++	case MIPI_DSI_GENERIC_SHORT_WRITE_1_PARAM:
++	case MIPI_DSI_GENERIC_SHORT_WRITE_2_PARAM:
++	case MIPI_DSI_GENERIC_LONG_WRITE:
++		return mipi_dsi_generic_write(dsi, payload, len);
++	case MIPI_DSI_DCS_SHORT_WRITE:
++	case MIPI_DSI_DCS_SHORT_WRITE_PARAM:
++	case MIPI_DSI_DCS_LONG_WRITE:
++		return mipi_dsi_dcs_write_buffer(dsi, payload, len);
++	default:
++		return -EINVAL;
++	}
++}
++
++static int e555_xfer_byte_seq(struct e555_panel *panel, struct e555_cmd_seq *seq)
++{
++	struct device *dev = panel->base.dev;
++	unsigned int i;
++	int ret;
++
++	if (!seq)
++		return 0;
++
++	for (i = 0; i < seq->cmd_cnt; i++) {
++		struct e555_cmd_desc *cmd = &seq->cmds[i];
++
++		ret = e555_dsi_send(panel->dsi, cmd->header.data_type,
++				    cmd->payload, cmd->header.payload_length);
++		if (ret < 0) {
++			dev_err(dev, "panel cmd %u failed: %d\n", i, ret);
++			return ret;
++		}
++		e555_msleep(cmd->header.delay);
++	}
++
++	return 0;
++}
++
++/*
++ * Vendor panel_backlight_update_status: brightness 0..255 → gamma u16
++ * (0x0000..0x03ff) → patch into C1 as {0xc1, hi, lo}, then send
++ * F0 page unlock + C1. DT default c1 03 ff is just gamma[255].
++ */
++static const u16 e555_bl_gamma[256] = {
++	0x000, 0x007, 0x00e, 0x014, 0x01b, 0x022, 0x029, 0x02f,
++	0x036, 0x03c, 0x043, 0x049, 0x050, 0x056, 0x05c, 0x063,
++	0x069, 0x06f, 0x075, 0x07b, 0x081, 0x087, 0x08d, 0x093,
++	0x099, 0x09f, 0x0a5, 0x0ab, 0x0b1, 0x0b7, 0x0bc, 0x0c2,
++	0x0c8, 0x0cd, 0x0d3, 0x0d9, 0x0de, 0x0e4, 0x0e9, 0x0ef,
++	0x0f4, 0x0fa, 0x0ff, 0x104, 0x10a, 0x10f, 0x114, 0x119,
++	0x11f, 0x124, 0x129, 0x12e, 0x133, 0x138, 0x13d, 0x143,
++	0x148, 0x14d, 0x151, 0x156, 0x15b, 0x160, 0x165, 0x16a,
++	0x16f, 0x174, 0x178, 0x17d, 0x182, 0x187, 0x18b, 0x190,
++	0x195, 0x199, 0x19e, 0x1a2, 0x1a7, 0x1ac, 0x1b0, 0x1b5,
++	0x1b9, 0x1be, 0x1c2, 0x1c6, 0x1cb, 0x1cf, 0x1d4, 0x1d8,
++	0x1dc, 0x1e1, 0x1e5, 0x1e9, 0x1ed, 0x1f2, 0x1f6, 0x1fa,
++	0x1fe, 0x203, 0x207, 0x20b, 0x20f, 0x213, 0x217, 0x21b,
++	0x21f, 0x223, 0x227, 0x22b, 0x22f, 0x233, 0x237, 0x23b,
++	0x23f, 0x243, 0x247, 0x24b, 0x24f, 0x253, 0x257, 0x25a,
++	0x25e, 0x262, 0x266, 0x26a, 0x26d, 0x271, 0x275, 0x279,
++	0x27c, 0x280, 0x284, 0x287, 0x28b, 0x28f, 0x292, 0x296,
++	0x299, 0x29d, 0x2a1, 0x2a4, 0x2a8, 0x2ab, 0x2af, 0x2b2,
++	0x2b6, 0x2b9, 0x2bd, 0x2c0, 0x2c4, 0x2c7, 0x2cb, 0x2ce,
++	0x2d1, 0x2d5, 0x2d8, 0x2dc, 0x2df, 0x2e2, 0x2e6, 0x2e9,
++	0x2ec, 0x2f0, 0x2f3, 0x2f6, 0x2f9, 0x2fd, 0x300, 0x303,
++	0x306, 0x30a, 0x30d, 0x310, 0x313, 0x317, 0x31a, 0x31d,
++	0x320, 0x323, 0x326, 0x329, 0x32d, 0x330, 0x333, 0x336,
++	0x339, 0x33c, 0x33f, 0x342, 0x345, 0x348, 0x34b, 0x34e,
++	0x351, 0x354, 0x357, 0x35a, 0x35d, 0x360, 0x363, 0x366,
++	0x369, 0x36c, 0x36f, 0x372, 0x375, 0x378, 0x37b, 0x37d,
++	0x380, 0x383, 0x386, 0x389, 0x38c, 0x38f, 0x391, 0x394,
++	0x397, 0x39a, 0x39d, 0x39f, 0x3a2, 0x3a5, 0x3a8, 0x3aa,
++	0x3ad, 0x3b0, 0x3b3, 0x3b5, 0x3b8, 0x3bb, 0x3be, 0x3c0,
++	0x3c3, 0x3c6, 0x3c8, 0x3cb, 0x3ce, 0x3d0, 0x3d3, 0x3d6,
++	0x3d8, 0x3db, 0x3dd, 0x3e0, 0x3e3, 0x3e5, 0x3e8, 0x3eb,
++	0x3ed, 0x3f0, 0x3f2, 0x3f5, 0x3f7, 0x3fa, 0x3fc, 0x3ff,
++};
++
++static int e555_bl_send(struct e555_panel *panel, int brightness, bool blank)
++{
++	static const u8 unlock[] = { 0xf0, 0x55, 0xaa, 0x52, 0x08, 0x02 };
++	u8 bright[3] = { 0xc1, 0x03, 0xff };
++	u16 level;
++	int ret;
++
++	if (blank) {
++		bright[1] = 0;
++		bright[2] = 0;
++	} else {
++		if (brightness < 0)
++			brightness = 0;
++		if (brightness > 255)
++			brightness = 255;
++		level = e555_bl_gamma[brightness];
++		bright[1] = level >> 8;
++		bright[2] = level & 0xff;
++	}
++
++	ret = mipi_dsi_dcs_write_buffer(panel->dsi, unlock, sizeof(unlock));
++	if (ret < 0)
++		return ret;
++	e555_msleep(1);
++
++	return mipi_dsi_dcs_write_buffer(panel->dsi, bright, sizeof(bright));
++}
++
++static int e555_bl_update_status(struct backlight_device *bl)
++{
++	struct e555_panel *panel = bl_get_data(bl);
++	bool blank;
++
++	if (!panel->brought_up || !panel->prepared)
++		return 0;
++
++	blank = bl->props.power != FB_BLANK_UNBLANK ||
++		(bl->props.state & BL_CORE_FBBLANK);
++
++	return e555_bl_send(panel, bl->props.brightness, blank);
++}
++
++static int e555_bl_get_brightness(struct backlight_device *bl)
++{
++	return bl->props.brightness;
++}
++
++static const struct backlight_ops e555_bl_ops = {
++	.update_status = e555_bl_update_status,
++	.get_brightness = e555_bl_get_brightness,
++};
++
++/* U-Boot e555 uses dm_gpio_set_value with DT flag 0 (active-high logical).
++ * Convert those U-Boot logical levels to Linux gpiod values so the *wire*
++ * sees the same 0→1→0→1 ending HIGH whether DT is ACTIVE_HIGH or ACTIVE_LOW.
++ */
++static int e555_uboot_to_gpiod(struct gpio_desc *gpio, int uboot_level)
++{
++	if (!gpio)
++		return uboot_level;
++	if (gpiod_is_active_low(gpio))
++		return !uboot_level;
++	return uboot_level;
++}
++
++static void e555_reset_uboot(struct e555_panel *p, int uboot_level)
++{
++	if (!p->reset_gpio)
++		return;
++	gpiod_set_value_cansleep(p->reset_gpio,
++				 e555_uboot_to_gpiod(p->reset_gpio, uboot_level));
++}
++
++/*
++ * Cold bring-up matches vendor U-Boot e555hbm2_panel prepare.
++ *
++ * Afterwards behave like vendor panel_dsi loader-protect: later
++ * prepare/unprepare/enable/disable are flag-only (no MIPI). Runtime
++ * brightness still goes through backlight update_status (needs
++ * rockchip,dsi-keep-hs-clk-on-lpm on the panel DT node).
++ */
++static int e555_panel_prepare(struct drm_panel *panel)
++{
++	struct e555_panel *p = to_e555_panel(panel);
++	int ret, raw = -1;
++
++	if (p->prepared)
++		return 0;
++
++	if (p->brought_up) {
++		p->prepared = true;
++		dev_info(panel->dev,
++			 "E555HBM2 prepare re-entry: flag only (no soft-resume)\n");
++		return 0;
++	}
++
++	if (p->reset_gpio)
++		gpiod_direction_output(p->reset_gpio,
++				       e555_uboot_to_gpiod(p->reset_gpio, 0));
++
++	ret = regulator_enable(p->supply);
++	if (ret < 0)
++		return ret;
++
++	if (p->enable_gpio)
++		gpiod_direction_output(p->enable_gpio, 1);
++
++	e555_msleep(30);
++
++	e555_reset_uboot(p, 1);
++	e555_msleep(10);
++	e555_reset_uboot(p, 0);
++	e555_msleep(10);
++	e555_reset_uboot(p, 1);
++
++	if (p->reset_gpio)
++		raw = gpiod_get_raw_value_cansleep(p->reset_gpio);
++
++	ret = e555_xfer_byte_seq(p, p->init_seq);
++	if (ret < 0) {
++		dev_err(panel->dev, "init sequence failed: %d\n", ret);
++		return ret;
++	}
++
++	{
++		int bri = p->backlight ? p->backlight->props.brightness : 255;
++
++		ret = e555_bl_send(p, bri, false);
++		if (ret < 0) {
++			dev_err(panel->dev, "backlight sequence failed: %d\n", ret);
++			return ret;
++		}
++	}
++
++	dev_info(panel->dev, "E555HBM2 cold init ok, reset_raw=%d\n", raw);
++	p->brought_up = true;
++	p->prepared = true;
++	return 0;
++}
++
++static int e555_panel_enable(struct drm_panel *panel)
++{
++	struct e555_panel *p = to_e555_panel(panel);
++
++	if (p->enabled)
++		return 0;
++
++	/* Vendor / U-Boot: delay only. No MIPI after HS video. */
++	e555_msleep(p->delay.enable ? p->delay.enable : 10);
++
++	p->enabled = true;
++	return 0;
++}
++
++static int e555_panel_disable(struct drm_panel *panel)
++{
++	struct e555_panel *p = to_e555_panel(panel);
++
++	if (!p->enabled)
++		return 0;
++
++	/* Vendor panel_disable: short sleep only — leave panel powered/lit. */
++	e555_msleep(p->delay.disable ? p->delay.disable : 10);
++
++	p->enabled = false;
++	return 0;
++}
++
++static bool e555_system_suspending(void)
++{
++#ifdef CONFIG_SUSPEND
++	return pm_suspend_target_state != PM_SUSPEND_ON;
++#else
++	return false;
++#endif
++}
++
++static int e555_panel_unprepare(struct drm_panel *panel)
++{
++	struct e555_panel *p = to_e555_panel(panel);
++
++	if (!p->prepared)
++		return 0;
++
++	/*
++	 * After cold init: flag only. Keep power/GPIO. Skip sleep MIPI on
++	 * system suspend so the OLED is not put to sleep from Linux.
++	 */
++	if (p->brought_up && e555_system_suspending())
++		dev_info(panel->dev,
++			 "E555HBM2 system suspend: skip sleep MIPI\n");
++
++	p->prepared = false;
++	return 0;
++}
++
++static int e555_panel_get_modes(struct drm_panel *panel,
++				struct drm_connector *connector)
++{
++	struct e555_panel *p = to_e555_panel(panel);
++	struct drm_display_mode *mode;
++
++	mode = drm_mode_duplicate(connector->dev, &p->mode);
++	if (!mode)
++		return 0;
++
++	mode->type |= DRM_MODE_TYPE_DRIVER | DRM_MODE_TYPE_PREFERRED;
++	drm_mode_set_name(mode);
++	drm_mode_probed_add(connector, mode);
++
++	drm_connector_set_panel_orientation(connector, p->orientation);
++
++	return 1;
++}
++
++static const struct drm_panel_funcs e555_panel_funcs = {
++	.prepare = e555_panel_prepare,
++	.enable = e555_panel_enable,
++	.disable = e555_panel_disable,
++	.unprepare = e555_panel_unprepare,
++	.get_modes = e555_panel_get_modes,
++};
++
++static int e555_panel_probe(struct mipi_dsi_device *dsi)
++{
++	struct device *dev = &dsi->dev;
++	struct e555_panel *panel;
++	struct device_node *np = dev->of_node;
++	const void *data;
++	int len, ret;
++	u32 val;
++	struct backlight_properties props;
++
++	panel = devm_kzalloc(dev, sizeof(*panel), GFP_KERNEL);
++	if (!panel)
++		return -ENOMEM;
++
++	panel->supply = devm_regulator_get(dev, "power");
++	if (IS_ERR(panel->supply))
++		return dev_err_probe(dev, PTR_ERR(panel->supply),
++				     "failed to get power supply\n");
++
++	panel->enable_gpio = devm_gpiod_get_optional(dev, "enable", GPIOD_ASIS);
++	if (IS_ERR(panel->enable_gpio))
++		return dev_err_probe(dev, PTR_ERR(panel->enable_gpio),
++				     "failed to get enable GPIO\n");
++
++	/* Match vendor DT: reset-gpios flag 0 (ACTIVE_HIGH logical levels). */
++	panel->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_ASIS);
++	if (IS_ERR(panel->reset_gpio))
++		return dev_err_probe(dev, PTR_ERR(panel->reset_gpio),
++				     "failed to get reset GPIO\n");
++
++	of_property_read_u32(np, "prepare-delay-ms", &panel->delay.prepare);
++	of_property_read_u32(np, "enable-delay-ms", &panel->delay.enable);
++	of_property_read_u32(np, "disable-delay-ms", &panel->delay.disable);
++	of_property_read_u32(np, "unprepare-delay-ms", &panel->delay.unprepare);
++	of_property_read_u32(np, "reset-delay-ms", &panel->delay.reset);
++	of_property_read_u32(np, "init-delay-ms", &panel->delay.init);
++
++	data = of_get_property(np, "panel-init-sequence", &len);
++	if (!data)
++		return dev_err_probe(dev, -EINVAL, "missing panel-init-sequence\n");
++
++	ret = e555_parse_byte_seq(dev, data, len, &panel->init_seq);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to parse init sequence\n");
++
++	ret = of_get_drm_display_mode(np, &panel->mode, NULL, OF_USE_NATIVE_MODE);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to get display mode\n");
++
++	if (!of_property_read_u32(np, "dsi,flags", &val))
++		panel->dsi_flags = val;
++	if (!of_property_read_u32(np, "dsi,format", &val))
++		panel->format = val;
++	if (!of_property_read_u32(np, "dsi,lanes", &val))
++		panel->lanes = val;
++
++	ret = of_drm_get_panel_orientation(np, &panel->orientation);
++	if (ret)
++		panel->orientation = DRM_MODE_PANEL_ORIENTATION_UNKNOWN;
++
++	drm_panel_init(&panel->base, dev, &e555_panel_funcs,
++		       DRM_MODE_CONNECTOR_DSI);
++	drm_panel_add(&panel->base);
++
++	memset(&props, 0, sizeof(props));
++	props.type = BACKLIGHT_RAW;
++	props.max_brightness = 255;
++	props.brightness = 255;
++	panel->backlight = devm_backlight_device_register(
++		dev, "backlight", dev, panel, &e555_bl_ops, &props);
++	if (IS_ERR(panel->backlight))
++		return dev_err_probe(dev, PTR_ERR(panel->backlight),
++				     "error registering backlight device\n");
++
++	panel->dsi = dsi;
++	dsi->mode_flags = panel->dsi_flags;
++	dsi->format = panel->format;
++	dsi->lanes = panel->lanes;
++
++	ret = mipi_dsi_attach(dsi);
++	if (ret) {
++		drm_panel_remove(&panel->base);
++		return ret;
++	}
++
++	mipi_dsi_set_drvdata(dsi, panel);
++
++	dev_dbg(dev, "E555HBM2 panel probed\n");
++	return 0;
++}
++
++static int e555_panel_remove(struct mipi_dsi_device *dsi)
++{
++	struct e555_panel *panel = mipi_dsi_get_drvdata(dsi);
++	int ret;
++
++	ret = mipi_dsi_detach(dsi);
++	if (ret < 0)
++		dev_err(&dsi->dev, "failed to detach from DSI host: %d\n", ret);
++
++	drm_panel_remove(&panel->base);
++	return 0;
++}
++
++static void e555_panel_shutdown(struct mipi_dsi_device *dsi)
++{
++	struct e555_panel *panel = mipi_dsi_get_drvdata(dsi);
++
++	/*
++	 * Clear flags first so backlight update cannot start a MIPI xfer.
++	 * Do NOT send exit/sleep DCS here: during reboot/poweroff the DSI host
++	 * is often already disabled and the transfer waits forever (soft reboot
++	 * appears hung). Reset + cut supply is enough; SoC reset finishes it.
++	 */
++	panel->enabled = false;
++	panel->prepared = false;
++	panel->brought_up = false;
++
++	e555_reset_uboot(panel, 0);
++	regulator_disable(panel->supply);
++}
++
++static const struct of_device_id e555_panel_of_match[] = {
++	{ .compatible = "e555hbm2-panel-dsi" },
++	{ .compatible = "e555hbm2-dsi" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, e555_panel_of_match);
++
++static struct mipi_dsi_driver e555_panel_driver = {
++	.driver = {
++		.name = "panel-e555hbm2",
++		.of_match_table = e555_panel_of_match,
++	},
++	.probe = e555_panel_probe,
++	.remove = e555_panel_remove,
++	.shutdown = e555_panel_shutdown,
++};
++module_mipi_dsi_driver(e555_panel_driver);
++
++MODULE_AUTHOR("ROCKNIX port");
++MODULE_DESCRIPTION("E555HBM2 MIPI-DSI panel driver");
++MODULE_LICENSE("GPL");

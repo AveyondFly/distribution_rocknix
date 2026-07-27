@@ -170,6 +170,12 @@ Gameplay / hotkeys / `.conf` sidecars / editing **`j2me.gptk`**: **`J2ME_USER_MA
 
 ---
 
+## 6.1 Kirikiri2 (KrKr2)
+
+`.kr2` launch rules (explicit xp3 vs implicit `name.xp3`), per-game `default.ttf`, and controller mapping: **`KRKR2_USER_MANUAL_en.md`** (**`KRKR2_USER_MANUAL_cn.md`** in Chinese).
+
+---
+
 ## 7. EBOOK (**kebook**/KReader) & music (**kplayer**/KPlayer)
 
 ### 7.1 EBOOK (“KReader”) — **`kebook`**
@@ -268,6 +274,7 @@ For **offline** upgrades (no reliable GitHub access, or you prefer downloading o
 | Repo root **`README.md`** | High-level changelog |
 | **`USER_MANUAL_cn.md`** / **`USER_MANUAL_en.md`** | This handbook (Zh / EN) |
 | **`J2ME_USER_MANUAL_*.md`** | J2ME hotkeys/bindings |
+| **`KRKR2_USER_MANUAL_*.md`** | Kirikiri2 / KrKr2 launch rules & bindings |
 | **`DRASTIC_USER_MANUAL_*.md`** | `layout.json` geometry guide |
 | **`/roms/ebook/*.pdf`** | Bundled **`/usr/share/misc/doc/rocknix-user-man`** PDF snapshots may be copied here on first-boot (`documentation/user_man/` Markdown remains canonical for developers) |
 

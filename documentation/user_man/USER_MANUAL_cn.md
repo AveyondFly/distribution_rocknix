@@ -191,6 +191,14 @@ RK3326 等平台上**山寨／克隆机型批次多**，即便名称与 §3 列�
 
 ---
 
+## 6.1 Kirikiri2（KrKr2）
+
+`.kr2` 启动规则（显式指定 xp3 / 隐式 `name.xp3`）、游戏目录 `default.ttf` 字体，以及手柄映射说明见：
+
+[**KRKR2_USER_MANUAL_cn.md**](KRKR2_USER_MANUAL_cn.md)；英文版见 [**KRKR2_USER_MANUAL_en.md**](KRKR2_USER_MANUAL_en.md)。
+
+---
+
 ## 7. 电子书（KReader）与音乐（KPlayer）
 
 本改版相较主线增加了面向掌机场景的 **EBOOK** 与增强款音乐播放器界面（与源码中的 **`kebook`**、**`kplayer`** 可执行名称对应）。
@@ -304,6 +312,8 @@ RK3326 等平台上**山寨／克隆机型批次多**，即便名称与 §3 列�
 | [USER_MANUAL_en.md](USER_MANUAL_en.md) | 英文手册（内容对应） |
 | [J2ME_USER_MANUAL_cn.md](J2ME_USER_MANUAL_cn.md) | J2ME 手柄与设置说明（中文） |
 | [J2ME_USER_MANUAL_en.md](J2ME_USER_MANUAL_en.md) | J2ME 玩家说明（英文） |
+| [KRKR2_USER_MANUAL_cn.md](KRKR2_USER_MANUAL_cn.md) | Kirikiri2 / KrKr2 启动与键位说明（中文） |
+| [KRKR2_USER_MANUAL_en.md](KRKR2_USER_MANUAL_en.md) | Kirikiri2 / KrKr2 player guide（English） |
 | [DRASTIC_USER_MANUAL_cn.md](DRASTIC_USER_MANUAL_cn.md) | drastic_adv 布局 JSON（中文） |
 | [DRASTIC_USER_MANUAL_en.md](DRASTIC_USER_MANUAL_en.md) | drastic_adv layouts（English） |
 | **`/roms/ebook/*.pdf`** | （若构建镜像时打包）`/usr/share/misc/doc/rocknix-user-man/` 下 PDF 可于首次开机复制到 **`/roms/ebook/`**便于 **EBOOK／kebook**；当前 Markdown 以 `*_cn.md`／`*_en.md` 成对维护（亦可通过独立手册仓库 Releases 分发 PDF）。 |

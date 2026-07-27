@@ -17,6 +17,7 @@ This is an **unofficial** fork of ROCKNIX that provides support for additional d
 - **HBMAME** (hbmame-lr): Homebrew MAME libretro core
 - **mkxp-z**: RPG Maker XP
 - **mrp** (mrp-sa): MRP Games (feature phone game format)
+- **krkr2** (krkr2-sa): Kirikiri2 visual novel engine
 - **ONScripter** (onscripter-lr / onscripter-sa): Visual novel engine (libretro + standalone)
 - **ppsspp2021-sa**: PPSSPP 2021 standalone (default PSP on RK3326 / RK3566 / RK356X)
 - **PyMO/cpymo**: PyMO AVG game engine in C

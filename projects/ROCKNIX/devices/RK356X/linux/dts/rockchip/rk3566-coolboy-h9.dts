@@ -436,8 +436,8 @@
 		display-timings {
 			native-mode = <&panel_timing>;
 			panel_timing: timing0 {
-				/* Known-good on H9: 774*1314*55 = 55938780 */
-				clock-frequency = <55938780>;
+				/* Vendor cbh9: 774*1314*50 = 50851800 */
+				clock-frequency = <50851800>;
 				hactive = <720>;
 				vactive = <1280>;
 				hfront-porch = <20>;

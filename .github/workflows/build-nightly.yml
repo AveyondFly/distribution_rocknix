@@ -241,6 +241,7 @@ jobs:
     uses: ./.github/workflows/build-rk3566-dtbselect-windows.yml
     with:
       include_rk3566: "${{ contains(needs.set-envs.outputs.matrix, 'RK3566') }}"
+      include_rk356x: "${{ contains(needs.set-envs.outputs.matrix, 'RK356X') }}"
     secrets: inherit
 
   rk356x-dtbselect-windows:

@@ -208,7 +208,7 @@ jobs:
         continue-on-error: true
         uses: actions/download-artifact@v4
         with:
-          name: dtbselect-rk3566-windows
+          name: dtbselect-rk356x-rk3566-windows
           path: /tmp/dtbw3566-rk356x-art
 
       - name: Stage DtbselectWin64.exe (RK356X RK3566-Specific prebuilt for package)
@@ -218,8 +218,8 @@ jobs:
           PRE=projects/ROCKNIX/devices/RK356X/packages/rk3566-dtb-select/prebuilt
           rm -rf "${PRE}"
           mkdir -p "${PRE}"
-          if [ -f /tmp/dtbw3566-rk356x-art/dtbselect-rk3566-windows-x64.zip ]; then
-            unzip -o /tmp/dtbw3566-rk356x-art/dtbselect-rk3566-windows-x64.zip -d /tmp/dtbw3566-rk356x-ex
+          if [ -f /tmp/dtbw3566-rk356x-art/dtbselect-rk356x-rk3566-windows-x64.zip ]; then
+            unzip -o /tmp/dtbw3566-rk356x-art/dtbselect-rk356x-rk3566-windows-x64.zip -d /tmp/dtbw3566-rk356x-ex
             if [ -f /tmp/dtbw3566-rk356x-ex/DtbselectWin64.exe ]; then
               cp -a /tmp/dtbw3566-rk356x-ex/DtbselectWin64.exe "${PRE}/DtbselectWin64.exe"
               ls -la "${PRE}/DtbselectWin64.exe"
@@ -227,7 +227,7 @@ jobs:
               echo "Zip has no DtbselectWin64.exe; Windows build skipped in RK3566-Specific image"
             fi
           else
-            echo "No dtbselect-rk3566-windows artifact; building RK3566-Specific image without DtbselectWin64.exe on /flash"
+            echo "No dtbselect-rk356x-rk3566-windows artifact; building RK3566-Specific image without DtbselectWin64.exe on /flash"
           fi
 
       - name: Download arm (${{ inputs.DEVICE }})

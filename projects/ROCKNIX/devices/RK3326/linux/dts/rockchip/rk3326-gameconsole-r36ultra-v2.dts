@@ -335,7 +335,7 @@ thumbr  { gpios = <&gpio2 RK_PB6 GPIO_ACTIVE_LOW>; };
 		pinctrl-names = "default";
 		pinctrl-0 = <&lcd_rst>;
 		panel_description =
-		"G size=153,85 delays=20,20,20,120,20 format=rgb888 lanes=4 flags=0xe03",
+		"G size=76,76 delays=20,20,20,120,20 format=rgb888 lanes=4 flags=0xe03",
 		
 		"M clock=49500 horizontal=720,140,80,160 vertical=720,20,4,6 default=1",
 		

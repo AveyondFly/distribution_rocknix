@@ -560,6 +560,11 @@
 		prepare-delay-ms = <200>;
 		unprepare-delay-ms = <36>;
 		disable-delay-ms = <50>;
+		/*
+		 * 3.2" 1024x768 panel; physical size from RK3566 generic-dsi (65x49 mm).
+		 */
+		width-mm = <65>;
+		height-mm = <49>;
 		dsi,flags = <(MIPI_DSI_MODE_VIDEO           |
 			      MIPI_DSI_MODE_VIDEO_BURST     |
 			      MIPI_DSI_MODE_LPM             |

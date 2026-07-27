@@ -278,6 +278,15 @@
 	];
 };
 
+/*
+ * 4.3" 1024x768 landscape panel; override darkos.dtsi portrait 68x121.
+ * Diagonal 109.2 mm @ 4:3 → 87x66 mm.
+ */
+&dsi_panel {
+	width-mm = <87>;
+	height-mm = <66>;
+};
+
 /* Display timing — 1024x768 landscape at ~61 Hz */
 &dsi_timing0 {
 	clock-frequency = <61152000>;

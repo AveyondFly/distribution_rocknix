@@ -390,6 +390,13 @@
 		unprepare-delay-ms = <60>;
 		/* Native panel is 720x1280; device used landscape like x55 */
 		rotation = <270>;
+		/*
+		 * Physical size for DRM/Wayland DPI (RetroArch menu scale).
+		 * Same native 720x1280 portrait panel class as rk3562-darkos.dtsi;
+		 * panel-e555hbm2 reads these explicitly (of_get_drm_display_mode does not).
+		 */
+		width-mm = <68>;
+		height-mm = <121>;
 		/* BURST: synopsys dw-mipi-dsi burst packet path */
 		dsi,flags = <0xa03>;
 		dsi,format = <0>;

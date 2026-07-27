@@ -460,7 +460,7 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&lcd_rst>;
 		panel_description =
-		"G size=153,85 delays=20,20,20,120,20 format=rgb888 lanes=4 flags=0xe03",
+		"G size=52,70 delays=20,20,20,120,20 format=rgb888 lanes=4 flags=0xe03",
 		"M clock=62160 horizontal=1024,90,101,80 vertical=768,16,8,8 default=1",
 		
 		"I seq=ee01", "I seq=ea07", "I seq=eb12",

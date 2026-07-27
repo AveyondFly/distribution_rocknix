@@ -14,7 +14,7 @@
 &internal_display {
 	compatible = "rocknix,generic-dsi";
 	panel_description = 
-	"G size=153,85 delays=20,20,20,120,20 format=rgb888 lanes=4 flags=0xe03",
+	"G size=76,76 delays=20,20,20,120,20 format=rgb888 lanes=4 flags=0xe03",
 	
 	"M clock=36500 horizontal=720,45,4,45 vertical=720,15,3,11 default=1",
 	"M clock=36600 horizontal=720,45,44,45 vertical=720,15,112,11",

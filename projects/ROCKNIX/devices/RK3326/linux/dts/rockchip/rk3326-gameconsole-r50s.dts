@@ -181,7 +181,7 @@
 	compatible = "rocknix,generic-dsi";
 	rotation = <0x10e>;
 	panel_description =
-	"G size=69,139 delays=2,20,10,50,20 format=rgb888 lanes=2 flags=0xa03",
+	"G size=64,113 delays=2,20,10,50,20 format=rgb888 lanes=2 flags=0xa03",
 	
 	"M clock=30265 horizontal=480,18,22,2 vertical=854,18,34,60 default=1",
 	// "M clock=60530  horizontal=480,18,22,2 vertical=854,18,34,60",

@@ -193,6 +193,11 @@ ALL_DEVICES: Dict[str, DtbEntry] = {
     "R36S酱油 屏幕3": DtbEntry("rk3326-r36s-sauce-panel3.dtb", 202),
     "R36S酱油 屏幕4": DtbEntry("rk3326-r36s-sauce-panel4.dtb", 202),
 
+    # UDT
+    "UDT R36 Ultra": DtbEntry("rk3326-gameconsole-r36ultra.dtb", 101),
+    "UDT R36 Ultra v2": DtbEntry("rk3326-gameconsole-r36ultra-v2.dtb", 101),
+    "UDT R36 Ultra X": DtbEntry("rk3326-gameconsole-r36ultrax.dtb", 101),
+
     # K36系列
     "K36 原始版本": DtbEntry("rk3326-gameconsole-k36.dtb", 202),
 
@@ -210,9 +215,8 @@ ALL_DEVICES: Dict[str, DtbEntry] = {
     "U8 P2屏幕": DtbEntry("rk3326-gameconsole-u8-v2.dtb", 101),
     "RX6H": DtbEntry("rk3326-gameconsole-rx6h.dtb", 101),
     "HG36/HG3506": DtbEntry("rk3326-gameconsole-hg36.dtb", 202),
-    "R36 Ultra": DtbEntry("rk3326-gameconsole-r36ultra.dtb", 101),
-    "R36 Ultra v2": DtbEntry("rk3326-gameconsole-r36ultra-v2.dtb", 101),
-    "R36 Ultra X": DtbEntry("rk3326-gameconsole-r36ultrax.dtb", 101),
+    "Lenovo Go2": DtbEntry("rk3326-gusgu-h7.dtb", 101),
+    "GUSGU H7": DtbEntry("rk3326-gusgu-h7.dtb", 101),
     "XGB36": DtbEntry("rk3326-gameconsole-xgb36.dtb", 202),
     "RG36": DtbEntry("rk3326-gameconsole-rg36.dtb", 202),
     "R40S": DtbEntry("rk3326-gameconsole-r40s.dtb", 202,),
@@ -307,6 +311,7 @@ CATEGORIES: Dict[str, Dict[str, DtbEntry]] = {
     "K36系列": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("K36 ")},
     "AISLPC": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("AISLPC ")},
     "Batlexp": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("Batlexp ")},
+    "UDT": {k: ALL_DEVICES[k] for k in ALL_DEVICES if k.startswith("UDT ")},
     "其他": {
         "GameConsole T16Max|S6000": ALL_DEVICES["T16Max"],
         "GameConsole U8": ALL_DEVICES["U8"],
@@ -337,6 +342,7 @@ CATEGORY_TRANSLATIONS = {
     "K36系列": "K36 Series",
     "AISLPC": "AISLPC",
     "Batlexp": "Batlexp",
+    "UDT": "UDT",
     "其他": "Others",
 }
 
@@ -358,6 +364,11 @@ DEVICE_TRANSLATIONS = {
     "R36S酱油 屏幕3": "R36S Sauce Panel3",
     "R36S酱油 屏幕4": "R36S Sauce Panel4",
 
+    # UDT
+    "UDT R36 Ultra": "UDT R36 Ultra",
+    "UDT R36 Ultra V2": "UDT R36 Ultra V2",
+    "UDT R36 Ultra X": "UDT R36 Ultra X",
+
     # K36系列
     "K36 原始版本": "K36 Original",
 
@@ -372,9 +383,8 @@ DEVICE_TRANSLATIONS = {
     "U8 P2屏幕": "U8 P2 Screen",
     "RX6H": "RX6H",
     "HG36/HG3506": "HG36/HG3506",
-    "R36 Ultra": "R36 Ultra",
-    "R36 Ultra V2": "R36 Ultra V2",
-    "R36 Ultra X": "R36 Ultra X",
+    "Lenovo Go2": "Lenovo Go2",
+    "GUSGU H7": "GUSGU H7",
     "XGB36": "XGB36",
     "R40S": "R40S",
     "R39S": "R39S",

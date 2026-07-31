@@ -89,6 +89,7 @@
     <file>rk3326-gameconsole-r40xxpromax</file>
     <file>rk3326-gameconsole-r45h</file>
     <file>rk3326-gameconsole-r46h</file>
+    <file>rk3326-gusgu-h7</file>
   </RK3326>
   <RK3326S mkimage_options="dtb,extlinux,uboot,rk3326s_dtb_select" fdt="rk3326s-gkd-pixel2.dtb" fdt_type="fdt" dtb_prefix="rockchip">
     <file>rk3326s-gamemt-e6</file>

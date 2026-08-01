@@ -2,7 +2,7 @@ diff --git a/arch/arm64/boot/dts/rockchip/Makefile b/arch/arm64/boot/dts/rockchi
 index 111111111111..222222222222 100644
 --- a/arch/arm64/boot/dts/rockchip/Makefile
 +++ b/arch/arm64/boot/dts/rockchip/Makefile
-@@ -156,7 +156,21 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-rgb30.dtb
+@@ -156,7 +156,22 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-rgb30.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-rgb30-v2.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-rgb20pro.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-rk2023.dtb
@@ -19,6 +19,7 @@ index 111111111111..222222222222 100644
 +dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-diium-d50plus.dtb
 +dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-coolboy-h9.dtb
 +dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-miniloong.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-miyoo-flip.dtb
 +dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-radxa-zero-3w.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3567-evb2-lp4x-v10.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3567-evb2-lp4x-v10-dual-channel-lvds.dtb

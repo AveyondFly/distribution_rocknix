@@ -121,6 +121,7 @@
       <file>rk3566-diium-d50plus</file>
       <file>rk3566-gamemt-e6p</file>
       <file>rk3566-miniloong</file>
+      <file>rk3566-miyoo-flip</file>
       <file>rk3566-radxa-zero-3w</file>
     </Specific>
   </RK3566>
@@ -143,6 +144,7 @@
       <file>rk3566-miniloong</file>
       <file>rk3566-coolboy-h9</file>
       <file>rk3566-radxa-zero-3w</file>
+      <file>rk3566-miyoo-flip</file>
     </RK3566-Specific>
     <RK3566-Generic mkimage_options="dtb,extlinux,uboot" fdt="device_trees" fdt_type="fdtdir">
       <file>rk3566-powkiddy-rgb10max3</file>

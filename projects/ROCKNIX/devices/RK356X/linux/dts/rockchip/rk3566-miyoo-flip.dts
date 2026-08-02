@@ -324,6 +324,10 @@
 		gpio = <&gpio4 RK_PC5 GPIO_ACTIVE_HIGH>;
 		pinctrl-0 = <&vcc5v0_host_en>;
 		pinctrl-names = "default";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
 		regulator-name = "vcc5v0_host";
 		vin-supply = <&dcdc_boost>;
 	};
@@ -969,10 +973,12 @@
 };
 
 &u2phy1_otg {
+	phy-supply = <&vcc5v0_host>;
 	status = "okay";
 };
 
 &u2phy1_host {
+	phy-supply = <&vcc5v0_host>;
 	status = "okay";
 };
 

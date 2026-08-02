@@ -1,0 +1,11 @@
+#!/bin/sh
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2026-present ROCKNIX (https://github.com/ROCKNIX)
+
+# Do not redefine DEVICE_PLAYBACK_PATH / ALSA_PRIMARY_CARD — platforms
+# already set the correct mixer name (Playback Mux vs Playback Path).
+# Only fix speaker/headphone enum values; RK3566 platform defaults both to HP.
+cat <<EOF >/storage/.config/profile.d/003-audio_spk
+DEVICE_PLAYBACK_PATH_SPK="SPK"
+DEVICE_PLAYBACK_PATH_HP="HP"
+EOF

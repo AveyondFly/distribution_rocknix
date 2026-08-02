@@ -151,6 +151,12 @@
 		/* use miyoo serial instead of adc */
 		rocknix,use-miyoo-serial-joypad;
 
+		/* PWM rumble on the joypad FF device (SDL/emulators use this) */
+		pwms = <&pwm5 0 1000000000 0>;
+		pwm-names = "enable";
+		rumble-boost-weak = <0x0000>;
+		rumble-boost-strong = <0x0000>;
+
 		/* gpio pincontrol setup */
 		pinctrl-names = "default";
 		pinctrl-0 = <&btn_pins_ctrl>;
@@ -322,12 +328,6 @@
 		vin-supply = <&dcdc_boost>;
 	};
 
-	vibrator: pwm-vibrator {
-		compatible = "pwm-vibrator";
-		pwm-names = "enable";
-		pwms = <&pwm5 0 1000000000 0>;
-		vcc-supply = <&vcc_3v3>;
-	};
 };
 
 &combphy1_usq {

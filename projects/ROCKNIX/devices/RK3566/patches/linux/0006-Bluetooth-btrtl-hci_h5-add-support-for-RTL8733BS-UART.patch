@@ -1,0 +1,95 @@
+From: tyusha <tyusha@local>
+Subject: [PATCH] Bluetooth: btrtl/hci_h5: add support for RTL8733BS UART
+
+The BL-M8733BS2 (and similar RTL8733BS SDIO+UART modules) report:
+
+  hci_ver=0x0b hci_rev=0x000f lmp_subver=0x8723
+
+on the HCI UART. Mainline/Aurknix already map the USB 8733BU variant
+(hci_ver=0x08) to rtl8723fu_*. Add the UART match and load rtl8723fs_*
+firmware/config, matching Android vendor naming
+(rtl8733bs_8723fs_{fw,config}).
+
+Also add DT compatible realtek,rtl8733bs-bt as a fallback to the common
+H5 power-sequence data used by rtl8723bs-bt.
+
+Firmware blobs are not in linux-firmware; ship device-specific files as:
+  lib/firmware/rtl_bt/rtl8723fs_fw.bin
+  lib/firmware/rtl_bt/rtl8723fs_config.bin
+
+Note: rtl8723fs_config.bin is board-specific (UART baud/flow).
+
+Depends-on: 0005-Bluetooth-btrtl-Add-the-support-for-RTL8733BU.patch
+  (Aurknix mainline); or fold the USB+UART entries together for upstream.
+
+---
+diff --git a/Documentation/devicetree/bindings/net/bluetooth/realtek,bluetooth.yaml b/Documentation/devicetree/bindings/net/bluetooth/realtek,bluetooth.yaml
+--- a/Documentation/devicetree/bindings/net/bluetooth/realtek,bluetooth.yaml
++++ b/Documentation/devicetree/bindings/net/bluetooth/realtek,bluetooth.yaml
+@@ -4,14 +4,14 @@
+ $id: http://devicetree.org/schemas/net/bluetooth/realtek,bluetooth.yaml#
+ $schema: http://devicetree.org/meta-schemas/core.yaml#
+ 
+-title: RTL8723BS/RTL8723CS/RTL8821CS/RTL8822CS Bluetooth
++title: RTL8723BS/RTL8723CS/RTL8733BS/RTL8821CS/RTL8822CS Bluetooth
+ 
+ maintainers:
+   - Vasily Khoruzhick <anarsoul@gmail.com>
+   - Alistair Francis <alistair@alistair23.me>
+ 
+ description:
+-  RTL8723BS/RTL8723CS/RTL8821CS/RTL8822CS is a WiFi + BT chip. WiFi part
++  RTL8723BS/RTL8723CS/RTL8733BS/RTL8821CS/RTL8822CS is a WiFi + BT chip. WiFi part
+   is connected over SDIO, while BT is connected over serial. It speaks
+   H5 protocol with few extra commands to upload firmware and change
+   module speed.
+@@ -28,6 +28,10 @@
+           - enum:
+               - realtek,rtl8821cs-bt
+           - const: realtek,rtl8723bs-bt
++      - items:
++          - enum:
++              - realtek,rtl8733bs-bt
++          - const: realtek,rtl8723bs-bt
+ 
+   device-wake-gpios:
+     maxItems: 1
+diff --git a/drivers/bluetooth/btrtl.c b/drivers/bluetooth/btrtl.c
+--- a/drivers/bluetooth/btrtl.c
++++ b/drivers/bluetooth/btrtl.c
+@@ -187,6 +187,14 @@
+ 	  .cfg_name = "rtl_bt/rtl8723fu_config",
+ 	  .hw_info  = "rtl8733bu" },
+ 
++	/* 8733BS (SDIO WiFi + UART BT), e.g. BL-M8733BS2 */
++	{ IC_INFO(RTL_ROM_LMP_8723B, 0xf, 0xb, HCI_UART),
++	  .config_needed = true,
++	  .has_rom_version = true,
++	  .fw_name  = "rtl_bt/rtl8723fs_fw",
++	  .cfg_name = "rtl_bt/rtl8723fs_config",
++	  .hw_info  = "rtl8733bs" },
++
+ 	/* 8821A */
+ 	{ IC_INFO(RTL_ROM_LMP_8821A, 0xa, 0x6, HCI_USB),
+ 	  .config_needed = false,
+@@ -1529,6 +1537,8 @@
+ MODULE_FIRMWARE("rtl_bt/rtl8723ds_config.bin");
+ MODULE_FIRMWARE("rtl_bt/rtl8723fu_fw.bin");
+ MODULE_FIRMWARE("rtl_bt/rtl8723fu_config.bin");
++MODULE_FIRMWARE("rtl_bt/rtl8723fs_fw.bin");
++MODULE_FIRMWARE("rtl_bt/rtl8723fs_config.bin");
+ MODULE_FIRMWARE("rtl_bt/rtl8761a_fw.bin");
+ MODULE_FIRMWARE("rtl_bt/rtl8761a_config.bin");
+ MODULE_FIRMWARE("rtl_bt/rtl8761b_fw.bin");
+diff --git a/drivers/bluetooth/hci_h5.c b/drivers/bluetooth/hci_h5.c
+--- a/drivers/bluetooth/hci_h5.c
++++ b/drivers/bluetooth/hci_h5.c
+@@ -1107,6 +1107,8 @@
+ 	  .data = (const void *)&h5_data_rtl8822cs },
+ 	{ .compatible = "realtek,rtl8723bs-bt",
+ 	  .data = (const void *)&h5_data_rtl8723bs },
++	{ .compatible = "realtek,rtl8733bs-bt",
++	  .data = (const void *)&h5_data_rtl8723bs },
+ 	{ .compatible = "realtek,rtl8723cs-bt",
+ 	  .data = (const void *)&h5_data_rtl8723bs },
+ 	{ .compatible = "realtek,rtl8723ds-bt",

@@ -47,6 +47,17 @@ tocon "Update tool modules..."
 rsync -a /usr/config/modules/* /storage/.config/modules/
 cp -f /usr/config/retroarch/retroarch-core-options.cfg /storage/.config/retroarch/retroarch-core-options.cfg
 
+# RK356X: sync stock eMMC bootloader and EmuELEC boot assets to the TF card.
+if [ "${HW_DEVICE}" = "RK356X" ]; then
+  _sync_uboot="/usr/config/modules/MOD_TOOLS/Sync eMMC Bootloader to TF.sh"
+  [ -x "${_sync_uboot}" ] || _sync_uboot="/storage/.config/modules/MOD_TOOLS/Sync eMMC Bootloader to TF.sh"
+  if [ -x "${_sync_uboot}" ]; then
+    echo "Sync eMMC bootloader to TF..." >>${LOG}
+    tocon "Sync eMMC bootloader to TF..."
+    "${_sync_uboot}" >>${LOG} 2>&1 || true
+  fi
+fi
+
 ### Apply developer ssh keys if they exist
 echo "Apply dev keys if available..." >>${LOG}
 if [ -e /usr/config/ssh/authorized_keys ]

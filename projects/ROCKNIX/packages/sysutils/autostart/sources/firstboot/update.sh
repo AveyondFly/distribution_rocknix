@@ -968,4 +968,14 @@ then
   systemctl restart input
 fi
 
+# RK356X: sync stock eMMC bootloader and EmuELEC boot assets to the TF card.
+if [ "${HW_DEVICE}" = "RK356X" ]; then
+  _sync_uboot="/usr/config/modules/MOD_TOOLS/Sync eMMC Bootloader to TF.sh"
+  [ -x "${_sync_uboot}" ] || _sync_uboot="/storage/.config/modules/MOD_TOOLS/Sync eMMC Bootloader to TF.sh"
+  if [ -x "${_sync_uboot}" ]; then
+    echo "Sync eMMC bootloader to TF..." >>/var/log/boot.log
+    "${_sync_uboot}" >>/var/log/boot.log 2>&1 || true
+  fi
+fi
+
 sync

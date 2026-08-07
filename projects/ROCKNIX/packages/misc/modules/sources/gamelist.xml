@@ -494,6 +494,18 @@ and keyboard to modify settings.</desc>
         <image>./images/file-manager.svg</image>
     </game>
     <game>
+        <path>./MOD_TOOLS/Sync eMMC Bootloader to TF.sh</path>
+        <name>Sync eMMC Bootloader to TF</name>
+        <desc>Copy stock eMMC bootloader (idbloader + U-Boot FIT) to the TF card and EmuELEC boot assets (*.dtb, *.bmp, *.png) to the AURKNIX /flash partition. For RK3562 handhelds booting from SD while eMMC still has factory EmuELEC. Always overwrites in place.</desc>
+        <developer>AURKNIX</developer>
+        <publisher>AURKNIX</publisher>
+        <rating>5.0</rating>
+        <releasedate>2026</releasedate>
+        <genre>Tool</genre>
+        <players>1</players>
+        <image>./images/install-rocknix.svg</image>
+    </game>
+    <game>
         <path>./MOD_TOOLS/Install AURKNIX to EMMC.sh</path>
         <name>Install AURKNIX to EMMC</name>
         <desc>Clone the running AURKNIX system from the SD card to internal eMMC storage. This will repartition and wipe the eMMC.</desc>

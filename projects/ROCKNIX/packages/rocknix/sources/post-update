@@ -313,6 +313,9 @@ cp -rf /usr/config/krkr2/* /storage/.config/krkr2/
 
 rm -rf /storage/.cache/rocknix-stats-reported
 
+mkdir -p /roms/ebook
+cp -f /usr/share/misc/doc/rocknix-user-man/*.pdf /roms/ebook/
+
 # Clean old GPU 'governor' values
 sed -i '/gpuperf=low/d' /storage/.config/system/configs/system.cfg
 sed -i '/gpuperf=profile_standard/d' /storage/.config/system/configs/system.cfg

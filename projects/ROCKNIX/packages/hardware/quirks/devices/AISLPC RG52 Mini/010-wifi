@@ -10,7 +10,8 @@ CHIP=$(tr -d '\0' </proc/device-tree/wireless-wlan/wifi_chip_type 2>/dev/null)
 
 case "$CHIP" in
   rk915)
-    modprobe rk915
+    # Loaded by rk915-load.service before iwd/ConnMan. Keeping this branch
+    # empty prevents network managers from racing module probe and FW startup.
     ;;
   aic8800D80)
     modprobe aic8800_bsp

@@ -1,0 +1,13 @@
+[Unit]
+Description=Load RK915 before wireless network managers
+After=systemd-modules-load.service local-fs.target
+Before=iwd.service connman.service
+ConditionPathExists=/proc/device-tree/wireless-wlan/wifi_chip_type
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'chip=$(dd if=/proc/device-tree/wireless-wlan/wifi_chip_type bs=1 count=5 2>/dev/null); if [ "$chip" = rk915 ]; then echo "rk915-load: loading before iwd and ConnMan" >/dev/kmsg; exec /sbin/modprobe rk915; fi'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,14 @@
+diff -Naur a/drivers/net/wireless/rockchip_wlan/rtl8821cs/Makefile b/drivers/net/wireless/rockchip_wlan/rtl8821cs/Makefile
+--- a/drivers/net/wireless/rockchip_wlan/rtl8821cs/Makefile	2026-06-15 07:50:16.000000000 +0800
++++ b/drivers/net/wireless/rockchip_wlan/rtl8821cs/Makefile	2026-07-31 16:13:22.211602176 +0800
+@@ -1702,7 +1702,9 @@
+ EXTRA_CFLAGS += -DCONFIG_LITTLE_ENDIAN -DCONFIG_PLATFORM_ANDROID -DCONFIG_PLATFORM_ROCKCHIPS
+ # default setting for Android 4.1, 4.2, 4.3, 4.4
+ EXTRA_CFLAGS += -DCONFIG_IOCTL_CFG80211 -DRTW_USE_CFG80211_STA_EVENT
+-EXTRA_CFLAGS += -DCONFIG_CONCURRENT_MODE
++# Concurrent mode creates a second p2p0 station iface that iwd also
++# auto-connects, yielding two DHCP addresses on the same AP.
++#EXTRA_CFLAGS += -DCONFIG_CONCURRENT_MODE
+ EXTRA_CFLAGS += -DCONFIG_RESUME_IN_WORKQUEUE
+ # default setting for Power control
+ #EXTRA_CFLAGS += -DRTW_ENABLE_WIFI_CONTROL_FUNC

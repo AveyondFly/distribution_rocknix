@@ -10,18 +10,24 @@ LED_PWR="/sys/kernel/debug/regulator/vcc-led/enable"
 
 stick_led_pwr() {
 	if [ -w "${LED_PWR}" ]; then
+		# regulator debugfs uses reference counting. Repeating the same
+		# request either underflows disable or leaks an enable reference.
+		[ "$(cat "${LED_PWR}" 2>/dev/null)" = "$1" ] && return
 		echo "$1" > "${LED_PWR}"
 		return
 	fi
 
-	local reg name
+	local reg name state
 	for reg in /sys/class/regulator/regulator.*; do
 		name=$(cat "${reg}/name" 2>/dev/null) || continue
 		[ "${name}" = "vcc-led" ] || continue
 		if [ -w "${reg}/state" ]; then
-			[ "$1" = "1" ] && echo enabled > "${reg}/state" || echo disabled > "${reg}/state"
+			[ "$1" = "1" ] && state=enabled || state=disabled
+			[ "$(cat "${reg}/state" 2>/dev/null)" = "${state}" ] ||
+				echo "${state}" > "${reg}/state"
 		elif [ -w "${reg}/enable" ]; then
-			echo "$1" > "${reg}/enable"
+			[ "$(cat "${reg}/enable" 2>/dev/null)" = "$1" ] ||
+				echo "$1" > "${reg}/enable"
 		fi
 		return
 	done

@@ -131,6 +131,7 @@
 |Various|CHIP-8 / S-CHIP / XO-CHIP (chip-8)|1978|`chip-8`|.ch8 .sc8 .xo8|**retroarch:** jaxe (default)<br>|
 |Various|EasyRPG (easyrpg)|2003|`easyrpg`|.zip .easyrpg .ldb|**retroarch:** easyrpg (default)<br>|
 |Various|EBook (ebook)|1990|`ebook`|.pdf .epub .txt|**kebook:** kebook (default)<br>|
+|Various|Kirikiri2 (krkr2)|2000|`krkr2`|.kr2 .KR2|**krkr2:** krkr2 (default)<br>|
 |Various|ONScripter (onscripter)|2000|`onscripter`|.ons|**retroarch:** onsyuri (default)<br>**onscripter:** onscripter<br>|
 |Various|OpenBOR (openbor)|2003|`openbor`|.pak|**OpenBOR:** OpenBOR (default)<br>**OpenBOR:** OpenBOR-ff<br>|
 |Various|PyMO (pymo)|2008|`pymo`|.pymo|**cpymo:** cpymo (default)<br>|

@@ -578,6 +578,11 @@ makeinstall_target() {
           fi
         fi
       done
+      if [ "${DEVICE}" = "RK3566" -o "${DEVICE}" = "RK356X" ]; then
+        sh "${PROJECT_DIR}/${PROJECT}/bootloader/organize_device_tree_subdirs.sh" \
+          "${DEVICE}" "${PROJECT_DIR}/${PROJECT}/config.xml" \
+          "${INSTALL}/usr/share/bootloader/device_trees"
+      fi
     fi
   fi
 

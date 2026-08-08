@@ -116,14 +116,10 @@ mkimage_dtb() {
     S922X)
       mcopy "${RELEASE_DIR}/3rdparty/bootloader/"*.dtb ::
       ;;
-    RK356X)
-      if [ -n "${SUBDEVICE}" ]; then
+    RK356X|RK3566)
+      if [ -n "${SUBDEVICE}" ] && [ -d "${RELEASE_DIR}/3rdparty/bootloader/device_trees/${SUBDEVICE}" ]; then
         mkdir -p "${IMG_TMP}/device_trees"
-        for dtb_base in $(xmlstarlet sel -t -m "//rocknix/${DEVICE}/${SUBDEVICE}/file" -v "." -n "${CONFIGXML}"); do
-          if [ -f "${RELEASE_DIR}/3rdparty/bootloader/device_trees/${dtb_base}.dtb" ]; then
-            cp "${RELEASE_DIR}/3rdparty/bootloader/device_trees/${dtb_base}.dtb" "${IMG_TMP}/device_trees/"
-          fi
-        done
+        cp -a "${RELEASE_DIR}/3rdparty/bootloader/device_trees/${SUBDEVICE}/." "${IMG_TMP}/device_trees/"
         mcopy -s "${IMG_TMP}/device_trees" ::
       else
         mcopy -s "${RELEASE_DIR}/3rdparty/bootloader/device_trees" ::

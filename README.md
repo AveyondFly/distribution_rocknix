@@ -51,6 +51,7 @@ Independent ports apps:
 | Gameforce | CHI |
 | GameMT | E6 |
 | Generic | EE Clone |
+| Lenovo | Go2 |
 | MagicX | XU10, XU Mini M |
 | ODROID-GO | Advance, Advance Black Edition, Super |
 | PortableGame | A10Mini, A10Mini-V4 |
@@ -68,7 +69,9 @@ Independent ports apps:
 | Diium | D50 Plus |
 | GameMT | E5P, E6P |
 | MiniLoong | Pocket1 |
+| Miyoo | Flip |
 | Powkiddy | X55, X35S, X35H |
+| Radxa | ZERO 3W |
 
 #### S905 Android TV Boxes
 | Brand | Models |
@@ -76,10 +79,30 @@ Independent ports apps:
 | Skyworth | E900V22C(S905L3A) |
 | GameBox | X10(S905X4) |
 
-#### RK356X Devices
+#### RK356X Devices (unified image, 5.10 BSP kernel)
+
+The **RK356X** image is a single unified build that bundles **RK3562**, **RK3566-Generic**, and **RK3566-Specific** subimages. It uses the **Rockchip 5.10 BSP kernel**, unlike standalone **RK3566** images which use the **mainline 6.x** kernel — do not mix RK356X and RK3566 install packages.
+
+Use `/flash/dtbselect` (Linux) or `DtbselectWin64.exe` (Windows) on the boot partition to pick the device tree for **RK3562** and **RK3566-Specific** targets. **RK3566-Generic** subimage boots via `FDTDIR` (multi-DTB folder) and does not use dtbselect.
+
+##### RK3562 subimage
 | Brand | Models | Notes |
 |-------|--------|-------|
-| AISLPC | RG52 Mini, RG43H Pro, RG43V Pro | Single image; use `/flash/dtbselect` (Linux) or `DtbselectWin64.exe` (Windows) to pick the device tree. **v1** entries (**RG52 Mini v1**, **RG43H Pro v1**, **RG43V Pro v1**) are for the **RK915 WiFi** hardware revision; the default entries are for other WiFi variants (AIC8800D80). |
+| AISLPC | RG52 Mini, RG43H Pro, RG43V Pro | **v1** entries (**RG52 Mini v1**, **RG43H Pro v1**, **RG43V Pro v1**) are for the **RK915 WiFi** hardware revision; the default entries are for other WiFi variants (AIC8800D80). |
+
+##### RK3566-Generic subimage
+| Brand | Models | Notes |
+|-------|--------|-------|
+| Powkiddy | RGB10 Max 3, RGB20 Pro, RGB20 SX, RGB30, RK2023 | Powkiddy handhelds only — **does not include** Anbernic models from standalone **RK3566 Generic**. |
+
+##### RK3566-Specific subimage
+| Brand | Models | Notes |
+|-------|--------|-------|
+| Coolboy | H9 | **RK356X only** — not included in standalone **RK3566 Specific**. |
+| Diium | D50 Plus | |
+| GameMT | E5P, E6P | |
+| MiniLoong | Pocket1 | |
+| Powkiddy | X55, X35S, X35H | |
 
 #### RK3326S Devices (unified image, PX30S, 5.10 BSP Kernel)
 | Brand | Models | Notes |

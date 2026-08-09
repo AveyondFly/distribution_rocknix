@@ -16,6 +16,9 @@
     <file>sun50i-h700-anbernic-rg34xx</file>
     <file>sun50i-h700-anbernic-rg34xx-sp</file>
   </H700>
+  <A527 mkimage_options="dtb,extlinux,uboot" fdt="dtb.img" fdt_type="fdt" dtb_prefix="allwinner">
+    <file>sun55i-a527-cubie-a5e</file>
+  </A527>
   <RK3326 mkimage_options="dtb,bootscr,extlinux,uboot,rk3326_dtb_select" fdt_type="fdtdir" fdt="/" dtb_prefix="rockchip">
     <file>rk3326-anbernic-rg351m</file>
     <file>rk3326-anbernic-rg351v</file>

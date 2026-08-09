@@ -28,6 +28,13 @@ case ${DEVICE} in
     PKG_GIT_CLONE_BRANCH="master"
     PKG_PATCH_DIRS="${DEVICE} default"
     ;;
+  A527)
+    # Tina AIOT V1.4.6 monorepo: kernel/ = lichee/linux-5.15 + allwinner-bsp in kernel/bsp/.
+    PKG_VERSION="5aca0243fa630708d01a4b97c4513aed4fe014f0"
+    PKG_URL="https://github.com/AveyondFly/a527-bsp-sdk/archive/${PKG_VERSION}.tar.gz"
+    PKG_SOURCE_DIR="a527-bsp-sdk-${PKG_VERSION}/kernel"
+    PKG_PATCH_DIRS="${DEVICE} default"
+    ;;
   RK3588)
     PKG_VERSION="b8e62bed74766b6c8c423a767b35495e78b64caf"
     PKG_URL="https://github.com/armbian/linux-rockchip/archive/${PKG_VERSION}.tar.gz"
@@ -135,6 +142,11 @@ post_unpack() {
     mkdir -p ${PKG_BUILD}/.git/hooks
     touch ${PKG_BUILD}/.scmversion
   fi
+
+  if [ "${DEVICE}" = "A527" ]; then
+    mkdir -p ${PKG_BUILD}/.git/hooks
+    echo "${PKG_VERSION}" >${PKG_BUILD}/.scmversion
+  fi
 }
 
 install_common_drivers() {
@@ -223,7 +235,7 @@ make_host() {
 
 makeinstall_host() {
   # Vendor BSP headers must not replace the mainline sysroot UAPI used by glibc.
-  if [ "${DEVICE}" = "S905" -o "${DEVICE}" = "RK356X" -o "${DEVICE}" = "RK3326S" ]; then
+  if [ "${DEVICE}" = "S905" -o "${DEVICE}" = "RK356X" -o "${DEVICE}" = "RK3326S" -o "${DEVICE}" = "A527" ]; then
     return 0
   fi
   make \
@@ -332,9 +344,20 @@ pre_make_target() {
 
   # disable lima/panfrost if a vendor Mali kernel driver/userspace is configured
   if [ "${OPENGLES}" = "libmali" ] || [ "${OPENGLES}" = "opengl-meson" ] || \
-     listcontains "${GRAPHIC_DRIVERS}" "gpu-aml"; then
+     listcontains "${GRAPHIC_DRIVERS}" "gpu-aml" || [ "${DEVICE}" = "A527" ] || \
+     { listcontains "${GRAPHIC_DRIVERS}" "mali" && ! listcontains "${GRAPHIC_DRIVERS}" "panfrost"; }; then
     ${PKG_BUILD}/scripts/config --disable CONFIG_DRM_LIMA
     ${PKG_BUILD}/scripts/config --disable CONFIG_DRM_PANFROST
+  fi
+
+  if [ "${DEVICE}" = "A527" ]; then
+    # Tina buildroot DDK profile: proprietary mali-valhall kbase, not AW panfrost.
+    ${PKG_BUILD}/scripts/config --disable CONFIG_AW_DRM_PANFROST
+    ${PKG_BUILD}/scripts/config --disable CONFIG_AW_DRM_LIMA
+    ${PKG_BUILD}/scripts/config --set-str CONFIG_AW_GPU_TYPE "mali-g57"
+    # sun55iw3 uses G2D RCQ; legacy driver breaks trace header paths out-of-Tina.
+    ${PKG_BUILD}/scripts/config --disable CONFIG_G2D_LEGACY
+    ${PKG_BUILD}/scripts/config --enable CONFIG_G2D_RCQ
   fi
 
   # disable wireguard support if not enabled
@@ -456,6 +479,10 @@ pre_make_target() {
 make_target() {
   DTC_FLAGS=-@ kernel_make ${KERNEL_TARGET} ${KERNEL_MAKE_EXTRACMD} modules
 
+  if [ "${DEVICE}" = "A527" ]; then
+    kernel_make -C ${PKG_BUILD}/bsp/modules/gpu GPU_BUILD_TYPE=release
+  fi
+
   if [ "${BUILD_ANDROID_BOOTIMG}" = "yes" -a "${DEVICE}" = "S905" ]; then
     mkdir -p ${BUILD}/image
     initramfs_add_root_links "${BUILD}/initramfs"
@@ -548,6 +575,10 @@ makeinstall_target() {
   fi
 
   kernel_make INSTALL_MOD_PATH=${INSTALL}/$(get_kernel_overlay_dir) modules_install
+  if [ "${DEVICE}" = "A527" ]; then
+    kernel_make -C ${PKG_BUILD}/bsp/modules/gpu \
+      INSTALL_MOD_PATH=${INSTALL}/$(get_kernel_overlay_dir) modules_install
+  fi
   rm -f ${INSTALL}/$(get_kernel_overlay_dir)/lib/modules/*/build
   rm -f ${INSTALL}/$(get_kernel_overlay_dir)/lib/modules/*/source
 
@@ -570,7 +601,7 @@ makeinstall_target() {
     else
       for dtb in arch/${TARGET_KERNEL_ARCH}/boot/dts/**/*.dtb; do
         if [ -f ${dtb} ]; then
-          if [[ "${DEVICE}" == RK3326* ]] || [ "${DEVICE}" = "H700" -o "${DEVICE}" = "RK3399" -o "${DEVICE}" = "RK356X" -o "${DEVICE}" = "RK3566" -o "${DEVICE}" = "RK3588" ]; then
+          if [[ "${DEVICE}" == RK3326* ]] || [ "${DEVICE}" = "H700" -o "${DEVICE}" = "A527" -o "${DEVICE}" = "RK3399" -o "${DEVICE}" = "RK356X" -o "${DEVICE}" = "RK3566" -o "${DEVICE}" = "RK3588" ]; then
             mkdir -p ${INSTALL}/usr/share/bootloader/device_trees
             cp -v ${dtb} ${INSTALL}/usr/share/bootloader/device_trees
           else

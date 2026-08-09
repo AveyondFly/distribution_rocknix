@@ -28,6 +28,10 @@ case "${DEVICE}" in
   RK3588)
     DRIVER_VERSION="g13p0"
   ;;
+  A527)
+    # A527 uses devices/A527/packages/libmali-sunxi (Tina libgpu blob).
+    DRIVER_VERSION="r32p0"
+  ;;
   *) # RK3326, RK3566, and RK356X
     DRIVER_VERSION="g24p0"
   ;;

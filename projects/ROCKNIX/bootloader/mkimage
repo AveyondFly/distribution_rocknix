@@ -39,6 +39,13 @@ mkimage_uboot() {
     # S922X
     echo "image: writing u-boot.bin to $(basename "${DISK}")..."
     dd if="${RELEASE_DIR}/3rdparty/bootloader/u-boot.bin" of="${DISK}" bs=512 seek=1 conv=sync,noerror,notrunc >"${SAVE_ERROR}" 2>&1 || show_error
+  elif [ -f "${RELEASE_DIR}/3rdparty/bootloader/boot0_sdcard_sun55iw3p1.bin" ] && \
+       [ -f "${RELEASE_DIR}/3rdparty/bootloader/boot_package.fex" ]; then
+    # A527 (Allwinner sun55iw3 BSP: boot0 + toc1 boot_package)
+    echo "image: writing boot0_sdcard_sun55iw3p1.bin to $(basename "${DISK}") @ 8KiB..."
+    dd if="${RELEASE_DIR}/3rdparty/bootloader/boot0_sdcard_sun55iw3p1.bin" of="${DISK}" bs=1K seek=8 conv=fsync,notrunc >"${SAVE_ERROR}" 2>&1 || show_error
+    echo "image: writing boot_package.fex to $(basename "${DISK}") @ 16400KiB..."
+    dd if="${RELEASE_DIR}/3rdparty/bootloader/boot_package.fex" of="${DISK}" bs=8K seek=2050 conv=fsync,notrunc >"${SAVE_ERROR}" 2>&1 || show_error
   elif [ -f "${RELEASE_DIR}/3rdparty/bootloader/u-boot-sunxi-with-spl.bin" ]; then
     # H700
     echo "image: writing u-boot-sunxi-with-spl.bin to $(basename "${DISK}")..."

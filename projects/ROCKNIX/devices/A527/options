@@ -1,0 +1,99 @@
+################################################################################
+# setup device defaults
+################################################################################
+
+  # The TARGET_CPU variable controls which processor should be targeted for
+  # generated code.
+    case ${TARGET_ARCH} in
+      aarch64)
+        TARGET_KERNEL_ARCH="arm64"
+        TARGET_KERNEL_PATCH_ARCH="aarch64"
+        TARGET_CPU="cortex-a55"
+        TARGET_ARCH_FLAGS="+crc+crypto+fp+simd+rcpc"
+        TARGET_FEATURES="64bit"
+        ;;
+      arm)
+        TARGET_KERNEL_ARCH="arm64"
+        TARGET_KERNEL_PATCH_ARCH="aarch64"
+        TARGET_CPU="cortex-a55"
+        TARGET_ARCH_FLAGS="+crc"
+        TARGET_FPU="neon-fp-armv8"
+        TARGET_FLOAT="hard"
+        TARGET_FEATURES="32bit"
+        ;;
+    esac
+
+    PARTITION_TABLE="gpt"
+    HW_CPU="Allwinner A527"
+    HW_DEVICE="A527"
+    HW_VENDOR="Radxa"
+    HW_MODEL="Cubie A5E"
+
+  # Tina mali-g57 DDK is aarch64-only; skip 32-bit userland (no armhf libgpu).
+    ENABLE_32BIT="no"
+
+  # Kernel target
+    KERNEL_TARGET="Image"
+
+  # Kernel extra targets to build
+    KERNEL_MAKE_EXTRACMD=" dtbs $(get_kernel_make_extracmd)"
+
+  # Kernel cmdline
+    EXTRA_CMDLINE="quiet console=ttyS0,115200n8 console=tty0 systemd.debug_shell=ttyS0"
+
+  # Tina AIOT Linux SDK V1.4.6 DDK stack (single monorepo):
+  #   github.com/AveyondFly/a527-bsp-sdk @ 5aca0243
+  #   kernel/     → linux package (lichee + bsp merged, mali-g57)
+  #   libgpu/     → libmali-sunxi (Mali-G57 wayland/gbm/vulkan blob)
+  #   kconfig:    devices/A527/linux/linux.aarch64.conf (Tina A527 bsp_defconfig)
+  #   u-boot:     prebuilt packages/u-boot/bin/ (build via build-uboot.sh, Radxa v1.4.6)
+
+  # Bootloader to use (syslinux / u-boot)
+    BOOTLOADER="u-boot"
+
+  # Mali-G57 valhall DDK (Tina libgpu r32 / libmali.so.0.32.0)
+    MALI_FAMILY="valhall-g57"
+    GRAPHIC_DRIVERS="mali"
+
+  # For maximum cross compatbility
+    PREFER_GLES="yes"
+
+    ROCKNIX_JOYPAD="no"
+
+  # VULKAN_SUPPORT
+    VULKAN_SUPPORT="yes"
+
+  # Vulkan implementation to use (vulkan-loader / no)
+    VULKAN="vulkan-loader"
+
+  # Displayserver to use (wl / no)
+    DISPLAYSERVER="wl"
+
+  # Windowmanager to use (weston / swaywm-env / no)
+    WINDOWMANAGER="swaywm-env"
+
+  # Pipewire audio support (yes / no)
+    PIPEWIRE_SUPPORT="yes"
+
+  # Additional drivers to install:
+    ADDITIONAL_DRIVERS=""
+
+  # Additional Firmware to use ( )
+    FIRMWARE=""
+
+    ADDITIONAL_PACKAGES="libmali-sunxi"
+
+  # Debug tty path
+    DEBUG_TTY="/dev/ttyS0"
+
+  # Build and install rocknix out-of-tree device trees and overlays (yes / no)
+    ROCKNIX_DEVICE_TREE_OVERLAYS=""
+
+  # ZRAM Algorithm
+    ZRAM_COMPRESSION_ALGO="zstd"
+
+  # ZRAM Size
+    ZRAM_SWAP_SIZE="Auto"
+
+  # Disk Swap
+    SWAP_FILE_SIZE="0"

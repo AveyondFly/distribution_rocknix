@@ -69,10 +69,12 @@ case "${DEVICE}" in
     PKG_EMUS+=" ppsspp2021-sa"
     ;;
   A527)
+    # Align with RK356X (aarch64-only; no 32-bit EMUS_32BIT).
     PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
-    PKG_EMUS+=" box64 dolphin-sa mednafen portmaster scummvmsa yabasanshiro-sa duckstation-sa ppsspp2021-sa"
+    PKG_EMUS+=" aethersx2-sa box64 dolphin-sa drastic-sa drastic_adv-sa mednafen melonds-sa portmaster scummvmsa yabasanshiro-sa duckstation-sa"
     LIBRETRO_CORES+=" dolphin-lr flycast2021-lr geolith-lr uae4arm"
     PKG_RETROARCH+=" retropie-shaders"
+    PKG_EMUS+=" ppsspp2021-sa"
     ;;
   RK3588)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr gpsp_ezode-lr pcsx_rearmed-lr"
@@ -1053,9 +1055,13 @@ makeinstall_target() {
       add_emu_core psx retroarch beetle_psx false
       add_emu_core psx mednafen psx false
       ;;
-    RK3566|RK356X|A527)
+    RK3566|RK356X)
       add_emu_core psx retroarch pcsx_rearmed32 true
       add_emu_core psx retroarch pcsx_rearmed false
+      ;;
+    A527)
+      # No 32-bit userland; use aarch64 pcsx_rearmed.
+      add_emu_core psx retroarch pcsx_rearmed true
       ;;
     SDM845|SM8250|SM8550)
       add_emu_core psx retroarch pcsx_rearmed32 true
@@ -1083,7 +1089,7 @@ makeinstall_target() {
 
   ### Sony Playstation 2
   case ${DEVICE} in
-    RK356X|RK3399|RK3588|SDM845|SM8250|SM8550|SM8650|S922X)
+    RK356X|A527|RK3399|RK3588|SDM845|SM8250|SM8550|SM8650|S922X)
       add_emu_core ps2 aethersx2 aethersx2-sa true
       add_es_system ps2
       install_script "Start AetherSX2.sh"
@@ -1101,7 +1107,7 @@ makeinstall_target() {
 
   ### Sony Playstation Portable
   case "${DEVICE}" in
-    RK356*|RK3326*)
+    RK356*|RK3326*|A527)
       add_emu_core psp ppsspp ppsspp2021-sa true
       add_emu_core psp ppsspp ppsspp-sa false
       ;;

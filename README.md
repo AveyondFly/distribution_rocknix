@@ -8,6 +8,8 @@ ROCKNIX is an immutable Linux distribution for handheld gaming devices developed
 
 This is an **unofficial** fork of ROCKNIX that provides support for additional devices and emulators not included in the official distribution.
 
+> **Note — device support requests:** Please **do not** open issues asking for support for devices not listed in this README. New device support depends entirely on whether a vendor or community member **donates a development unit**. Maintainers cannot reliably port to hardware they do not have — guessing from specs or marketing photos is not a viable path to a working image.
+
 ### Additional Emulators
 
 - **BBK 4980** (gam4980-lr): Electronic dictionary game emulator

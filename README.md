@@ -79,11 +79,11 @@ Independent ports apps:
 | Skyworth | E900V22C(S905L3A) |
 | GameBox | X10(S905X4) |
 
-#### RK356X Devices (unified image, 5.10 BSP kernel)
+#### RK356X Devices (5.10 BSP kernel, three install images)
 
-The **RK356X** image is a single unified build that bundles **RK3562**, **RK3566-Generic**, and **RK3566-Specific** subimages. It uses the **Rockchip 5.10 BSP kernel**, unlike standalone **RK3566** images which use the **mainline 6.x** kernel — do not mix RK356X and RK3566 install packages.
+The **RK356X** platform builds **three install images** — **RK3562**, **RK3566-Generic**, and **RK3566-Specific** — sharing one update package. It uses the **Rockchip 5.10 BSP kernel**, unlike standalone **RK3566** images which use the **mainline 6.x** kernel — do not mix RK356X and RK3566 install packages.
 
-Use `/flash/dtbselect` (Linux) or `DtbselectWin64.exe` (Windows) on the boot partition to pick the device tree for **RK3562** and **RK3566-Specific** targets. **RK3566-Generic** subimage boots via `FDTDIR` (multi-DTB folder) and does not use dtbselect.
+Use `/flash/dtbselect` (Linux) or `DtbselectWin64.exe` (Windows) on the boot partition to pick the device tree for **RK3562** and **RK3566-Specific** targets. **RK3566-Generic** subimage boots via `FDTDIR` (multi-DTB folder) and does not use dtbselect. **Miyoo Flip** and **Radxa ZERO 3W** are supported on standalone **RK3566 Specific** (mainline 6.x) only, not on RK356X.
 
 ##### RK3562 subimage
 | Brand | Models | Notes |
@@ -98,7 +98,7 @@ Use `/flash/dtbselect` (Linux) or `DtbselectWin64.exe` (Windows) on the boot par
 ##### RK3566-Specific subimage
 | Brand | Models | Notes |
 |-------|--------|-------|
-| Coolboy | H9 | **RK356X only** — not included in standalone **RK3566 Specific**. |
+| Coolboy (Kuhai) | H9 | **RK356X only** — not included in standalone **RK3566 Specific**. |
 | Diium | D50 Plus | |
 | GameMT | E5P, E6P | |
 | MiniLoong | Pocket1 | |

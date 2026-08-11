@@ -1,0 +1,11 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+* # Copyright (C) 2022-26 AURKNIX (https://github.com/AveyondFly)
+*/
+
+#include "rk3326-powkiddy-rgb10.dts"
+
+/ {
+	model = "Powkiddy RGBV10";
+	compatible = "powkiddy,rgbv10", "rockchip,rk3326";
+};

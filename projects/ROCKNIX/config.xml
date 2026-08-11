@@ -19,6 +19,8 @@
   <RK3326 mkimage_options="dtb,bootscr,extlinux,uboot,rk3326_dtb_select" fdt_type="fdtdir" fdt="/" dtb_prefix="rockchip">
     <file>rk3326-anbernic-rg351m</file>
     <file>rk3326-anbernic-rg351v</file>
+    <file>rk3326-anbernic-rg351v-panel2</file>
+    <file>rk3326-anbernic-rg351mp</file>
     <file>rk3326-gameconsole-r33s</file>
     <file>rk3326-gameconsole-r36s</file>
     <file>rk3326-gameconsole-r40s</file>
@@ -28,10 +30,12 @@
     <file>rk3326-odroid-go2-v11</file>
     <file>rk3326-odroid-go3</file>
     <file>rk3326-powkiddy-rgb10</file>
+    <file>rk3326-powkiddy-rgbv10</file>
     <file>rk3326-powkiddy-rgb10s</file>
     <file>rk3326-powkiddy-rgb10x</file>
     <file>rk3326-powkiddy-rgb20s</file>
     <file>rk3326-powkiddy-rgb10max1</file>
+    <file>rk3326-powkiddy-rgb10max2</file>
     <file>rk3326-magicx-xu-mini-m</file>
     <file>rk3326-gameconsole-eeclone</file>
     <file>rk3326-batlexp-g350</file>

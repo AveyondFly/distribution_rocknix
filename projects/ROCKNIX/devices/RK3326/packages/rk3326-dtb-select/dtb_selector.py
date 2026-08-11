@@ -261,8 +261,8 @@ ALL_DEVICES: Dict[str, DtbEntry] = {
     # 安伯尼克
     "安伯尼克 RG351M": DtbEntry("rk3326-anbernic-rg351m.dtb", 101),
     "安伯尼克 RG351V": DtbEntry("rk3326-anbernic-rg351v.dtb", 101),
-    "安伯尼克 RG351V P2屏幕": DtbEntry("rk3326-anbernic-rg351v.dtb", 101, "overlays-rg351v-p2"),
-    "安伯尼克 RG351MP": DtbEntry("rk3326-gameconsole-r36s.dtb", 202, "overlays-rg351mp-p2"),
+    "安伯尼克 RG351V P2屏幕": DtbEntry("rk3326-anbernic-rg351v-panel2.dtb", 101),
+    "安伯尼克 RG351MP": DtbEntry("rk3326-anbernic-rg351mp.dtb", 202),
 
     # 亿米创
     "YMC A10mini": DtbEntry("rk3326-portablegame-a10mini.dtb", 202),
@@ -278,10 +278,12 @@ ALL_DEVICES: Dict[str, DtbEntry] = {
 
     # 泡机堂
     "PowKiddy RGB10": DtbEntry("rk3326-powkiddy-rgb10.dtb", 101),
+    "PowKiddy RGBV10": DtbEntry("rk3326-powkiddy-rgbv10.dtb", 101),
     "PowKiddy RGB10X": DtbEntry("rk3326-powkiddy-rgb10x.dtb", 101),
     "PowKiddy RGB10S": DtbEntry("rk3326-powkiddy-rgb10s.dtb", 101),
     "PowKiddy RGB2OS": DtbEntry("rk3326-powkiddy-rgb20s.dtb", 202),
     "PowKiddy RGB10Max1": DtbEntry("rk3326-powkiddy-rgb10max1.dtb", 101),
+    "PowKiddy RGB10Max2": DtbEntry("rk3326-powkiddy-rgb10max2.dtb", 101),
 
     # GAMEMT
     "GAMEMT E6": DtbEntry("rk3326-gamemt-e6.dtb", 101),

@@ -18,13 +18,8 @@ fi
 mount -o remount,rw $BOOT_ROOT
 
 DT_SOC=$($SYSTEM_ROOT/usr/bin/dtsoc | cut -f2 -d,)
-# If FDT is not specifed, this is autmatically detected device, use Generic u-boot
-# If FDT is specifed, use Specific u-boot, meaning booting specific device tree
-if [ -z "$(grep '^[^#]*FDT ' $BOOT_ROOT/extlinux/extlinux.conf)" ]; then
-  SUBDEVICE="Generic"
-else
-  SUBDEVICE="Specific"
-fi
+. ${SYSTEM_ROOT}/usr/share/bootloader/detect_subdevice.sh
+detect_subdevice "${BOOT_ROOT}" "${SYSTEM_ROOT}"
 
 ### Migrate device trees to subfolder (except RK326) - remove in the future
 if [ "$DT_SOC" = "rk3326" ]; then
@@ -52,7 +47,15 @@ fi
 
 echo "Updating device trees..."
 [ "$DT_SOC" = "rk3326" ] && DT_LOC=$BOOT_ROOT || DT_LOC=$BOOT_ROOT/device_trees
-cp -f $SYSTEM_ROOT/usr/share/bootloader/device_trees/* $DT_LOC
+DT_SRC=$SYSTEM_ROOT/usr/share/bootloader/device_trees
+
+if [ -n "$SUBDEVICE" ] && [ -d "$DT_SRC/$SUBDEVICE" ]; then
+  echo "Updating device trees for ${SUBDEVICE}..."
+  rm -f $DT_LOC/*.dtb
+  cp -f "$DT_SRC/$SUBDEVICE/"*.dtb "$DT_LOC/"
+else
+  cp -f "$DT_SRC/"*.dtb "$DT_LOC/" 2>/dev/null || true
+fi
 
 if [ -d $SYSTEM_ROOT/usr/share/bootloader/overlays ]; then
   echo "Updating device tree overlays..."

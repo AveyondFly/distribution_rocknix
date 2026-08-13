@@ -493,6 +493,18 @@
         <image>./images/file-manager.svg</image>
     </game>
     <game>
+        <path>./MOD_TOOLS/Sync eMMC Bootloader to TF.sh</path>
+        <name>同步 eMMC 引导到 TF 卡</name>
+        <desc>将机内 eMMC 上的原厂引导程序（idbloader + U-Boot FIT）复制到 TF 卡，并将 EmuELEC 分区中的启动资源（*.dtb、*.bmp、*.png）复制到 AURKNIX /flash 分区。适用于从 SD 卡启动、机内仍保留 EmuELEC 的 RK3562 掌机。将强制覆盖已有文件。</desc>
+        <developer>AURKNIX</developer>
+        <publisher>AURKNIX</publisher>
+        <rating>5.0</rating>
+        <releasedate>2026</releasedate>
+        <genre>工具</genre>
+        <players>1</players>
+        <image>./images/install-rocknix.svg</image>
+    </game>
+    <game>
         <path>./MOD_TOOLS/Install AURKNIX to EMMC.sh</path>
         <name>安装 AURKNIX 到 eMMC</name>
         <desc>将当前运行的 AURKNIX 系统从 SD 卡克隆到机内 eMMC。将重新分区并清空 eMMC。</desc>

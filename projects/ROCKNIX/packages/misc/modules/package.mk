@@ -40,7 +40,8 @@ makeinstall_target() {
 
 post_makeinstall_target() {
   remove_gamelist_game() {
-    python3 -c "
+    for gamelist in gamelist.xml gamelist_zh.xml; do
+      python3 -c "
 import re, sys
 path = sys.argv[1]
 with open(sys.argv[2]) as f:
@@ -52,7 +53,8 @@ xml = re.sub(
     flags=re.DOTALL,
 )
 open(sys.argv[2], 'w').write(xml)
-" "${1}" "${INSTALL}/usr/config/modules/gamelist.xml"
+" "${1}" "${INSTALL}/usr/config/modules/${gamelist}"
+    done
   }
 
   case ${ARCH} in
@@ -96,5 +98,9 @@ open(sys.argv[2], 'w').write(xml)
       remove_gamelist_game "MOD_TOOLS/FixShutdown.sh"
       ;;
   esac
+
+  if [ "${DEVICE}" != "RK356X" ]; then
+    remove_gamelist_game "MOD_TOOLS/Sync eMMC Bootloader to TF.sh"
+  fi
 }
 

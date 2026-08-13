@@ -16,8 +16,10 @@ AURKNIX is made up of many open-source components. Components are provided under
 | **RK3326** (unified image) | [AURKNIX-RK3326.aarch64-$DATE.img.gz](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK3326.aarch64-$DATE.img.gz) | [documentation](/documentation/PER_DEVICE_DOCUMENTATION/RK3326/) |
 | **RK3326S** (unified image)<br>*GameMT E6; GameKiddy GKD Pixel 2 (P2)*<br>*Use `/flash/dtbselect` or `DtbselectWin64.exe` on the boot partition to pick the device tree* | [AURKNIX-RK3326S.aarch64-$DATE.img.gz](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK3326S.aarch64-$DATE.img.gz) | [documentation](/documentation/PER_DEVICE_DOCUMENTATION/RK3326S/) |
 | **RK3566 (Generic)**<br>*Powkiddy RGB10 Max 3, RGB20 Pro, RGB20 SX, RGB30, RK2023* | [AURKNIX-RK3566.aarch64-$DATE-Generic.img.gz](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK3566.aarch64-$DATE-Generic.img.gz) | [documentation](/documentation/PER_DEVICE_DOCUMENTATION/RK3566/) |
-| **RK3566 (Specific)**<br>*Powkiddy X55, X35S, X35H; GameMT E5P / E6P; Diium D50 Plus; MiniLoong Pocket 1* | [AURKNIX-RK3566.aarch64-$DATE-Specific.img.gz](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK3566.aarch64-$DATE-Specific.img.gz) | [documentation](/documentation/PER_DEVICE_DOCUMENTATION/RK3566/) |
-| **RK356X**<br>*AISLPC RG52 Mini, RG43H Pro, RG43V Pro (unified image)*<br>*Use `/flash/dtbselect` or `DtbselectWin64.exe` on the boot partition: default entries for AIC8800 WiFi; **v1** entries (**RG52 Mini v1**, **RG43H Pro v1**, **RG43V Pro v1**) for **RK915 WiFi*** | [AURKNIX-RK356X.aarch64-$DATE.img.gz](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK356X.aarch64-$DATE.img.gz) | [documentation](/documentation/PER_DEVICE_DOCUMENTATION/RK356X/) |
+| **RK3566 (Specific)**<br>*Powkiddy X55, X35S, X35H; GameMT E5P / E6P; Diium D50 Plus; MiniLoong Pocket1; Miyoo Flip; Radxa ZERO 3W* | [AURKNIX-RK3566.aarch64-$DATE-Specific.img.gz](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK3566.aarch64-$DATE-Specific.img.gz) | [documentation](/documentation/PER_DEVICE_DOCUMENTATION/RK3566/) |
+| **RK356X (RK3562, 5.10 BSP)**<br>*AISLPC RG52 Mini, RG43H Pro, RG43V Pro*<br>*Use `/flash/dtbselect` or `DtbselectWin64.exe`: default entries for AIC8800 WiFi; **v1** entries (**RG52 Mini v1**, **RG43H Pro v1**, **RG43V Pro v1**) for **RK915 WiFi*** | [AURKNIX-RK356X.aarch64-$DATE-RK3562.img.gz](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK356X.aarch64-$DATE-RK3562.img.gz) | [documentation](/documentation/PER_DEVICE_DOCUMENTATION/RK356X/) |
+| **RK356X (RK3566-Generic, 5.10 BSP)**<br>*Powkiddy RGB10 Max 3, RGB20 Pro, RGB20 SX, RGB30, RK2023*<br>*Boots via multi-DTB `FDTDIR`; not interchangeable with standalone **RK3566 Generic** (mainline 6.x)* | [AURKNIX-RK356X.aarch64-$DATE-RK3566-Generic.img.gz](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK356X.aarch64-$DATE-RK3566-Generic.img.gz) | [documentation](/documentation/PER_DEVICE_DOCUMENTATION/RK356X/) |
+| **RK356X (RK3566-Specific, 5.10 BSP)**<br>*Powkiddy X55, X35S, X35H; GameMT E5P / E6P; Diium D50 Plus; MiniLoong Pocket1; Coolboy / Kuhai H9*<br>*Use `/flash/dtbselect` or `DtbselectWin64.exe`; **Coolboy H9** (also sold as **Kuhai H9**) is **RK356X only** — not in standalone **RK3566 Specific**. **Miyoo Flip** and **Radxa ZERO 3W** use standalone **RK3566 Specific** (mainline 6.x), not RK356X.* | [AURKNIX-RK356X.aarch64-$DATE-RK3566-Specific.img.gz](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK356X.aarch64-$DATE-RK3566-Specific.img.gz) | [documentation](/documentation/PER_DEVICE_DOCUMENTATION/RK356X/) |
 | **S905** | [AURKNIX-S905.aarch64-$DATE.img.gz](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-S905.aarch64-$DATE.img.gz) | [documentation](/documentation/PER_DEVICE_DOCUMENTATION/S905/) |
 
 ## Upgrading
@@ -33,7 +35,7 @@ AURKNIX is made up of many open-source components. Components are provided under
 | **RK3326** | [AURKNIX-RK3326.aarch64-$DATE.tar](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK3326.aarch64-$DATE.tar) |
 | **RK3326S** | [AURKNIX-RK3326S.aarch64-$DATE.tar](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK3326S.aarch64-$DATE.tar) |
 | **RK3566** (Generic & Specific) | [AURKNIX-RK3566.aarch64-$DATE.tar](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK3566.aarch64-$DATE.tar) |
-| **RK356X** | [AURKNIX-RK356X.aarch64-$DATE.tar](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK356X.aarch64-$DATE.tar) |
+| **RK356X** (RK3562, RK3566-Generic & RK3566-Specific) | [AURKNIX-RK356X.aarch64-$DATE.tar](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-RK356X.aarch64-$DATE.tar) |
 | **S905** | [AURKNIX-S905.aarch64-$DATE.tar](https://github.com/AveyondFly/distribution_rocknix/releases/download/$DATE/AURKNIX-S905.aarch64-$DATE.tar) |
 
 ## Documentation
@@ -48,6 +50,7 @@ AURKNIX is made up of many open-source components. Components are provided under
 
 ### New Features
 * **RK3326S** unified image: initial support for **GameMT E6** and **GameKiddy GKD Pixel 2 (P2)** (PX30S). Select the device tree with `/flash/dtbselect` (Linux) or `DtbselectWin64.exe` (Windows) on the boot partition.
+* **RK356X** now ships **three install images** (5.10 BSP kernel): **RK3562**, **RK3566-Generic**, and **RK3566-Specific**. Pick the subimage that matches your hardware; do not use standalone **RK3566** packages (mainline 6.x) on RK356X targets.
 
 ### Updates
 * Updated...?

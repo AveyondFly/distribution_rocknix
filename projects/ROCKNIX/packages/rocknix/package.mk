@@ -44,6 +44,7 @@ EOF
   fi
   # Always install the update script
   mkdir -p $INSTALL/usr/share/bootloader
+  find_file_path bootloader/detect_subdevice.sh && cp -av ${FOUND_PATH} ${INSTALL}/usr/share/bootloader
   find_file_path bootloader/update.sh && cp -av ${FOUND_PATH} ${INSTALL}/usr/share/bootloader
 }
 

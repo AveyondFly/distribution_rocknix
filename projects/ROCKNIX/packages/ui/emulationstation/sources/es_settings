@@ -8,6 +8,8 @@
 
 export SDL_AUDIODRIVER=pulseaudio
 
+IMPORT_VARIABLES=()
+
 TZ=$(get_setting system.timezone)
 echo -n "TIMEZONE=${TZ}" > /storage/.cache/timezone
 echo -n "${TZ}" >/storage/.cache/system_timezone
@@ -38,19 +40,24 @@ then
   export LOCPATH="${MYLOCPATH}/locale"
   export LANG=${MYLANG}
   export LANGUAGE=${MYLANG}
-  systemctl import-environment LANG
-  systemctl import-environment LOCPATH
-  systemctl import-environment I18NPATH
-  systemctl import-environment LANGUAGE
+  IMPORT_VARIABLES+=(LANG LOCPATH LANGUAGE)
+  [[ -v I18NPATH ]] && IMPORT_VARIABLES+=(I18NPATH)
 fi
 
 ### Import quirk variables.
 for VARIABLE in $(cat /etc/profile.d/999-export | grep _ | sed 's/export//g; s/^\W//g; s/\\//g')
 do
-  systemctl import-environment ${VARIABLE}
+  [[ -v "${VARIABLE}" ]] && IMPORT_VARIABLES+=("${VARIABLE}")
 done
 
 ### Import proxy variables for systemd-launched child services.
-systemctl import-environment http_proxy https_proxy all_proxy no_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY NO_PROXY 2>/dev/null || true
+for VARIABLE in http_proxy https_proxy all_proxy no_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY NO_PROXY
+do
+  [[ -v "${VARIABLE}" ]] && IMPORT_VARIABLES+=("${VARIABLE}")
+done
+
+if (( ${#IMPORT_VARIABLES[@]} )); then
+  systemctl import-environment "${IMPORT_VARIABLES[@]}"
+fi
 
 set_kill set "emulationstation"

@@ -1,0 +1,12 @@
+diff -Naur a/src/registry.c b/src/registry.c
+--- a/src/registry.c	2023-10-09 04:46:48.000000000 +0800
++++ b/src/registry.c	2026-08-01 15:11:50.211471509 +0800
+@@ -1179,7 +1179,7 @@
+ 
+     /* Note: do not use xmlParserInputBufferCreateStatic, it generates random
+      * DTD validity errors for unknown reasons */
+-    buf = xmlParserInputBufferCreateMem(dtdstr, sizeof(dtdstr),
++    buf = xmlParserInputBufferCreateMem(dtdstr, sizeof(dtdstr) - 1,
+                                         XML_CHAR_ENCODING_UTF8);
+     if (!buf)
+         return false;

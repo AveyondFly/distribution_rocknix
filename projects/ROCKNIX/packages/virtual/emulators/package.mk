@@ -1542,6 +1542,9 @@ makeinstall_target() {
   if [ "${DEVICE}" = "RK3566" ] || [ "${DEVICE}" = "RK356X" ]; then
     install_script "MOD_TOOLS/FixShutdown.sh"
   fi
+  if [ "${DEVICE}" = "RK356X" ]; then
+    install_script "MOD_TOOLS/Sync eMMC Bootloader to TF.sh"
+  fi
   if [ "${DEVICE}" != "S905" ]; then
     install_script "MOD_TOOLS/Install AURKNIX to EMMC.sh"
     install_script "MOD_TOOLS/Backup EMMC.sh"

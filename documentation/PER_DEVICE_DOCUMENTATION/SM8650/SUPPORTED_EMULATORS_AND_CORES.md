@@ -7,13 +7,14 @@
 |&#xf013; System|Screenshots (imageviewer)|System|`screenshots`|.jpg .jpeg .png .bmp .psd .tga .gif .hdr .pic .ppm .pgm .mkv .pdf .mp4 .avi||
 |&#xf013; System|Tools (tools)|System|`modules`|.sh||
 |Acorn|BBC Micro (bbcmicro)|1981|`bbcmicro`|.ssd .dsd|**retroarch:** b2 (default)<br>|
+|Adobe|Adobe Flash (flash)|1996|`flash`|.swf .SWF|**ruffle:** ruffle-sa (default)<br>|
 |Amstrad|Amstrad CPC (amstradcpc)|1984|`amstradcpc`|.dsk .cpr .sna .tap .cdt .kcr .voc .m3u .zip .7z|**retroarch:** crocods (default)<br>**retroarch:** cap32<br>|
 |Apple|Macintosh (macintosh)|1984|`mac`|.dsk .img .hfv .cmd .zip|**retroarch:** minivmac (default)<br>|
 |Arcade|Arcade (arcade)|0000|`arcade`|.zip .7z|**retroarch:** fbneoplus (default)<br>**retroarch:** mame2003_plus<br>**retroarch:** mame2010<br>**retroarch:** mame2015<br>**retroarch:** fbneo<br>**retroarch:** fbalpha2012<br>**retroarch:** fbalpha2019<br>**retroarch:** mame<br>|
 |Arcade|Daphne (daphne)|1996|`daphne`|.daphne .singe|**hypseus-singe:** hypseus-singe (default)<br>**retroarch:** daphne<br>|
 |Arcade|Final Burn Neo (fbn)|2002|`fbneo`|.7z .zip .fid .hak .FID .HAK|**retroarch:** fbneoplus (default)<br>**retroarch:** fbneo<br>**retroarch:** mame2003_plus<br>**retroarch:** mame2010<br>**retroarch:** mame2015<br>**retroarch:** mame<br>**retroarch:** fbalpha2012<br>**retroarch:** fbalpha2019<br>|
 |Arcade|Homebrew Mame (hbmame)|0000|`hbmame`|.zip .7z|**retroarch:** fbalpha2012_32b (default)<br>**retroarch:** nebularm_32b<br>**retroarch:** nebularm_legacy_32b<br>**retroarch:** fbneo_32b<br>**retroarch:** mame2003_plus_32b<br>|
-|Arcade|MAME (mame)|1997|`mame`|.7z .zip|**retroarch:** mame2003_plus (default)<br>**retroarch:** mame2010<br>**retroarch:** mame2015<br>**retroarch:** mame<br>**retroarch:** fbneo<br>**retroarch:** fbalpha2012<br>**retroarch:** fbalpha2019<br>|
+|Arcade|MAME (mame)|1997|`mame`|.7z .zip|**retroarch:** mame2003_plus (default)<br>**retroarch:** mame2010<br>**retroarch:** mame2015<br>**retroarch:** mame<br>**retroarch:** fbneoplus<br>**retroarch:** fbneo<br>**retroarch:** fbalpha2012<br>**retroarch:** fbalpha2019<br>|
 |Arcade|Vertical Arcade (varcade)|0000|`varcade`|.zip .7z|**retroarch:** mame2003_plus (default)<br>**retroarch:** fbneoplus<br>**retroarch:** mame2010<br>**retroarch:** mame2015<br>**retroarch:** fbneo<br>**retroarch:** fbalpha2012<br>**retroarch:** fbalpha2019<br>**retroarch:** mame<br>|
 |Arduboy|Arduboy (arduboy)|2014|`arduboy`|.hex|**retroarch:** arduous (default)<br>|
 |Atari|Atari 2600 (atari2600)|1977|`atari2600`|.a26 .bin .zip .7z|**retroarch:** stella (default)<br>|
@@ -28,9 +29,9 @@
 |Bandai|Wonderswan Color (wonderswancolor)|2000|`wonderswancolor`|.ws .wsc .zip .7z|**retroarch:** beetle_wswan (default)<br>**mednafen:** wswan<br>|
 |BBK|BBK 4980 (bbk)|2002|`bbk`|.bin .BIN .gam|**retroarch:** gam4980 (default)<br>|
 |belogic|Uzebox (uzebox)|2008|`uzebox`|.uze|**retroarch:** uzem (default)<br>|
-|Capcom|CPS-I (cps1)|1988|`cps1`|.zip .7z|**retroarch:** fbneo (default)<br>**retroarch:** mame2003_plus<br>**retroarch:** mame2010<br>**retroarch:** fbalpha2012<br>**AdvanceMame:** AdvanceMame<br>|
-|Capcom|CPS-II (cps2)|1993|`cps2`|.zip .7z|**retroarch:** fbneo (default)<br>**retroarch:** mame2003_plus<br>**retroarch:** mame2010<br>**retroarch:** fbalpha2012<br>**AdvanceMame:** AdvanceMame<br>|
-|Capcom|CPS-III (cps3)|1996|`cps3`|.zip .7z|**retroarch:** fbneo (default)<br>**retroarch:** mame2003_plus<br>**retroarch:** mame2010<br>**retroarch:** fbalpha2012<br>**AdvanceMame:** AdvanceMame<br>|
+|Capcom|CPS-I (cps1)|1988|`cps1`|.zip .7z|**retroarch:** fbneoplus (default)<br>**retroarch:** fbneo<br>**retroarch:** mame2003_plus<br>**retroarch:** mame2010<br>**retroarch:** fbalpha2012<br>**AdvanceMame:** AdvanceMame<br>|
+|Capcom|CPS-II (cps2)|1993|`cps2`|.zip .7z|**retroarch:** fbneoplus (default)<br>**retroarch:** fbneo<br>**retroarch:** mame2003_plus<br>**retroarch:** mame2010<br>**retroarch:** fbalpha2012<br>**AdvanceMame:** AdvanceMame<br>|
+|Capcom|CPS-III (cps3)|1996|`cps3`|.zip .7z|**retroarch:** fbneoplus (default)<br>**retroarch:** fbneo<br>**retroarch:** mame2003_plus<br>**retroarch:** mame2010<br>**retroarch:** fbalpha2012<br>**AdvanceMame:** AdvanceMame<br>|
 |Coleco|ColecoVision (colecovision)|1982|`coleco`|.bin .col .rom .zip .7z|**retroarch:** gearcoleco (default)<br>**retroarch:** bluemsx<br>**retroarch:** smsplus<br>|
 |Commodore|Amiga (amiga)|1985|`amiga`|.zip .adf .uae .ipf .dms .adz .lha .m3u .hdf .hdz|**retroarch:** puae2021 (default)<br>**retroarch:** puae<br>**amiberry:** amiberry<br>**retroarch:** uae4arm<br>|
 |Commodore|Amiga CD32 (amigacd32)|1994|`amigacd32`|.iso .cue .lha .chd|**retroarch:** puae2021 (default)<br>**retroarch:** puae<br>**retroarch:** uae4arm<br>|
@@ -52,6 +53,7 @@
 |Microsoft|MSX 2 (msx2)|1988|`msx2`|.dsk .mx1 .mx2 .rom .zip .7z .m3u|**retroarch:** bluemsx (default)<br>**retroarch:** fmsx<br>|
 |Microsoft|Windows (windows)|System|`windows`|.sh|**wine:** wine (default)<br>|
 |Microsoft|Xbox (xbox)|2001|`xbox`|.iso|**xemu:** xemu-sa (default)<br>|
+|native32emu|native32emu (native32emu)|2005|`native32emu`|.smf .sgm .ssl .zip|**retroarch:** native32emu (default)<br>|
 |NEC|PC Engine (pcengine)|1987|`pcengine`|.pce .bin .zip .7z|**retroarch:** beetle_pce_fast (default)<br>**retroarch:** beetle_pce<br>**retroarch:** beetle_supergrafx<br>**mednafen:** pce<br>**mednafen:** pce_fast<br>|
 |NEC|PC Engine CD (pcenginecd)|1988|`pcenginecd`|.cue .ccd .chd .toc .m3u|**retroarch:** beetle_pce_fast (default)<br>**retroarch:** beetle_pce<br>**retroarch:** beetle_supergrafx<br>**mednafen:** pce<br>**mednafen:** pce_fast<br>|
 |NEC|PC-8800 (pc-8800)|1981|`pc88`|.d88 .u88 .m3u|**retroarch:** quasi88 (default)<br>|
@@ -119,8 +121,8 @@
 |Sinclair|ZX81 (zx81)|1981|`zx81`|.tzx .p .t81 .zip .7z|**retroarch:** 81 (default)<br>|
 |SKY-mobi|MRP (mrp)|2004|`mrp`|.mrp|**mrp:** mrp (default)<br>|
 |Smith Engineering|Vectrex (vectrex)|1982|`vectrex`|.bin .gam .vec .zip .7z|**retroarch:** vecx (default)<br>|
-|SNK|Neo Geo (neogeo)|1990|`neogeo`|.7z .zip .neo|**retroarch:** fbneo (default)<br>**retroarch:** mame2003_plus<br>**retroarch:** fbalpha2012<br>**retroarch:** fbalpha2019<br>**retroarch:** mame2010<br>**retroarch:** mame2015<br>**retroarch:** mame<br>**retroarch:** geolith<br>|
-|SNK|Neo Geo CD (neocd)|1994|`neocd`|.cue .iso .chd|**retroarch:** neocd (default)<br>**retroarch:** fbneo<br>|
+|SNK|Neo Geo (neogeo)|1990|`neogeo`|.7z .zip .neo|**retroarch:** fbneoplus (default)<br>**retroarch:** fbneo<br>**retroarch:** mame2003_plus<br>**retroarch:** fbalpha2012<br>**retroarch:** fbalpha2019<br>**retroarch:** mame2010<br>**retroarch:** mame2015<br>**retroarch:** mame<br>**retroarch:** geolith<br>|
+|SNK|Neo Geo CD (neocd)|1994|`neocd`|.cue .iso .chd|**retroarch:** neocd (default)<br>**retroarch:** fbneoplus<br>**retroarch:** fbneo<br>|
 |SNK|Neo Geo Pocket (ngp)|1998|`ngp`|.ngp .ngc .zip .7z|**retroarch:** beetle_ngp (default)<br>**retroarch:** race<br>**mednafen:** ngp<br>|
 |SNK|Neo Geo Pocket Color (ngpc)|1999|`ngpc`|.ngp .ngc .zip .7z|**retroarch:** beetle_ngp (default)<br>**retroarch:** race<br>**mednafen:** ngp<br>|
 |Sony|PlayStation (psx)|1994|`psx`|.bin .cue .img .mdf .pbp .toc .cbn .m3u .ccd .chd .iso|**retroarch:** pcsx_rearmed<br>**retroarch:** beetle_psx<br>**mednafen:** psx<br>**retroarch:** pcsx_rearmed_rumble_32b<br>**duckstation:** duckstation-sa<br>**retroarch:** swanstation<br>|
@@ -133,6 +135,7 @@
 |Various|CHIP-8 / S-CHIP / XO-CHIP (chip-8)|1978|`chip-8`|.ch8 .sc8 .xo8|**retroarch:** jaxe (default)<br>|
 |Various|EasyRPG (easyrpg)|2003|`easyrpg`|.zip .easyrpg .ldb|**retroarch:** easyrpg (default)<br>|
 |Various|EBook (ebook)|1990|`ebook`|.pdf .epub .txt|**kebook:** kebook (default)<br>|
+|Various|Kirikiri2 (krkr2)|2000|`krkr2`|.kr2 .KR2|**krkr2:** krkr2 (default)<br>|
 |Various|ONScripter (onscripter)|2000|`onscripter`|.ons|**retroarch:** onsyuri (default)<br>**onscripter:** onscripter<br>|
 |Various|OpenBOR (openbor)|2003|`openbor`|.pak|**OpenBOR:** OpenBOR (default)<br>**OpenBOR:** OpenBOR-ff<br>|
 |Various|PyMO (pymo)|2008|`pymo`|.pymo|**cpymo:** cpymo (default)<br>|

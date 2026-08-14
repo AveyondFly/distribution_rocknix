@@ -132,10 +132,6 @@
 	*/
 	joypad: rocknix-singleadc-joypad {
 		compatible = "rocknix-singleadc-joypad";
-		pwms = <&pwm0 0 200000000 0>;
-		pwm-names = "enable";
-		rumble-boost-weak = <0x0000>;
-		rumble-boost-strong = <0x0000>;
 		
 		joypad-name = "retrogame_joypad";
 		joypad-product = <0x1101>;
@@ -147,7 +143,6 @@
 		/* gpio pincontrol setup */
 		pinctrl-names = "default";
 		pinctrl-0 = <&btn_pins_ctrl>;
-		pinctrl-1 = <&pwm0_pin>;
 		
 		/* Analog mux define */
 		io-channel-names = "amux_adc";
@@ -789,10 +784,6 @@
 };
 
 &csi_dphy {
-	status = "okay";
-};
-
-&pwm0 {
 	status = "okay";
 };
 

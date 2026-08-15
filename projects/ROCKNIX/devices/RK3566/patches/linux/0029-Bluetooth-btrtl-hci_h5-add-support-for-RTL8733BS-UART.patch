@@ -1,0 +1,32 @@
+From: rocknix <rocknix@local>
+Subject: [PATCH] Bluetooth: btrtl: add RTL8733BS UART match for hci_ver=0x08
+
+The merged 0006 patch maps RTL8733BS UART at hci_ver=0x0b (BL-M8733BS2).
+GameMT E6 Plus units (and the AveyondFly sample) report:
+
+  hci_ver=0x08 hci_rev=0x000f lmp_subver=0x8723
+
+on UART. Without this extra IC_INFO row, btrtl falls through and
+Read reg16 fails with -110.
+
+USB 8733BU stays on HCI_USB / rtl8723fu_*. This UART 0x08 row loads
+the same rtl8723fs_* firmware as the existing 0x0b UART entry.
+
+---
+--- a/drivers/bluetooth/btrtl.c
++++ b/drivers/bluetooth/btrtl.c
+@@ -187,6 +187,14 @@
+ 	  .cfg_name = "rtl_bt/rtl8723fu_config",
+ 	  .hw_info  = "rtl8733bu" },
+ 
++	/* 8733BS UART (hci_ver=0x08, same IDs as 8733BU USB) */
++	{ IC_INFO(RTL_ROM_LMP_8723B, 0xf, 0x8, HCI_UART),
++	  .config_needed = true,
++	  .has_rom_version = true,
++	  .fw_name  = "rtl_bt/rtl8723fs_fw",
++	  .cfg_name = "rtl_bt/rtl8723fs_config",
++	  .hw_info  = "rtl8733bs" },
++
+ 	/* 8733BS (SDIO WiFi + UART BT), e.g. BL-M8733BS2 */
+ 	{ IC_INFO(RTL_ROM_LMP_8723B, 0xf, 0xb, HCI_UART),
+ 	  .config_needed = true,

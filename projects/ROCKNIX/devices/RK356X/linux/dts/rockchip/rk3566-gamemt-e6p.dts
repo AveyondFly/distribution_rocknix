@@ -356,7 +356,7 @@
 		clock-names = "ext_clock";
 		pinctrl-0 = <&wifi_enable_h>;
 		pinctrl-names = "default";
-		post-power-on-delay-ms = <200>;
+		post-power-on-delay-ms = <300>;
 		reset-gpios = <&gpio0 RK_PC0 GPIO_ACTIVE_LOW>;
 	};
 
@@ -1074,10 +1074,11 @@
 	status = "okay";
 
 	bluetooth {
-		compatible = "realtek,rtl8821cs-bt", "realtek,rtl8723bs-bt";
+		compatible = "realtek,rtl8733bs-bt", "realtek,rtl8723bs-bt";
 		device-wake-gpios = <&gpio0 RK_PB6 GPIO_ACTIVE_HIGH>;
 		enable-gpios = <&gpio0 RK_PC1 GPIO_ACTIVE_HIGH>;
 		host-wake-gpios = <&gpio0 RK_PB5 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 	};
 };
 

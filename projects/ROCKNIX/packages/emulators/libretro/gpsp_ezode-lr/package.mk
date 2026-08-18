@@ -21,7 +21,7 @@
 ################################################################################
 
 PKG_NAME="gpsp_ezode-lr"
-PKG_VERSION="016d2414d433486e47f900084a09ba9c34c71a7b"
+PKG_VERSION="master"
 PKG_ARCH="arm aarch64"
 PKG_LICENSE="GPLv2"
 PKG_SITE="https://github.com/lcdyk0517/gpsp-mod"

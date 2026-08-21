@@ -6,7 +6,40 @@
 };
 
 &battery {
-	charge-full-design-microamp-hours = <3000000>;
+	/* From vendor x35h.dtb rk817,battery / charger */
+	charge-full-design-microamp-hours = <2718000>;
+	charge-term-current-microamp = <300000>;
+	constant-charge-current-max-microamp = <2000000>;
+	constant-charge-voltage-max-microvolt = <4300000>;
+	factory-internal-resistance-micro-ohms = <94000>;
+	voltage-max-design-microvolt = <4183000>;
+	voltage-min-design-microvolt = <3500000>;
+
+	ocv-capacity-celsius = <20>;
+	ocv-capacity-table-0 =  <4183000 100>, <4129000 95>, <4081000 90>, <4033000 85>,
+				<3985000 80>, <3938000 75>, <3892000 70>, <3846000 65>,
+				<3802000 60>, <3760000 55>, <3716000 50>, <3683000 45>,
+				<3661000 40>, <3645000 35>, <3632000 30>, <3619000 25>,
+				<3605000 20>, <3586000 15>, <3560000 10>, <3532000 5>,
+				<3500000 0>;
+};
+
+&rk817 {
+	battery {
+		ocv_table = <3500 3532 3560 3586 3605 3619 3632 3645 3661 3683 3716
+			     3760 3802 3846 3892 3938 3985 4033 4081 4129 4183>;
+		design_capacity = <2718>;
+		design_qmax = <2990>;
+		bat_res = <94>;
+		sleep_enter_current = <150>;
+		sleep_exit_current = <180>;
+		sleep_filter_current = <100>;
+		power_off_thresd = <3500>;
+	};
+};
+
+&rk817_charger {
+	max_input_current = <2000>;
 };
 
 &cru {

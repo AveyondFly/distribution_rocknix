@@ -1,0 +1,32 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026-present AURKNIX (https://github.com/AveyondFly)
+
+PORTS_DIR=/storage/roms/ports
+GAMELIST="$PORTS_DIR/gamelist.xml"
+
+mkdir -p "$PORTS_DIR" /storage/.local/share/dora-ssr/logs
+cp -f "/usr/share/dora-ssr/ports/Dora SSR.sh" "$PORTS_DIR/Dora SSR.sh"
+cp -f "/usr/share/dora-ssr/ports/Dora Update.sh" "$PORTS_DIR/Dora Update.sh"
+chmod 0755 "$PORTS_DIR/Dora SSR.sh" "$PORTS_DIR/Dora Update.sh"
+
+if ! xmlstarlet val -q "$GAMELIST" 2>/dev/null; then
+  printf '%s\n' '<?xml version="1.0"?>' '<gameList />' > "$GAMELIST"
+fi
+
+add_game() {
+  path=$1
+  name=$2
+  image=$3
+
+  xmlstarlet ed --inplace -d "/gameList/game[path='$path']" "$GAMELIST"
+  xmlstarlet ed --inplace \
+    --subnode "/gameList" --type elem -n game -v "" \
+    --subnode "/gameList/game[last()]" --type elem -n path -v "$path" \
+    --subnode "/gameList/game[last()]" --type elem -n name -v "$name" \
+    --subnode "/gameList/game[last()]" --type elem -n image -v "$image" \
+    "$GAMELIST"
+}
+
+add_game "./Dora SSR.sh" "Dora SSR" "/usr/share/dora-ssr/Image/logo.png"
+add_game "./Dora Update.sh" "Dora Update" "/usr/share/dora-ssr/Image/icon.png"

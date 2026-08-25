@@ -1,0 +1,97 @@
+#!/bin/bash
+source /etc/profile
+set -euo pipefail
+
+DORA_BASE=/storage/.local/share/dora-ssr
+DORA_RELEASES="$DORA_BASE/releases"
+DORA_LOG="$DORA_BASE/logs/dora-update.log"
+PACKAGES_URL=https://ppa.launchpadcontent.net/ippclub/dora-ssr/ubuntu/dists/jammy/main/binary-arm64/Packages.gz
+PPA_ROOT=https://ppa.launchpadcontent.net/ippclub/dora-ssr/ubuntu
+work=
+
+mkdir -p "$DORA_RELEASES" "$DORA_BASE/logs"
+exec > >(tee -a "$DORA_LOG") 2>&1
+
+cleanup() {
+  case "${work:-}" in
+    "$DORA_BASE"/.update-*) rm -rf -- "$work" ;;
+  esac
+}
+
+finish() {
+  status=$?
+  trap - EXIT INT TERM
+  cleanup
+  printf '\n============================================================\n'
+  if [ "$status" -eq 0 ]; then
+    echo '                 UPDATE SUCCESSFUL'
+  else
+    echo "                 UPDATE FAILED (code $status)"
+    echo "See log: $DORA_LOG"
+  fi
+  printf '============================================================\n\n'
+  echo 'Returning to EmulationStation in 10 seconds...'
+  sleep 10
+  exit "$status"
+}
+
+trap finish EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+clear
+echo 'Dora SSR Updater'
+echo '================'
+echo
+
+exec 9>"$DORA_BASE/.update.lock"
+if ! flock -n 9; then
+  echo 'Another Dora update is already running.'
+  exit 1
+fi
+
+work=$(mktemp -d "$DORA_BASE/.update-XXXXXX")
+
+echo "[$(date '+%F %T')] Checking Dora SSR PPA..."
+curl --http1.1 --retry 5 --retry-delay 2 -fsSL "$PACKAGES_URL" -o "$work/Packages.gz"
+gzip -dc "$work/Packages.gz" > "$work/Packages"
+
+version=$(awk '$1 == "Package:" { selected = ($2 == "dora-ssr") } selected && $1 == "Version:" { print $2; exit }' "$work/Packages")
+filename=$(awk '$1 == "Package:" { selected = ($2 == "dora-ssr") } selected && $1 == "Filename:" { print $2; exit }' "$work/Packages")
+checksum=$(awk '$1 == "Package:" { selected = ($2 == "dora-ssr") } selected && $1 == "SHA256:" { print $2; exit }' "$work/Packages")
+
+if [ -z "$version" ] || [ -z "$filename" ] || [ -z "$checksum" ]; then
+  echo 'Unable to find the ARM64 dora-ssr package in the PPA index.'
+  exit 1
+fi
+
+echo "Latest version: $version"
+release="$DORA_RELEASES/$version"
+if [ ! -x "$release/usr/bin/dora-ssr" ]; then
+  if [ -x /usr/bin/dora-ssr ] && [ "$(cat /usr/share/dora-ssr/version 2>/dev/null || true)" = "$version" ]; then
+    if [ -L "$DORA_BASE/current" ]; then
+      rm -f "$DORA_BASE/current"
+    fi
+    echo "Dora SSR $version is included in this AURKNIX image."
+    exit 0
+  fi
+
+  echo "Downloading Dora SSR $version..."
+  curl --http1.1 --retry 5 --retry-delay 2 -fL "$PPA_ROOT/$filename" -o "$work/dora.deb"
+  echo 'Verifying package checksum...'
+  printf '%s  %s\n' "$checksum" "$work/dora.deb" | sha256sum -c -
+
+  echo 'Installing package...'
+  mkdir -p "$work/ar" "$work/root"
+  cd "$work/ar"
+  ar x "$work/dora.deb"
+  zstd -dc data.tar.zst | tar -x -C "$work/root"
+  test -x "$work/root/usr/bin/dora-ssr"
+  test -f "$work/root/usr/share/dora-ssr/Image/logo.png"
+  mv "$work/root" "$release"
+else
+  echo "Dora SSR $version is already installed."
+fi
+
+ln -sfn "releases/$version" "$DORA_BASE/current"
+echo "[$(date '+%F %T')] Dora SSR is now $version."

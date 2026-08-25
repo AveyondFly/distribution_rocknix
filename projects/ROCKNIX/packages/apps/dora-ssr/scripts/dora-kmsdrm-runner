@@ -1,0 +1,62 @@
+#!/bin/bash
+set -u
+
+source /etc/profile
+
+DORA_BASE=/storage/.local/share/dora-ssr
+DORA_ROOT="$DORA_BASE/current"
+DORA_LOG="$DORA_BASE/logs/dora-ssr.log"
+
+if [ -x "$DORA_ROOT/usr/bin/dora-ssr" ]; then
+  DORA_BIN="$DORA_ROOT/usr/bin/dora-ssr"
+  DORA_ASSET="$DORA_ROOT/usr/share/dora-ssr"
+else
+  DORA_BIN=/usr/bin/dora-ssr
+  DORA_ASSET=/usr/share/dora-ssr
+fi
+
+restore_ui() {
+  echo "$(date): restoring Sway and EmulationStation" >> "$DORA_LOG"
+  systemctl start sway.service
+  systemctl start essway.service
+}
+
+trap restore_ui EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+mkdir -p "$DORA_BASE/logs"
+
+if [ ! -x "$DORA_BIN" ]; then
+  echo "$(date): Dora SSR executable not found: $DORA_BIN" >> "$DORA_LOG"
+  exit 1
+fi
+
+echo "$(date): stopping Sway for Dora KMSDRM" >> "$DORA_LOG"
+systemctl stop essway.service
+systemctl stop sway.service
+
+for _ in $(seq 1 20); do
+  if ! pgrep -x sway >/dev/null; then
+    break
+  fi
+  sleep 0.25
+done
+
+export HOME=/storage
+export SDL_VIDEODRIVER=kmsdrm
+export SDL_KMSDRM_REQUIRE_DRM_MASTER=1
+export SDL_KMSDRM_DISABLE_CURSOR=1
+export SDL_KMSDRM_DEVICE_INDEX=0
+export SDL_GAMECONTROLLERCONFIG_FILE=/storage/.config/SDL-GameControllerDB/gamecontrollerdb.txt
+unset DISPLAY WAYLAND_DISPLAY SWAYSOCK
+
+clear > /dev/console 2>/dev/null || true
+cd /storage || exit 1
+
+echo "$(date): starting Dora SSR with KMSDRM" >> "$DORA_LOG"
+"$DORA_BIN" --asset "$DORA_ASSET" >> "$DORA_LOG" 2>&1
+status=$?
+echo "$(date): Dora SSR exited with status $status" >> "$DORA_LOG"
+exit "$status"

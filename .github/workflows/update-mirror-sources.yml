@@ -33,27 +33,20 @@ jobs:
       - name: install xmlstarlet
         run: sudo apt-get install xmlstarlet
       - name: get sources
-        uses: corrupt952/actions-retry-command@v1.0.7
-        with:
-          command: |
-            PROJECT=ROCKNIX DEVICE=RK3326 ./tools/download-tool 
-            PROJECT=ROCKNIX DEVICE=RK3326S ./tools/download-tool 
-            PROJECT=ROCKNIX DEVICE=RK3399 ./tools/download-tool 
-            PROJECT=ROCKNIX DEVICE=RK3566 ./tools/download-tool 
-            PROJECT=ROCKNIX DEVICE=RK3588 ./tools/download-tool 
-            PROJECT=ROCKNIX DEVICE=H700 ./tools/download-tool 
-            PROJECT=ROCKNIX DEVICE=S922X ./tools/download-tool 
-            PROJECT=ROCKNIX DEVICE=SM8250 ./tools/download-tool 
-            PROJECT=ROCKNIX DEVICE=SM8550 ./tools/download-tool
-          max_attempts: 6
-          retry_interval: 10
+        run: |
+          DEVICES=(RK3326 RK3326S RK3399 RK3566 RK3588 H700 S922X SM8250 SM8550)
+          for DEVICE in "${DEVICES[@]}"; do
+            if ! PROJECT=ROCKNIX DEVICE="${DEVICE}" ./tools/download-tool; then
+              echo "::warning::Source download for ${DEVICE} was incomplete; uploading successful downloads."
+            fi
+          done
       - name: print number of downloaded artifacts
         run: find sources/ -type f \( -name "*.tar.gz" -o -name "*.tar.xz" -o -name "*.tgz" -o -name "*.tar.bz2" -o -name "*.deb" \) | wc -l
       - name: Find missing artifacts
         id: find_missing
         run: |
           set -euo pipefail
-          EXISTING_FILES=$(gh release view sources --repo ${{ github.repository_owner }}/distribution-sources --json assets --jq '.assets[].name' || true)
+          EXISTING_FILES=$(gh release view sources --repo "${{ github.repository_owner }}/distribution-sources" --json assets --jq '.assets[].name' || true)
           mapfile -t LOCAL_FILES < <(find sources/ -type f \( -name '*.tar.gz' -o -name '*.tar.xz' -o -name '*.tgz' -o -name '*.tar.bz2' -o -name '*.deb' -o -name '*.tar.zst' \))
           
           MISSING_FILES=()
@@ -65,12 +58,12 @@ jobs:
             fi
           done
           
-          if [ ${#MISSING_FILES[@]} -eq 0 ]; then
+          if [ "${#MISSING_FILES[@]}" -eq 0 ]; then
             echo "No missing files to upload."
-            echo "HAS_MISSING=false" >> $GITHUB_ENV
+            echo "HAS_MISSING=false" >> "$GITHUB_ENV"
           else
-            echo "ARTIFACTS=$(IFS=,; echo "${MISSING_FILES[*]}")" >> $GITHUB_ENV
-            echo "HAS_MISSING=true" >> $GITHUB_ENV
+            printf 'ARTIFACTS=%s\n' "$(IFS=,; echo "${MISSING_FILES[*]}")" >> "$GITHUB_ENV"
+            echo "HAS_MISSING=true" >> "$GITHUB_ENV"
           fi
       - name: push sources
         if: env.HAS_MISSING == 'true'

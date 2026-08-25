@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       SKIP_GIT: true
+      GET_MAX_ATTEMPTS: 2
       GH_TOKEN: ${{ secrets.GH_PAT }}
     steps:
       - name: Maximize build space
@@ -41,16 +42,29 @@ jobs:
             fi
           done
       - name: print number of downloaded artifacts
-        run: find sources/ -type f \( -name "*.tar.gz" -o -name "*.tar.xz" -o -name "*.tgz" -o -name "*.tar.bz2" -o -name "*.deb" \) | wc -l
+        run: find sources/ -type f -name "*.sha256" | wc -l
       - name: Find missing artifacts
         id: find_missing
         run: |
           set -euo pipefail
           EXISTING_FILES=$(gh release view sources --repo "${{ github.repository_owner }}/distribution-sources" --json assets --jq '.assets[].name' || true)
-          mapfile -t LOCAL_FILES < <(find sources/ -type f \( -name '*.tar.gz' -o -name '*.tar.xz' -o -name '*.tgz' -o -name '*.tar.bz2' -o -name '*.deb' -o -name '*.tar.zst' \))
+          mapfile -d '' -t SHA_FILES < <(find sources/ -type f -name '*.sha256' -print0)
           
           MISSING_FILES=()
-          for file in "${LOCAL_FILES[@]}"; do
+          for sha_file in "${SHA_FILES[@]}"; do
+            file="${sha_file%.sha256}"
+            if [ ! -f "$file" ]; then
+              echo "::warning::Skipping source without archive: $file"
+              continue
+            fi
+
+            expected_sha=$(tr -d '[:space:]' < "$sha_file")
+            actual_sha=$(sha256sum "$file" | cut -d ' ' -f 1)
+            if [ -z "$expected_sha" ] || [ "$expected_sha" != "$actual_sha" ]; then
+              echo "::warning::Skipping source with invalid checksum: $file"
+              continue
+            fi
+
             BASENAME=$(basename "$file")
             if ! echo "$EXISTING_FILES" | grep -qx "$BASENAME"; then
               echo "Missing: $file"

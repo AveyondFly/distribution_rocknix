@@ -25,13 +25,16 @@ case $1 in
 esac
 
 declare -A fetched_packages
+declare -a failed_packages
 
 for package in $(find projects/ROCKNIX/packages/ -name package.mk); do
   if [[ "$package" == *addons* && -z "$ALL_PACKAGES" ]]; then
     continue
   fi
   name=$(basename "$(dirname "$package")")
-  ./scripts/get "$name"
+  if ! ./scripts/get "$name"; then
+    failed_packages+=("$name")
+  fi
   fetched_packages["$name"]=1
 done
 
@@ -43,5 +46,12 @@ for package in $(find packages/ -name package.mk); do
   if [[ -n "${fetched_packages[$name]}" ]]; then
     continue
   fi
-  ./scripts/get "$name"
+  if ! ./scripts/get "$name"; then
+    failed_packages+=("$name")
+  fi
 done
+
+if [ "${#failed_packages[@]}" -gt 0 ]; then
+  printf 'Failed to download %d package(s): %s\n' "${#failed_packages[@]}" "${failed_packages[*]}" >&2
+  exit 1
+fi

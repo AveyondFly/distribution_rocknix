@@ -4,10 +4,10 @@
 
 PKG_NAME="configtools"
 PKG_VERSION="28ea239c53a2d5d8800c472bc2452eaa16e37af2"
-PKG_SHA256="6e4ebaa2a60114cf8b72d478b30e559f0c8e025d290ae3303773095104bf7bcc"
+PKG_SHA256="f78737b2a11e7b47dfacc0345c0ca2fbf538b7455efbaf7459ccc570a9cddf87"
 PKG_LICENSE="GPL"
-PKG_SITE="http://git.savannah.gnu.org/cgit/config.git"
-PKG_URL="http://git.savannah.gnu.org/cgit/config.git/snapshot/config-${PKG_VERSION}.tar.gz"
+PKG_SITE="https://github.com/risqcapital/gnu-config-mirror"
+PKG_URL="${PKG_SITE}/archive/${PKG_VERSION}.tar.gz"
 PKG_DEPENDS_HOST=""
 PKG_LONGDESC="configtools"
 PKG_TOOLCHAIN="manual"

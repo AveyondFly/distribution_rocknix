@@ -7,7 +7,7 @@ PKG_VERSION="1.37.1.2"
 PKG_SHA256="959496928c8a676ec8377f665ff6a19a707bfad693325f9cc4a4126642f53224"
 PKG_LICENSE="GPL3"
 PKG_SITE="https://tracker.debian.org/pkg/fakeroot"
-PKG_URL="http://ftp.debian.org/debian/pool/main/f/fakeroot/${PKG_NAME}_${PKG_VERSION}.orig.tar.gz"
+PKG_URL="https://snapshot.debian.org/archive/debian/20250513T025019Z/pool/main/f/fakeroot/${PKG_NAME}_${PKG_VERSION}.orig.tar.gz"
 PKG_DEPENDS_HOST="ccache:host libcap:host autoconf:host libtool:host"
 PKG_LONGDESC="fakeroot provides a fake root environment by means of LD_PRELOAD and SYSV IPC (or TCP) trickery."
 

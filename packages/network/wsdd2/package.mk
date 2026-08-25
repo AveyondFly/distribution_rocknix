@@ -3,10 +3,10 @@
 
 PKG_NAME="wsdd2"
 PKG_VERSION="1.8.7"
-PKG_SHA256="b0b6b31522f4a5e39d075b31d59d57af9a567f543e0b39b2fbdfec324d30310a"
+PKG_SHA256="2b1e7720435a1e067388660ec3edb321a4c91b4f9d0928ba27d0a8d89b7ef3b9"
 PKG_LICENSE="GPL 3.0"
-PKG_SITE="https://github.com/Netgear/wsdd2/"
-PKG_URL="https://github.com/Netgear/wsdd2/archive/${PKG_VERSION}.tar.gz"
+PKG_SITE="https://tracker.debian.org/pkg/wsdd2"
+PKG_URL="https://deb.debian.org/debian/pool/main/w/wsdd2/${PKG_NAME}_${PKG_VERSION}+dfsg.orig.tar.xz"
 PKG_DEPENDS_TARGET="make:host gcc:host"
 PKG_LONGDESC="WSD/LLMNR Discovery/Name Service Daemon"
 PKG_BUILD_FLAGS="+size"

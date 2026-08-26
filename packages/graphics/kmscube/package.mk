@@ -3,10 +3,10 @@
 
 PKG_NAME="kmscube"
 PKG_VERSION="9f63f359fab1b5d8e862508e4e51c9dfe339ccb0"
-PKG_SHA256="896ac76671a9b89836a7014b16cc85b45b041e03fe34a8f529f4718aa2b15cef"
+PKG_SHA256="8af4c16f79b042c991ed1166d8d92e47f65a04b9b8ec7c3d3b72d1a17fa0e597"
 PKG_LICENSE="GPL"
 PKG_SITE="https://gitlab.freedesktop.org/mesa/kmscube"
-PKG_URL="https://gitlab.freedesktop.org/mesa/kmscube/-/archive/master/kmscube-${PKG_VERSION}.tar.gz"
+PKG_URL="https://gitlab.freedesktop.org/mesa/kmscube/-/archive/${PKG_VERSION}/kmscube-${PKG_VERSION}.tar.gz"
 PKG_DEPENDS_TARGET="toolchain"
 PKG_LONGDESC="Example KMS/GBM/EGL application"
 

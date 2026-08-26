@@ -42,6 +42,10 @@ if [ -n "${PKG_URL}" -a -n "${PKG_SOURCE_NAME}" ]; then
       ;;
   esac
 
+  if [ "${get_handler}" = "git" ] && [ "${SKIP_GIT}" = "true" ]; then
+    exit 0
+  fi
+
   if ! listcontains "${GET_HANDLER_SUPPORT}" "${get_handler}"; then
     die "ERROR: get handler \"${get_handler}\" is not supported, unable to get package ${1} - aborting!"
   else

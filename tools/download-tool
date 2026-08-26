@@ -27,25 +27,29 @@ esac
 declare -A fetched_packages
 declare -a failed_packages
 
-for package in $(find projects/ROCKNIX/packages/ -name package.mk); do
-  if [[ "$package" == *addons* && -z "$ALL_PACKAGES" ]]; then
-    continue
+if [[ -n "$ALL_PACKAGES" ]]; then
+  mapfile -t packages < <(find projects/ROCKNIX/packages/ packages/ -name package.mk)
+  for package in "${packages[@]}"; do
+    name=$(basename "$(dirname "$package")")
+    if [[ -n "${fetched_packages[$name]}" ]]; then
+      continue
+    fi
+    fetched_packages["$name"]=1
+  done
+else
+  plan_file=$(mktemp)
+  trap 'rm -f "$plan_file"' EXIT
+  if ! ./tools/viewplan image > "$plan_file"; then
+    echo "Failed to generate the image build plan." >&2
+    exit 1
   fi
-  name=$(basename "$(dirname "$package")")
-  if ! ./scripts/get "$name"; then
-    failed_packages+=("$name")
-  fi
-  fetched_packages["$name"]=1
-done
 
-for package in $(find packages/ -name package.mk); do
-  if [[ "$package" == *addons* && -z "$ALL_PACKAGES" ]]; then
-    continue
-  fi
-  name=$(basename "$(dirname "$package")")
-  if [[ -n "${fetched_packages[$name]}" ]]; then
-    continue
-  fi
+  while read -r name; do
+    fetched_packages["$name"]=1
+  done < <(awk 'NF >= 2 { name=$2; sub(/:.*/, "", name); print name }' "$plan_file" | sort -u)
+fi
+
+for name in "${!fetched_packages[@]}"; do
   if ! ./scripts/get "$name"; then
     failed_packages+=("$name")
   fi

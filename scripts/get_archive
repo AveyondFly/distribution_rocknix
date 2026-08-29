@@ -35,8 +35,12 @@ then
   PKG_URLS="${PKG_URL} ${PACKAGE_MIRROR}"
 fi
 
-NBWGET=10
-while [ ${NBWGET} -gt 0 ]; do
+NBWGET="${GET_MAX_ATTEMPTS:-10}"
+if ! [[ "${NBWGET}" =~ ^[1-9][0-9]*$ ]]; then
+  die "GET_MAX_ATTEMPTS must be a positive integer"
+fi
+
+while [ "${NBWGET}" -gt 0 ]; do
   for url in ${PKG_URLS}; do
     rm -f "${PACKAGE}"
     if ${WGET_CMD} "${url}"; then
@@ -50,7 +54,8 @@ while [ ${NBWGET} -gt 0 ]; do
   NBWGET=$((NBWGET - 1))
 done
 
-if [ ${NBWGET} -eq 0 ]; then
+if [ "${NBWGET}" -eq 0 ]; then
+  rm -f "${PACKAGE}"
   die "\nCannot get ${1} sources : ${PKG_URL}\nTry later!"
 else
   build_msg "CLR_INFO" "INFO" "Calculated checksum: ${CALC_SHA256}"

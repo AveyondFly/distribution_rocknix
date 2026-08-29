@@ -121,6 +121,11 @@ function Set_ra_ext() {
 	sed -i -e '/input_fps_toggle_btn\ \=/c\input_fps_toggle_btn\ \=\ \"'${mapped_y}'\"' ${RACFG}
 	sed -i -e '/menu_scale_factor\ \=/c\menu_scale_factor\ \=\ \"'${1}'\"' ${RACFG}
 	sed -i -e '/menu_widget_scale_factor\ \=/c\menu_widget_scale_factor\ \=\ \"'${2}'\"' ${RACFG}
+	if grep -qE '^[[:space:]]*video_gpu_screenshot[[:space:]]*=' ${RACFG}; then
+		sed -i -e 's/^[[:space:]]*video_gpu_screenshot[[:space:]]*=.*/video_gpu_screenshot = "true"/' ${RACFG}
+	else
+		printf 'video_gpu_screenshot = "true"\n' >> ${RACFG}
+	fi
 }
 
 function Setup_drastic_cheat() {

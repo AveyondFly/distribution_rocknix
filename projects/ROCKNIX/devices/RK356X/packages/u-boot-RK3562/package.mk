@@ -29,13 +29,14 @@ make_target() {
 }
 
 makeinstall_target() {
-  # 16 MiB pre-partition blob for dd seek=64 (matches SYSTEM_PART_START=32768):
-  #   blob sector 0      -> disk sector 64     (idbloader / SPL, 8 MiB)
-  #   blob sector 16320  -> disk sector 16384  (U-Boot FIT, 4 MiB)
-  truncate -s $((32768 * 512)) ${PKG_BUILD}/uboot.bin
+  # Pre-partition blob for the final dd seek=64:
+  #   source sector 64   -> blob sector 0     -> disk sector 64 (idbloader / SPL)
+  #   blob sector 16320  -> disk sector 16384 (U-Boot FIT, 4 MiB)
+  # The source is a dump of disk sectors 0-16383, so skip its first 64 sectors.
+  truncate -s $((32704 * 512)) ${PKG_BUILD}/uboot.bin
   dd if=${PKG_BUILD}/bootloader_area.img \
     of=${PKG_BUILD}/uboot.bin \
-    bs=512 conv=fsync,notrunc status=none
+    bs=512 skip=64 count=16320 conv=fsync,notrunc status=none
   dd if=${PKG_BUILD}/uboot_partition.img \
     of=${PKG_BUILD}/uboot.bin \
     bs=512 seek=16320 conv=fsync,notrunc status=none

@@ -1,0 +1,36 @@
+From 1f91f64768f5f383f7ebccdd63f45b967cc12f71 Mon Sep 17 00:00:00 2001
+From: ROCKNIX <hello@rocknix.org>
+Date: Wed, 16 Sep 2026 10:00:00 +0800
+Subject: [PATCH] cfg80211: use the static primary interface
+
+The driver publishes its wiphy before registering the primary netdev while
+also advertising add_virtual_intf and del_virtual_intf.  iwd consequently
+tries to create a station interface in that window, but this driver returns
+-ENODEV for every station creation request.  Depending on timing, iwd may
+instead try to delete the driver's static primary interface, which tears down
+the HIF-owned NIC and deadlocks under RTNL.
+
+The driver only implements dynamic creation for a monitor interface.  Do not
+advertise dynamic interface management on ROCKNIX, so iwd waits for and uses
+the statically registered primary interface.  The primary interface can still
+change type through change_virtual_intf.
+---
+ os/linux/cfg80211/zt_cfg80211.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/os/linux/cfg80211/zt_cfg80211.c b/os/linux/cfg80211/zt_cfg80211.c
+index f89b290..96cd206 100644
+--- a/os/linux/cfg80211/zt_cfg80211.c
++++ b/os/linux/cfg80211/zt_cfg80211.c
+@@ -4224,9 +4224,6 @@ static struct cfg80211_ops cfg80211_ops =
+ #endif
+ 
+ #ifdef CFG_ENABLE_AP_MODE
+-    .add_virtual_intf = add_virtual_intf,
+-    .del_virtual_intf = del_virtual_intf,
+-
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 4, 0)) && !defined(COMPAT_KERNEL_RELEASE)
+     .add_beacon = add_beacon_cb,
+     .set_beacon = set_beacon_cb,
+-- 
+2.43.0

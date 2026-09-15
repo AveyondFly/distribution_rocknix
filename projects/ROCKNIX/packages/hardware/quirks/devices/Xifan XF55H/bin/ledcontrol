@@ -1,0 +1,6 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+
+# XF55H uses the same GPIO3_A0/A1 two-color power LED as RG52 Mini.
+exec "/usr/lib/autostart/quirks/devices/AISLPC RG52 Mini/bin/ledcontrol" "$@"

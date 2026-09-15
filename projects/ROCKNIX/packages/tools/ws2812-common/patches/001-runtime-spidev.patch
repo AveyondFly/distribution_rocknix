@@ -1,0 +1,76 @@
+diff --git a/ws2812.c b/ws2812.c
+index 6f9faaf..9b3c647 100644
+--- a/ws2812.c
++++ b/ws2812.c
+@@ -5,7 +5,7 @@
+  * 逆向工程反编译重构
+  * 适用设备: XiFan DC40V, XiFan DC35V, XiFan XF40V, XiFan R36MAX2, XiFan XF28
+  * 
+- * 用法: ws2812 <mode> [brightness]
++ * 用法: ws2812 [--device <spidev>] <mode> [brightness]
+  * 
+  * 编译: make
+  */
+@@ -27,7 +27,7 @@
+ #define LED_COUNT           8
+ #define LED_BUFFER_SIZE     (LED_COUNT * 24)
+ #define SPI_SPEED           8000000
+-#define SPI_DEVICE          "/dev/spidev1.0"
++#define DEFAULT_SPI_DEVICE  "/dev/spidev1.0"
+ #define JOYSTICK_DEVICE     "/dev/input/event2"
+ 
+ /* 刷新间隔 (微秒) */
+@@ -455,8 +455,12 @@ static const mode_entry_t mode_table[] = {
+ /* ==================== 主函数 ==================== */
+ 
+ int main(int argc, char *argv[]) {
++    const char *spi_device = DEFAULT_SPI_DEVICE;
++    int argi = 1;
++
+     if (argc < 2) {
+-        printf("Usage: %s <mode> [brightness]\n", argv[0]);
++usage:
++        printf("Usage: %s [--device <spidev>] <mode> [brightness]\n", argv[0]);
+         printf("Modes: OFF, Joystick, Scrolling, Breathing, Breathing_Red, Breathing_Green, "
+                "Breathing_Blue, Breathing_Blue_Red, Breathing_Green_Blue, "
+                "Breathing_Red_Green, Breathing_Red_Green_Blue, Red_Green_Blue, "
+@@ -465,15 +469,27 @@ int main(int argc, char *argv[]) {
+         return 1;
+     }
+     
+-    if (argc >= 3 && parse_brightness(argv[2]) < 0) {
+-        fprintf(stderr, "Invalid brightness: %s\n", argv[2]);
++    if (strcmp(argv[argi], "--device") == 0) {
++        if (argc <= argi + 1) {
++            fprintf(stderr, "Missing spidev path after --device\n");
++            return 1;
++        }
++        spi_device = argv[argi + 1];
++        argi += 2;
++    }
++
++    if (argc <= argi)
++        goto usage;
++
++    if (argc > argi + 1 && parse_brightness(argv[argi + 1]) < 0) {
++        fprintf(stderr, "Invalid brightness: %s\n", argv[argi + 1]);
+         return 1;
+     }
+     
+     signal(SIGINT, signal_handler);
+     signal(SIGTERM, signal_handler);
+     
+-    spi_fd = spi_init(SPI_DEVICE);
++    spi_fd = spi_init(spi_device);
+     if (spi_fd < 0) return 1;
+     
+     uint8_t *buffer = calloc(LED_BUFFER_SIZE + 1, 1);
+@@ -485,7 +501,7 @@ int main(int argc, char *argv[]) {
+     
+     /* 查找并执行模式 */
+     for (const mode_entry_t *entry = mode_table; entry->name; entry++) {
+-        if (strcmp(argv[1], entry->name) == 0) {
++        if (strcmp(argv[argi], entry->name) == 0) {
+             entry->func(buffer);
+             break;
+         }

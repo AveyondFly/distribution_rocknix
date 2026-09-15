@@ -1,0 +1,709 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2024 dArkOS Contributors
+ *
+ * Xifan NGP45H — RK3562 gaming handheld with landscape 1024x768 DSI panel
+ */
+
+/dts-v1/;
+
+#include "rk3562.dtsi"
+#include "rk3562-linux.dtsi"
+#include "rk3562-rk817.dtsi"
+#include "rk3562-darkos.dtsi"
+
+/ {
+	model = "Xifan NGP45H";
+	compatible = "xifan,ngp45h", "rockchip,rk3562-evb1-lp4x-v10",
+		     "rockchip,rk3562";
+
+	/*
+	 * The inherited SDIO Wi-Fi description is not used on NGP45H and its
+	 * control GPIOs overlap the joypad and hp-det.  The production module is
+	 * an AIC8800DC USB device powered by the USB-host rail below.
+	 */
+	wireless-wlan {
+		status = "disabled";
+	};
+
+	joypad: rocknix-joypad {
+		compatible = "rocknix-joypad";
+		status = "okay";
+
+		/* Keep the standard ROCKNIX userspace identity. */
+		joypad-name = "retrogame_joypad";
+		joypad-product = <0x1101>;
+		joypad-revision = <0x0100>;
+		joypad-vendor = <0x484b>;
+
+		/* Vendor order is LX, LY, RX, RY on SARADC1 channels 4..7. */
+		io-channel-names = "key-RY", "key-RX", "key-LY", "key-LX";
+		io-channels = <&saradc1 7>, <&saradc1 6>,
+			      <&saradc1 5>, <&saradc1 4>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&ngp45h_gpio_key_pin &ngp45h_rumble_pin>;
+		rumble-gpio = <&gpio0 RK_PB7 GPIO_ACTIVE_HIGH>;
+
+		/* Initial values; axis direction and tuning need real-hardware calibration. */
+		button-adc-scale = <2>;
+		button-adc-deadzone = <216>;
+		button-adc-fuzz = <54>;
+		button-adc-flat = <54>;
+		abs_x-p-tuning = <180>;
+		abs_x-n-tuning = <180>;
+		abs_y-p-tuning = <180>;
+		abs_y-n-tuning = <180>;
+		abs_rx-p-tuning = <180>;
+		abs_rx-n-tuning = <180>;
+		abs_ry-p-tuning = <180>;
+		abs_ry-n-tuning = <180>;
+		invert-absy;
+		invert-absry;
+		poll-interval = <10>;
+
+		/* Temporary key map: verify every GPIO and remap on the device. */
+		sw1 {
+			gpios = <&gpio1 RK_PD3 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN_TR";
+			linux,code = <BTN_TR>;
+		};
+		sw2 {
+			gpios = <&gpio1 RK_PD4 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN_TR2";
+			linux,code = <BTN_TR2>;
+		};
+		sw3 {
+			gpios = <&gpio1 RK_PD1 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN_TL";
+			linux,code = <BTN_TL>;
+		};
+		sw4 {
+			gpios = <&gpio1 RK_PD2 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN_TL2";
+			linux,code = <BTN_TL2>;
+		};
+		sw5 {
+			gpios = <&gpio0 RK_PC3 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN-A";
+			linux,code = <BTN_EAST>;
+		};
+		sw6 {
+			gpios = <&gpio0 RK_PC5 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN-B";
+			linux,code = <BTN_SOUTH>;
+		};
+		sw7 {
+			gpios = <&gpio2 RK_PA0 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN-X";
+			linux,code = <BTN_NORTH>;
+		};
+		sw8 {
+			gpios = <&gpio2 RK_PA1 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN-Y";
+			linux,code = <BTN_WEST>;
+		};
+		sw9 {
+			gpios = <&gpio0 RK_PB5 GPIO_ACTIVE_LOW>;
+			label = "GPIO DPAD-LEFT";
+			linux,code = <BTN_DPAD_LEFT>;
+		};
+		sw10 {
+			gpios = <&gpio0 RK_PB6 GPIO_ACTIVE_LOW>;
+			label = "GPIO DPAD-RIGHT";
+			linux,code = <BTN_DPAD_RIGHT>;
+		};
+		sw11 {
+			gpios = <&gpio0 RK_PB3 GPIO_ACTIVE_LOW>;
+			label = "GPIO DPAD-UP";
+			linux,code = <BTN_DPAD_UP>;
+		};
+		sw12 {
+			gpios = <&gpio0 RK_PB4 GPIO_ACTIVE_LOW>;
+			label = "GPIO DPAD-DOWN";
+			linux,code = <BTN_DPAD_DOWN>;
+		};
+		sw13 {
+			gpios = <&gpio0 RK_PA5 GPIO_ACTIVE_LOW>;
+			label = "BTN_SELECT";
+			linux,code = <BTN_SELECT>;
+		};
+		sw14 {
+			gpios = <&gpio3 RK_PA6 GPIO_ACTIVE_LOW>;
+			label = "BTN_START";
+			linux,code = <BTN_START>;
+		};
+		sw15 {
+			gpios = <&gpio1 RK_PC7 GPIO_ACTIVE_LOW>;
+			label = "GPIO BTN_MODE";
+			linux,code = <BTN_MODE>;
+		};
+		sw16 {
+			gpios = <&gpio0 RK_PC6 GPIO_ACTIVE_LOW>;
+			label = "BTN_THUMBL";
+			linux,code = <BTN_THUMBL>;
+		};
+		sw17 {
+			gpios = <&gpio0 RK_PC7 GPIO_ACTIVE_LOW>;
+			label = "BTN_THUMBR";
+			linux,code = <BTN_THUMBR>;
+		};
+	};
+
+	vcc5v0_usb_host: vcc5v0-usb-host {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc5v0_usb_host";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-boot-on;
+		regulator-always-on;
+		enable-active-low;
+		gpio = <&gpio3 RK_PC0 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&usb_host_pwren_ngp45h>;
+	};
+
+	vcc5v0_usb_otg: vcc5v0-usb-otg {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc5v0_usb_otg";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		enable-active-high;
+		gpio = <&gpio3 RK_PB0 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&usb_otg_pwren_ngp45h>;
+	};
+};
+
+/* ---- Per-device overrides ------------------------------------------------ */
+
+/* NGP45H uses GPIO0_C7 and GPIO1_D2 as gamepad keys, not stick-LED control. */
+&led_vcc {
+	status = "disabled";
+};
+
+&uart1 {
+	status = "disabled";
+};
+
+/*
+ * The analogue-stick WS2812 LEDs are connected to SPI0 M1.  The vendor
+ * pinctrl only muxes CLK and MOSI; do not use the common spi0m1_pins group,
+ * since that would also claim GPIO3_C0 as MISO and conflict with USB power.
+ */
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0m1_csn0_ngp45h &spi0m1_pins_ngp45h>;
+	status = "okay";
+
+	spi_dev@0 {
+		compatible = "rockchip,spidev";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+	};
+};
+
+&sdio_pwrseq {
+	status = "disabled";
+};
+
+/* GPIO0_A5 is a joypad button on NGP45H, not an SD-card power switch. */
+&vcc_sd {
+	status = "disabled";
+};
+
+&sdmmc0 {
+	/delete-property/ vmmc-supply;
+};
+
+/* Both DW-MMC ports are wired as removable SD-card slots on the vendor DT. */
+&sdmmc1 {
+	/delete-property/ no-sd;
+	/delete-property/ cap-sdio-irq;
+	/delete-property/ keep-power-in-suspend;
+	/delete-property/ mmc-pwrseq;
+	/delete-property/ broken-cd;
+	/delete-property/ supports-sdio;
+	/delete-property/ supports-rk912;
+
+	no-sdio;
+	no-mmc;
+	bus-width = <4>;
+	cap-mmc-highspeed;
+	cap-sd-highspeed;
+	disable-wp;
+	sd-uhs-sdr104;
+	vqmmc-supply = <&vccio_sd>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdmmc1_bus4 &sdmmc1_cmd &sdmmc1_clk &sdmmc1_det>;
+	status = "okay";
+};
+
+/* NGP45H four-key resistor ladder; values are from the running vendor DT. */
+&adc_keys {
+	/* The vendor mapping intentionally crosses the two volume keycodes. */
+	vol-up-key {
+		linux,code = <KEY_VOLUMEDOWN>;
+		press-threshold-microvolt = <300000>;
+	};
+
+	vol-down-key {
+		linux,code = <KEY_VOLUMEUP>;
+		press-threshold-microvolt = <17000>;
+	};
+
+	mute-key {
+		linux,code = <KEY_MUTE>;
+		label = "menu";
+		press-threshold-microvolt = <600000>;
+	};
+
+	back-key {
+		linux,code = <KEY_ESC>;
+		label = "back";
+		press-threshold-microvolt = <980000>;
+	};
+};
+
+/* LCD voltage regulator — GPIO0_B0 active-high enable */
+&vcc3v3_lcd_n {
+	gpios = <&gpio0 RK_PB0 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
+	pinctrl-names = "default";
+	pinctrl-0 = <&lcd_powerctrl_gpio>;
+	status = "okay";
+};
+
+/* DSI panel — NGP45H 1024x768 landscape panel */
+&dsi {
+	/* Vendor PHY rate, in Mbps per lane. */
+	rockchip,lane-rate = <480>;
+};
+
+&dsi_panel {
+	bpc = <8>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&lcd_rst_gpio>;
+	power-supply = <&vcc3v3_lcd_n>;
+	reset-delay-ms = <100>;
+	init-delay-ms = <120>;
+	enable-delay-ms = <100>;
+	prepare-delay-ms = <20>;
+	unprepare-delay-ms = <20>;
+	disable-delay-ms = <20>;
+
+	panel-init-sequence = [
+		15 00 02 ee 01
+		15 00 02 ea 07
+		15 00 02 eb 12
+		15 00 02 0a 5e
+		15 00 02 13 14
+		15 00 02 17 35
+		15 00 02 1d 33
+		15 00 02 21 01
+		15 00 02 28 28
+		15 00 02 29 18
+		15 00 02 2a 63
+		15 00 02 2f f3
+		15 00 02 ee 02
+		15 00 02 39 a9
+		15 00 02 00 00
+		15 00 02 01 0d
+		15 00 02 02 12
+		15 00 02 03 08
+		15 00 02 04 0e
+		15 00 02 05 30
+		15 00 02 06 0b
+		15 00 02 07 0e
+		15 00 02 08 0f
+		15 00 02 09 0e
+		15 00 02 0a 11
+		15 00 02 0b 4e
+		15 00 02 0c 14
+		15 00 02 0d 1a
+		15 00 02 0e 2f
+		15 00 02 0f 36
+		15 00 02 10 3f
+		15 00 02 20 00
+		15 00 02 21 0d
+		15 00 02 22 12
+		15 00 02 23 08
+		15 00 02 24 0e
+		15 00 02 25 30
+		15 00 02 26 0b
+		15 00 02 27 0e
+		15 00 02 28 0f
+		15 00 02 29 0e
+		15 00 02 2a 11
+		15 00 02 2b 4e
+		15 00 02 2c 14
+		15 00 02 2d 1a
+		15 00 02 2e 2f
+		15 00 02 2f 36
+		15 00 02 30 3f
+		15 00 02 ee 04
+		15 00 02 00 05
+		15 00 02 01 01
+		15 00 02 02 80
+		15 00 02 03 04
+		15 00 02 04 00
+		15 00 02 06 06
+		15 00 02 07 05
+		15 00 02 08 1a
+		15 00 02 09 20
+		15 00 02 0a 0e
+		15 00 02 0b 00
+		15 00 02 20 40
+		15 00 02 24 08
+		15 00 02 ee 05
+		15 00 02 00 01
+		15 00 02 01 09
+		15 00 02 02 05
+		15 00 02 03 05
+		15 00 02 07 05
+		15 00 02 08 0d
+		15 00 02 09 00
+		15 00 02 0a 12
+		15 00 02 0b 14
+		15 00 02 0c 66
+		15 00 02 10 03
+		15 00 02 11 07
+		15 00 02 12 05
+		15 00 02 13 05
+		15 00 02 19 12
+		15 00 02 1a f6
+		15 00 02 40 55
+		15 00 02 41 00
+		15 00 02 43 03
+		15 00 02 44 01
+		15 00 02 45 81
+		15 00 02 46 06
+		15 00 02 47 00
+		15 00 02 ee 06
+		15 00 02 00 45
+		15 00 02 02 01
+		15 00 02 04 88
+		15 00 02 06 cd
+		15 00 02 08 ef
+		15 00 02 09 cd
+		15 00 02 0a ab
+		15 00 02 0b 89
+		15 00 02 0c 67
+		15 00 02 0d 45
+		15 00 02 0e 23
+		15 00 02 0f 01
+		15 00 02 ee 07
+		15 00 02 00 3c
+		15 00 02 01 3c
+		15 00 02 02 3c
+		15 00 02 03 3c
+		15 00 02 04 0d
+		15 00 02 05 3c
+		15 00 02 06 3c
+		15 00 02 07 3c
+		15 00 02 08 08
+		15 00 02 09 10
+		15 00 02 0a 12
+		15 00 02 0b 14
+		15 00 02 0c 16
+		15 00 02 0d 18
+		15 00 02 0e 1a
+		15 00 02 0f 1c
+		15 00 02 10 1e
+		15 00 02 11 04
+		15 00 02 12 00
+		15 00 02 13 3c
+		15 00 02 14 0c
+		15 00 02 15 3c
+		15 00 02 20 3c
+		15 00 02 21 3c
+		15 00 02 22 3c
+		15 00 02 23 3c
+		15 00 02 24 0d
+		15 00 02 25 3c
+		15 00 02 26 3c
+		15 00 02 27 3c
+		15 00 02 28 08
+		15 00 02 29 11
+		15 00 02 2a 13
+		15 00 02 2b 15
+		15 00 02 2c 17
+		15 00 02 2d 19
+		15 00 02 2e 1b
+		15 00 02 2f 1d
+		15 00 02 30 1f
+		15 00 02 31 05
+		15 00 02 32 01
+		15 00 02 33 3c
+		15 00 02 34 0c
+		15 00 02 35 3c
+		15 00 02 ee 08
+		15 00 02 10 00
+		15 00 02 12 dc
+		15 00 02 13 1c
+		15 00 02 17 23
+		15 00 02 18 20
+		15 00 02 20 80
+		15 00 02 ee 0f
+		15 00 02 00 01
+		15 00 02 01 00
+		15 00 02 ee 00
+		15 00 02 ea 00
+		15 00 02 eb 00
+		15 00 02 36 00
+		05 c8 01 11
+		05 14 01 29
+	];
+};
+
+/*
+ * Panel dimensions from the NGP45H vendor device tree.
+ */
+&dsi_panel {
+	width-mm = <68>;
+	height-mm = <121>;
+};
+
+/* Display timing from the NGP45H vendor device tree */
+&dsi_timing0 {
+	clock-frequency = <52000000>;
+	hactive = <1024>;
+	vactive = <768>;
+	hfront-porch = <32>;
+	hsync-len = <20>;
+	hback-porch = <20>;
+	vfront-porch = <8>;
+	vsync-len = <4>;
+	vback-porch = <6>;
+	hsync-active = <0>;
+	vsync-active = <0>;
+	de-active = <0>;
+	pixelclk-active = <0>;
+};
+
+/* RK817 codec and external speaker amplifier from the vendor tree. */
+&rk817_codec {
+	hp-volume = <15>;
+	spk-volume = <11>;
+	spk-ctl-gpios = <&gpio0 RK_PA7 GPIO_ACTIVE_HIGH>;
+	/delete-property/ mic-in-differential;
+	/delete-property/ hp2extamplifier;
+};
+
+&rk817_sound {
+	hp-det-gpio = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>;
+	pinctrl-0 = <&hp_det_ngp45h>;
+	/delete-property/ spk-con-gpios;
+	/delete-property/ io-channels;
+	/delete-property/ io-channel-names;
+	/delete-property/ keyup-threshold-microvolt;
+	/delete-property/ poll-interval;
+	/delete-node/ play-pause-key;
+};
+
+/* The common board uses I2C4; NGP45H wires its RK628 to I2C3 instead. */
+&i2c4 {
+	status = "disabled";
+};
+
+&i2c4_rk628 {
+	status = "disabled";
+};
+
+/* Disconnect the disabled common RK628 endpoint before wiring the I2C3 one. */
+&rgb_in_hdmi {
+	/delete-property/ remote-endpoint;
+};
+
+&i2c3 {
+	status = "okay";
+	clock-frequency = <400000>;
+
+	i2c3_rk628_ngp45h: rk628@50 {
+		compatible = "rockchip,rk628";
+		reg = <0x50>;
+		status = "okay";
+		#sound-dai-cells = <0>;
+
+		assigned-clocks = <&cru CLK_PMU1_WIFI>;
+		assigned-clock-rates = <24000000>;
+		clocks = <&cru CLK_PMU1_WIFI>;
+		clock-names = "soc_24M";
+
+		interrupt-parent = <&gpio3>;
+		interrupts = <RK_PB3 IRQ_TYPE_LEVEL_HIGH>;
+		enable-gpios = <&gpio3 RK_PB6 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio3 RK_PB2 GPIO_ACTIVE_LOW>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&rk628_reset_ngp45h &refclk_pins>;
+
+		rk628-rgb-in;
+		rk628-hdmi-out;
+		mode-sync-pol = <0>;
+
+		port {
+			rk628_rgb_in_ngp45h: endpoint {
+				remote-endpoint = <&rgb_out_hdmi>;
+			};
+		};
+	};
+};
+
+&rgb_out_hdmi {
+	remote-endpoint = <&rk628_rgb_in_ngp45h>;
+};
+
+&route_rgb {
+	bridge = <&i2c3_rk628_ngp45h>;
+};
+
+&rk628_sound {
+	status = "okay";
+
+	simple-audio-card,codec {
+		sound-dai = <&i2c3_rk628_ngp45h>;
+	};
+};
+
+/* NGP45H exposes both USB2 controller paths as host ports. */
+&u2phy_otg {
+	vbus-supply = <&vcc5v0_usb_otg>;
+	status = "okay";
+};
+
+&u2phy_host {
+	phy-supply = <&vcc5v0_usb_host>;
+	status = "okay";
+};
+
+&usbdrd_dwc3 {
+	dr_mode = "host";
+	status = "okay";
+};
+
+&usb_host0_ehci {
+	status = "okay";
+};
+
+&usb_host0_ohci {
+	status = "okay";
+};
+
+/* RK817 PMIC — battery and charger parameters */
+&rk817 {
+	battery {
+		compatible = "rk817,battery";
+		ocv_table = <3500 3539 3608 3694 3767 3806 3829 3844
+			     3856 3863 3869 3882 3930 4003 4010 4023
+			     4033 4045 4059 4070 4171>;
+		design_capacity = <3791>;
+		design_qmax = <4000>;
+		bat_res = <127>;
+		design_max_voltage = <4120>;
+		sleep_enter_current = <150>;
+		sleep_exit_current = <180>;
+		sleep_filter_current = <100>;
+		power_off_thresd = <3450>;
+		zero_algorithm_vol = <3950>;
+		max_soc_offset = <60>;
+		monitor_sec = <5>;
+		sample_res = <10>;
+		virtual_power = <0>;
+		dc_det_gpio = <&gpio3 RK_PA7 GPIO_ACTIVE_HIGH>;
+		charge_red_gpio = <&gpio3 RK_PC2 GPIO_ACTIVE_HIGH>;
+		charge_blue_gpio = <&gpio3 RK_PC1 GPIO_ACTIVE_HIGH>;
+		charge_display_gpio = <&gpio3 RK_PC3 GPIO_ACTIVE_HIGH>;
+	};
+
+	charger {
+		compatible = "rk817,charger";
+		min_input_voltage = <4500>;
+		max_input_current = <2500>;
+		max_chrg_current = <2500>;
+		max_chrg_voltage = <4350>;
+		chrg_term_mode = <0>;
+		chrg_finish_cur = <300>;
+		virtual_power = <0>;
+		dc_det_adc = <0>;
+		dc_det_gpio = <&gpio3 RK_PA7 GPIO_ACTIVE_HIGH>;
+		charge_display_gpio = <&gpio3 RK_PC3 GPIO_ACTIVE_HIGH>;
+		extcon = <&u2phy>;
+		gate_function_disable = <1>;
+	};
+};
+
+/* ---- Per-device pinctrl additions ---------------------------------------- */
+
+&pinctrl {
+	spi0-ngp45h {
+		spi0m1_csn0_ngp45h: spi0m1-csn0-ngp45h {
+			rockchip,pins =
+				<3 RK_PB7 4 &pcfg_pull_up_drv_level_4>;
+		};
+
+		spi0m1_pins_ngp45h: spi0m1-pins-ngp45h {
+			rockchip,pins =
+				<3 RK_PB5 4 &pcfg_pull_up_drv_level_4>,
+				<3 RK_PB4 4 &pcfg_pull_down_drv_level_4>;
+		};
+	};
+
+	headphone {
+		hp_det_ngp45h: hp-det-ngp45h {
+			rockchip,pins = <0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	lcd {
+		lcd_powerctrl_gpio: lcd-powerctrl-gpio {
+			rockchip,pins = <0 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	usb {
+		usb_host_pwren_ngp45h: usb-host-pwren-ngp45h {
+			rockchip,pins = <3 RK_PC0 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+
+		usb_otg_pwren_ngp45h: usb-otg-pwren-ngp45h {
+			rockchip,pins = <3 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	rk628-ngp45h {
+		rk628_reset_ngp45h: rk628-reset-ngp45h {
+			rockchip,pins = <3 RK_PB2 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	rumble-ngp45h {
+		ngp45h_rumble_pin: ngp45h-rumble-pin {
+			/* Pull low keeps the active-high motor off before probe. */
+			rockchip,pins = <0 RK_PB7 RK_FUNC_GPIO &pcfg_pull_down>;
+		};
+	};
+
+	buttons {
+		ngp45h_gpio_key_pin: ngp45h-gpio-key-pin {
+			rockchip,pins =
+				<1 RK_PD3 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PD4 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PD1 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PD2 RK_FUNC_GPIO &pcfg_pull_up>,
+				<0 RK_PC3 RK_FUNC_GPIO &pcfg_pull_up>,
+				<0 RK_PC5 RK_FUNC_GPIO &pcfg_pull_up>,
+				<2 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>,
+				<2 RK_PA1 RK_FUNC_GPIO &pcfg_pull_up>,
+				<0 RK_PB5 RK_FUNC_GPIO &pcfg_pull_up>,
+				<0 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>,
+				<0 RK_PB3 RK_FUNC_GPIO &pcfg_pull_up>,
+				<0 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>,
+				<0 RK_PA5 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PC7 RK_FUNC_GPIO &pcfg_pull_up>,
+				<0 RK_PC6 RK_FUNC_GPIO &pcfg_pull_up>,
+				<0 RK_PC7 RK_FUNC_GPIO &pcfg_pull_up>,
+				<0 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+};

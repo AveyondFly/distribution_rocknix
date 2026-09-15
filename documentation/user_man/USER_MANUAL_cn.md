@@ -114,11 +114,18 @@ ROM、BIOS 与版权合规由用户自行负责；请将合法拥有的游戏文
 | E900V | E900V22C |
 | M401 | M401A |
 
-### 3.4 RK356X（WIP，预期与可用性以降低预期为准）
+### 3.4 RK356X（Rockchip 5.10 BSP 内核）
 
-| 品牌 | 型号 |
-|------|------|
-| RO520C | LP3X-V10 |
+RK356X 发布包包含 **RK3562**、**RK3566-Generic** 和 **RK3566-Specific** 三套安装镜像，共用同一更新包。它与使用主线 6.x 内核的独立 **RK3566** 发布包不兼容，请按镜像文件名中的后缀选择。
+
+RK3562 机型使用 `*-RK3562.img.gz`。写卡后，在启动分区运行 `/flash/dtbselect`（Linux）或 `DtbselectWin64.exe`（Windows），选择与机器完全一致的设备树：
+
+| 品牌 | 型号（RK3562 镜像） | 说明 |
+|------|---------------------|------|
+| AISLPC | RG52 Mini、RG43H Pro、RG43V Pro | 根据设备的实际版本选择默认或 **v1** 条目。 |
+| Xifan | NGP45H、XF55H | 选择与机器型号同名的设备项。 |
+
+RK3566-Generic 使用多 DTB `FDTDIR` 启动，不使用 `dtbselect`；RK3566-Specific 则需要用 `dtbselect` 选择设备。完整设备列表和注意事项见仓库 README 及 RK356X 设备文档。
 
 ### 3.5 RK3326S（Linux 6.6 BSP 内核支线）
 

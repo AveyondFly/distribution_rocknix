@@ -114,13 +114,18 @@ RK3566 **does not reuse** RK3326 images. Published builds use two image lines; t
 | E900V | E900V22C |
 | M401 | M401A |
 
-### 3.4 RK356X (WIP)
+### 3.4 RK356X (Rockchip 5.10 BSP kernel)
 
-| Brand | Models |
-|-------|--------|
-| RO520C | LP3X-V10 |
+The RK356X release contains three install images—**RK3562**, **RK3566-Generic**, and **RK3566-Specific**—which share one update package. They are not interchangeable with the standalone **RK3566** release that uses a mainline 6.x kernel; choose the suffix in the image filename carefully.
 
-Expect rough edges until maintainers declare the branch stable.
+RK3562 devices use `*-RK3562.img.gz`. After writing the image, run `/flash/dtbselect` (Linux) or `DtbselectWin64.exe` (Windows) on the boot partition and select the exact device tree for the hardware:
+
+| Brand | Models (RK3562 image) | Notes |
+|-------|-----------------------|-------|
+| AISLPC | RG52 Mini, RG43H Pro, RG43V Pro | Select the default or **v1** entry that matches the device revision. |
+| Xifan | NGP45H, XF55H | Select the entry with the same model name as the device. |
+
+RK3566-Generic boots from a multi-DTB `FDTDIR` and does not use `dtbselect`; RK3566-Specific does use `dtbselect`. See the repository README and RK356X device documentation for the full device lists and cautions.
 
 ### 3.5 RK3326S (Linux 6.6 BSP branch)
 

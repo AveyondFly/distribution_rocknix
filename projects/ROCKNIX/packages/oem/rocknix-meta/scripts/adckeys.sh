@@ -4,8 +4,21 @@
 # Copyright (C) 2024-present AmberELEC (https://github.com/AmberELEC)
 
 MODEL=$(cat /sys/firmware/devicetree/base/model | tr '\0' '\n')
-if [[ "$MODEL" == *"GameMT E"* ]] || [[ "$MODEL" == *"Diium D50Plus"* ]] || [[ "$MODEL" == *"Diium D007"* ]]; then
-    DEVICE_FILE="/dev/input/by-path/platform-adc-keys-event"
+DEVICE_FILE="/dev/input/by-path/platform-adc-keys-event"
+
+if [[ "$MODEL" == *"Xifan NGP45H"* ]]; then
+    # Keep the ADC keyboard visible to input_sense so volume and menu keys
+    # retain their normal behavior.  Only mirror Back/ESC into the joypad.
+    while true; do
+        evtest "$DEVICE_FILE" | while read -r line; do
+            if [[ $line == *"KEY_ESC"* ]]; then
+                if [[ $line == *"value 1"* ]]; then
+                    /usr/bin/adckeys_new.py startselect
+                fi
+            fi
+        done
+    done
+elif [[ "$MODEL" == *"GameMT E"* ]] || [[ "$MODEL" == *"Diium D50Plus"* ]] || [[ "$MODEL" == *"Diium D007"* ]]; then
     while true; do
         evtest --grab "$DEVICE_FILE" | while read -r line; do
             if [[ $line == *"KEY_ESC"* ]]; then

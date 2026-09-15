@@ -2,7 +2,7 @@
 /*
  * RK3562 handheld gamepad driver
  *
- * Generic input driver for RK3562-based handheld gamepads (RG56 Pro,
+ * Generic input driver for RK3562-based handheld gamepads (RG52 Mini,
  * RG43H Pro, etc.).  Reads analog sticks and triggers via IIO (SARADC),
  * ADC-threshold buttons via IIO, and GPIO-connected buttons via IRQ
  * with debounce.
@@ -12,12 +12,14 @@
  * - Dynamic GPIO button count (read from DT key-gpios-map)
  * - Force feedback (rumble) via GPIO-connected motors
  * - Left/right stick X/Y axis swap (DT properties)
- * - Left stick polarity inversion (DT property "left-stick-invert")
+ * - Whole-left-stick and per-axis polarity inversion (DT properties)
  * - Axis-to-dpad mode via sysfs
  *
- * Note: The stock zed_joystick driver reads l_x_swap, l_y_swap, r_x_swap,
- * and r_y_swap DT properties but never uses them for axis inversion.
- * We match that behavior by ignoring these properties entirely.
+ * Per-axis inversion uses the unambiguous left-x-invert, left-y-invert,
+ * right-x-invert and right-y-invert properties.  The similarly named
+ * l_x_swap/l_y_swap/r_x_swap/r_y_swap properties found in vendor trees are
+ * intentionally ignored because the stock zed_joystick driver never applies
+ * them and their meaning is ambiguous.
  *
  * Compatible with the "play_joystick" device tree node shipped in the
  * stock RK3562 firmware.
@@ -120,8 +122,12 @@ struct rk3562_joystick {
 	bool r_xy_swap;
 
 	/* Left stick polarity inversion (for devices where the left stick
-	 * module is physically rotated 180 degrees, e.g. RG56 Pro) */
+	 * module is physically rotated 180 degrees, e.g. RG52 Mini) */
 	bool left_stick_invert;
+	bool left_x_invert;
+	bool left_y_invert;
+	bool right_x_invert;
+	bool right_y_invert;
 
 	/* Rumble motors (optional) */
 	struct gpio_desc *moto_gpio;
@@ -138,7 +144,7 @@ struct rk3562_joystick {
 	/* Start/Select <-> HOME/BACK swap */
 	bool swap_start_home;
 	bool swap_available;	/* false if any of the 4 buttons missing */
-	int swap_indices[4];	/* gpio_btns[] indices: START, SELECT, MODE, TL2 */
+	int swap_indices[4];	/* gpio_btns[] indices: START, SELECT, MODE, HAPPY1 */
 };
 
 static const char * const stick_chan_names[NUM_STICK_CHANS] = {
@@ -159,7 +165,24 @@ static const unsigned int stick_abs_codes[NUM_STICK_CHANS] = {
 	ABS_X, ABS_Y, ABS_RX, ABS_RY,
 };
 
-/* Axis ABS codes for triggers */
+/* Axis ABS codes for triggers: ABS_Z (left/L2) and ABS_RZ (right/R2).
+ *
+ * These are the canonical Linux analog-trigger codes, exposed as real
+ * analog axes by BOTH consumers we care about: SDL2 auto-maps
+ * ABS_Z->lefttrigger / ABS_RZ->righttrigger, and RetroArch's udev
+ * joypad driver applies its trigger fix-up (neg_trigger detection +
+ * (val+0x7fff)/2 remap) to give a clean 0..max range for our
+ * rest-at-0 triggers.
+ *
+ * We previously used ABS_HAT2Y/ABS_HAT2X (the Gamepad-spec ZL/ZR
+ * codes) to keep joydev's axis order at 0-3=sticks, 4/5=triggers.
+ * But udev treats the ABS_HAT range (0x10-0x17) as a digital hat, so
+ * RetroArch could only bind them as h2down/h2right -- no analog value
+ * ever reached cores like Flycast. ABS_Z (0x02) sits between the
+ * sticks, so joydev/SDL now enumerate axes as
+ * 0=LX,1=LY,2=L2,3=RX,4=RY,5=R2; every index-based config
+ * (gamecontrollerdb, es_input, mupen, dolphin, retroarch autoconfig)
+ * was updated to match this layout. */
 static const unsigned int trig_abs_codes[NUM_TRIG_CHANS] = {
 	ABS_Z, ABS_RZ,
 };
@@ -181,6 +204,36 @@ static unsigned int rk3562_stick_code(struct rk3562_joystick *joy, int i)
 	default:
 		return stick_abs_codes[i];
 	}
+}
+
+static int rk3562_apply_stick_inversion(struct rk3562_joystick *joy,
+					unsigned int code, int val)
+{
+	bool invert;
+
+	switch (code) {
+	case ABS_X:
+		invert = joy->left_x_invert;
+		break;
+	case ABS_Y:
+		invert = joy->left_y_invert;
+		break;
+	case ABS_RX:
+		invert = joy->right_x_invert;
+		break;
+	case ABS_RY:
+		invert = joy->right_y_invert;
+		break;
+	default:
+		return val;
+	}
+
+	/* left-stick-invert flips both left axes.  XOR lets a per-axis flag
+	 * correct just one of those axes when a board needs asymmetric wiring. */
+	if (code == ABS_X || code == ABS_Y)
+		invert ^= joy->left_stick_invert;
+
+	return invert ? -val : val;
 }
 
 /*
@@ -395,13 +448,13 @@ static ssize_t swap_start_home_store(struct device *dev,
 	if (val != joy->swap_start_home) {
 		/* Pairwise swap: START↔BACK, SELECT↔HOME/FN */
 		joy->gpio_btns[joy->swap_indices[0]].code =
-			val ? BTN_TL2 : BTN_START;     /* START → BACK */
+			val ? BTN_TRIGGER_HAPPY1 : BTN_START;     /* START → BACK */
 		joy->gpio_btns[joy->swap_indices[1]].code =
 			val ? BTN_MODE : BTN_SELECT;   /* SELECT → HOME/FN */
 		joy->gpio_btns[joy->swap_indices[2]].code =
 			val ? BTN_SELECT : BTN_MODE;   /* HOME/FN → SELECT */
 		joy->gpio_btns[joy->swap_indices[3]].code =
-			val ? BTN_START : BTN_TL2;     /* BACK → START */
+			val ? BTN_START : BTN_TRIGGER_HAPPY1;     /* BACK → START */
 		joy->swap_start_home = val;
 	}
 
@@ -410,9 +463,39 @@ static ssize_t swap_start_home_store(struct device *dev,
 
 static DEVICE_ATTR_RW(swap_start_home);
 
+/* --- Left stick inversion sysfs --- */
+
+static ssize_t left_stick_invert_show(struct device *dev,
+				      struct device_attribute *attr, char *buf)
+{
+	struct rk3562_joystick *joy = platform_get_drvdata(to_platform_device(dev));
+
+	return sysfs_emit(buf, "%d\n", joy->left_stick_invert);
+}
+
+static ssize_t left_stick_invert_store(struct device *dev,
+				       struct device_attribute *attr,
+				       const char *buf, size_t count)
+{
+	struct rk3562_joystick *joy = platform_get_drvdata(to_platform_device(dev));
+	bool val;
+	int ret;
+
+	ret = kstrtobool(buf, &val);
+	if (ret)
+		return ret;
+
+	joy->left_stick_invert = val;
+
+	return count;
+}
+
+static DEVICE_ATTR_RW(left_stick_invert);
+
 static struct attribute *rk3562_attrs[] = {
 	&dev_attr_axis_to_dpad.attr,
 	&dev_attr_swap_start_home.attr,
+	&dev_attr_left_stick_invert.attr,
 	NULL,
 };
 ATTRIBUTE_GROUPS(rk3562);
@@ -475,9 +558,7 @@ static void rk3562_poll(struct input_dev *input)
 			int val = stick_vals[i];
 			unsigned int code = rk3562_stick_code(joy, i);
 
-			if (joy->left_stick_invert &&
-			    (code == ABS_X || code == ABS_Y))
-				val = -val;
+			val = rk3562_apply_stick_inversion(joy, code, val);
 
 			if (code == ABS_X)
 				log_x = val;
@@ -512,22 +593,20 @@ static void rk3562_poll(struct input_dev *input)
 		input_report_abs(input, rk3562_stick_code(joy, 1), 0);
 
 		/* Right stick still reports normally */
-		input_report_abs(input, rk3562_stick_code(joy, 2), stick_vals[2]);
-		input_report_abs(input, rk3562_stick_code(joy, 3), stick_vals[3]);
+		for (i = 2; i < NUM_STICK_CHANS; i++) {
+			unsigned int code = rk3562_stick_code(joy, i);
+			int val = rk3562_apply_stick_inversion(joy, code,
+							       stick_vals[i]);
+
+			input_report_abs(input, code, val);
+		}
 	} else {
 		/* Normal mode: report all 4 axes with XY swap */
 		for (i = 0; i < NUM_STICK_CHANS; i++) {
 			int val = stick_vals[i];
 			unsigned int code = rk3562_stick_code(joy, i);
 
-			/* If left stick inversion is enabled, negate both
-			 * left axes.  This corrects for devices where the
-			 * left stick module is physically rotated 180
-			 * degrees (ribbon cable faces inward), giving
-			 * opposite voltage polarity from the right stick. */
-			if (joy->left_stick_invert &&
-			    (code == ABS_X || code == ABS_Y))
-				val = -val;
+			val = rk3562_apply_stick_inversion(joy, code, val);
 
 			input_report_abs(input, code, val);
 		}
@@ -680,15 +759,23 @@ static int rk3562_parse_adc_buttons(struct rk3562_joystick *joy,
 
 /*
  * Remap DTS key codes that fall outside the BTN_* range (and would be
- * invisible to joydev) into BTN_MODE/BTN_TL2.
+ * invisible to joydev) into joydev-visible BTN_* codes.
+ *
+ * KEY_HOME -> BTN_MODE (the SDL Guide button).
+ * KEY_FN   -> BTN_TRIGGER_HAPPY1: a generic "extra button" slot in the
+ *             BTN_TRIGGER_HAPPY1..40 range (evdev 0x2c0..0x2e7) that the
+ *             kernel input subsystem reserves for buttons that don't fit
+ *             the standard gamepad layout.  Avoids overloading BTN_TL2
+ *             (the canonical Left Trigger 2 code) for an unrelated
+ *             function button.
  */
 static unsigned int rk3562_remap_code(unsigned int dts_code)
 {
 	switch (dts_code) {
 	case KEY_HOME_DTS:
-		return BTN_MODE;  /* 0x13c -- HOME/FN -> Guide button */
+		return BTN_MODE;            /* 0x13c -- HOME -> Guide */
 	case KEY_FN_DTS:
-		return BTN_TL2;   /* 0x138 -- BACK -> function button */
+		return BTN_TRIGGER_HAPPY1;  /* 0x2c0 -- FN/BACK -> extra btn */
 	default:
 		return dts_code;
 	}
@@ -764,6 +851,14 @@ static int rk3562_probe(struct platform_device *pdev)
 	 * opposite voltage polarity from the right stick. */
 	joy->left_stick_invert = of_property_read_bool(dev->of_node,
 						       "left-stick-invert");
+	joy->left_x_invert = of_property_read_bool(dev->of_node,
+						  "left-x-invert");
+	joy->left_y_invert = of_property_read_bool(dev->of_node,
+						  "left-y-invert");
+	joy->right_x_invert = of_property_read_bool(dev->of_node,
+						   "right-x-invert");
+	joy->right_y_invert = of_property_read_bool(dev->of_node,
+						   "right-y-invert");
 
 	/* Stick calibration (millivolts -> microvolts) */
 	if (of_property_read_u32(dev->of_node, "axis-min-value-mv",
@@ -913,7 +1008,7 @@ static int rk3562_probe(struct platform_device *pdev)
 	/* --- Locate swappable buttons for Start/Select <-> HOME/BACK --- */
 	{
 		static const unsigned int swap_codes[4] = {
-			BTN_START, BTN_SELECT, BTN_MODE, BTN_TL2,
+			BTN_START, BTN_SELECT, BTN_MODE, BTN_TRIGGER_HAPPY1,
 		};
 		int found = 0;
 
@@ -934,7 +1029,7 @@ static int rk3562_probe(struct platform_device *pdev)
 
 		joy->swap_available = (found == 4);
 		if (joy->swap_available)
-			dev_info(dev, "Button swap available (START=%d SELECT=%d MODE=%d TL2=%d)\n",
+			dev_info(dev, "Button swap available (START=%d SELECT=%d MODE=%d HAPPY1=%d)\n",
 				 joy->swap_indices[0], joy->swap_indices[1],
 				 joy->swap_indices[2], joy->swap_indices[3]);
 		else
@@ -992,11 +1087,18 @@ static int rk3562_probe(struct platform_device *pdev)
 	for (i = 0; i < NUM_ADC_BTNS; i++)
 		input_set_capability(input, EV_KEY, joy->adc_btn_codes[i]);
 
-	/* Always register BTN_TL2 and BTN_MODE so joydev assigns the same
-	 * sequential button indices on all RK3562 devices, regardless of
-	 * whether a physical HOME/FN button exists (RG56 Pro has it,
-	 * RG43H does not).  input_set_capability is idempotent. */
+	/* Always register BTN_TL2, BTN_TR2, and BTN_MODE so joydev assigns
+	 * the same sequential button indices on all RK3562 devices,
+	 * regardless of whether a physical HOME/FN button exists (RG52
+	 * Mini has it, RG43H does not).  BTN_TR2 (evdev 0x139) is set
+	 * unconditionally to fill the gap between BTN_TL2 (0x138) and
+	 * BTN_SELECT (0x13a) -- without it, joydev collapses SELECT to
+	 * button 7 instead of 8, shifting all later buttons (DPAD, etc.)
+	 * down by one and breaking emulator configs that assume the
+	 * standard SDL_GameController layout. input_set_capability is
+	 * idempotent. */
 	input_set_capability(input, EV_KEY, BTN_TL2);
+	input_set_capability(input, EV_KEY, BTN_TR2);
 	input_set_capability(input, EV_KEY, BTN_MODE);
 
 	/* Register dpad button capabilities (for axis-to-dpad mode) */
@@ -1033,10 +1135,12 @@ static int rk3562_probe(struct platform_device *pdev)
 		return ret;
 	}
 
-	dev_info(dev, "RK3562 joystick registered (%d GPIOs, poll %u ms, debounce %u ms, rumble %s, lstick-invert %s)\n",
+	dev_info(dev, "RK3562 joystick registered (%d GPIOs, poll %u ms, debounce %u ms, rumble %s, lstick-invert %s, axis-invert LX:%u LY:%u RX:%u RY:%u)\n",
 		 joy->num_gpio_btns, poll_interval, joy->debounce_ms,
 		 (joy->moto_gpio || joy->moto_r_gpio) ? "yes" : "no",
-		 joy->left_stick_invert ? "yes" : "no");
+		 joy->left_stick_invert ? "yes" : "no",
+		 joy->left_x_invert, joy->left_y_invert,
+		 joy->right_x_invert, joy->right_y_invert);
 
 	return 0;
 }

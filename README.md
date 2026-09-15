@@ -91,6 +91,7 @@ Use `/flash/dtbselect` (Linux) or `DtbselectWin64.exe` (Windows) on the boot par
 | Brand | Models | Notes |
 |-------|--------|-------|
 | AISLPC | RG52 Mini, RG43H Pro, RG43V Pro | **v1** entries (**RG52 Mini v1**, **RG43H Pro v1**, **RG43V Pro v1**) are for the **RK915 WiFi** hardware revision; the default entries are for other WiFi variants (AIC8800D80). |
+| Xifan | NGP45H, XF55H | Includes model-specific display, controls, audio, dual TF-card slots, and status/analog-stick LED support. XF55H also includes support for its onboard ZT9101 USB WiFi. Select the exact device entry with `/flash/dtbselect` or `DtbselectWin64.exe`. |
 
 ##### RK3566-Generic subimage
 | Brand | Models | Notes |

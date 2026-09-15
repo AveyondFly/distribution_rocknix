@@ -1,0 +1,6 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+
+# XF55H drives its WS2812 stick LEDs through the UART1 LED MCU.
+exec "/usr/lib/autostart/quirks/devices/AISLPC RG52 Mini/bin/analog_sticks_ledcontrol_single" "$@"

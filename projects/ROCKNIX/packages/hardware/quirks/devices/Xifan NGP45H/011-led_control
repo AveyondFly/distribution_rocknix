@@ -1,0 +1,9 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+
+# The charge indicator is handled by the hardware.  Prevent the RK356X
+# powerstate hooks from overriding the user-selected red/blue status LED.
+cat <<EOF >/storage/.config/profile.d/011-led_control
+DEVICE_LED_CHARGING="false"
+EOF

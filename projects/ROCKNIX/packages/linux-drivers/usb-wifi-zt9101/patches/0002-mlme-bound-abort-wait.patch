@@ -1,0 +1,48 @@
+From b8b89f17e9362fd06e3219297f7d4a69eddf3029 Mon Sep 17 00:00:00 2001
+From: ROCKNIX <hello@rocknix.org>
+Date: Tue, 15 Sep 2026 22:05:00 +0800
+Subject: [PATCH] mlme: bound the abort wait
+
+The MLME abort path can leave the state marked as running after scan abort
+has timed out.  Waiting forever here blocks ndo_stop while RTNL is held and
+can also prevent module initialization from returning when userspace quickly
+opens and closes the newly registered interface.
+
+Limit the wait to five seconds and report the stale state.  The MLME worker
+can still finish its pending operation after the caller releases RTNL.
+---
+ nic/mlme.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/nic/mlme.c b/nic/mlme.c
+index da4763d..7fcbe3d 100644
+--- a/nic/mlme.c
++++ b/nic/mlme.c
+@@ -2153,6 +2153,7 @@ zt_s32 zt_mlme_get_traffic_busy(nic_info_st *pnic_info, zt_bool *bbusy)
+ zt_s32 zt_mlme_abort(nic_info_st *pnic_info)
+ {
+     mlme_info_t *pmlme_info = pnic_info->mlme_info;
++    zt_timer_t abort_timer;
+ 
+     switch (zt_local_cfg_get_work_mode(pnic_info))
+     {
+@@ -2170,10 +2171,17 @@ zt_s32 zt_mlme_abort(nic_info_st *pnic_info)
+             break;
+     }
+     pmlme_info->freeze_pend = zt_true;
++    zt_timer_set(&abort_timer, 5000);
+ 
+     MLME_INFO("wait until mlme abort done");
+     while ((pmlme_info->state & MLME_STA_RUN_BIT) || pmlme_info->connect)
+     {
++        if (zt_timer_expired(&abort_timer))
++        {
++            MLME_WARN("abort timeout, state:0x%x connect:%d",
++                      pmlme_info->state, pmlme_info->connect);
++            return -1;
++        }
+         zt_msleep(10);
+     }
+     MLME_INFO("mlme abort done");
+-- 
+2.43.0

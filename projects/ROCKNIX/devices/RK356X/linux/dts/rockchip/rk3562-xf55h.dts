@@ -1,0 +1,379 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Xifan XF55H — RK3562 gaming handheld
+ *
+ * Hardware data was transcribed from the vendor
+ * rk3562-ro520c-lp3x-v10-linux.dtb.
+ */
+
+/dts-v1/;
+
+#include "rk3562.dtsi"
+#include "rk3562-linux.dtsi"
+#include "rk3562-rk817.dtsi"
+#include "rk3562-darkos.dtsi"
+
+/ {
+	model = "Xifan XF55H";
+	compatible = "xifan,xf55h", "rockchip,rk3562-ro520c-lp3x-v10",
+		     "rockchip,rk3562";
+
+	/* GPIO0_A6 and GPIO0_B4 belong to the second TF-card slot. */
+	wireless-wlan {
+		status = "disabled";
+	};
+
+	wireless-bluetooth {
+		status = "disabled";
+	};
+
+	play_joystick {
+		compatible = "play_joystick";
+		io-channels = <&saradc0 2>, <&saradc0 3>,
+			      <&saradc0 5>, <&saradc0 6>,
+			      <&saradc1 1>, <&saradc1 4>,
+			      <&saradc1 0>, <&saradc1 2>,
+			      <&saradc1 3>, <&saradc1 5>,
+			      <&saradc1 6>, <&saradc1 7>;
+		io-channel-names = "button0", "button1",
+				   "button2", "button3",
+				   "l2-abs", "r2-abs",
+				   "left-key", "right-key",
+				   "down-key", "b-key",
+				   "x-key", "y-key";
+		joysticks_numbers = <2>;
+		left-x-invert;
+		right-y-invert;
+		axis-min-value-mv = <250>;
+		axis-max-value-mv = <1550>;
+		axis-dead-zone-l = <790>;
+		axis-dead-zone-h = <1010>;
+		axis-division-value = <60>;
+		keyup-threshold-microvolt = <1800000>;
+		poll-interval = <16>;
+		debounce-interval = <100>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&xf55h_gpio_key_pin &xf55h_moto_gpio>;
+		moto-gpio = <&gpio3 RK_PA7 GPIO_ACTIVE_HIGH>;
+		gpio-key-num = <10>;
+		key-gpios = <&gpio1 RK_PC7 GPIO_ACTIVE_LOW>,
+			    <&gpio1 RK_PD0 GPIO_ACTIVE_LOW>,
+			    <&gpio1 RK_PD5 GPIO_ACTIVE_LOW>,
+			    <&gpio1 RK_PD6 GPIO_ACTIVE_LOW>,
+			    <&gpio1 RK_PD3 GPIO_ACTIVE_LOW>,
+			    <&gpio1 RK_PD7 GPIO_ACTIVE_LOW>,
+			    <&gpio1 RK_PD4 GPIO_ACTIVE_LOW>,
+			    <&gpio2 RK_PA0 GPIO_ACTIVE_LOW>,
+			    <&gpio0 RK_PC5 GPIO_ACTIVE_LOW>,
+			    <&gpio0 RK_PC6 GPIO_ACTIVE_LOW>;
+		key-gpios-map = <0x136 0x220 0x137 0x131
+				 0x13a 0x13b 0x66 0x1d0
+				 0x13d 0x13e>;
+		l2-r2-min-value-mv = <50>;
+		l2-r2-max-value-mv = <800>;
+		l2-r2-division-value-mv = <75>;
+		l2_r2_abs;
+
+		left-key {
+			label = "left-key";
+			adc-chan = <0>;
+			linux,code = <0x222>;
+			press-threshold-microvolt = <80000>;
+		};
+
+		right-key {
+			label = "right-key";
+			adc-chan = <2>;
+			linux,code = <0x223>;
+			press-threshold-microvolt = <80000>;
+		};
+
+		down-key {
+			label = "down-key";
+			adc-chan = <3>;
+			linux,code = <0x221>;
+			press-threshold-microvolt = <80000>;
+		};
+
+		b-key {
+			label = "b-key";
+			adc-chan = <5>;
+			linux,code = <0x130>;
+			press-threshold-microvolt = <80000>;
+		};
+
+		x-key {
+			label = "x-key";
+			adc-chan = <6>;
+			linux,code = <0x133>;
+			press-threshold-microvolt = <80000>;
+		};
+
+		y-key {
+			label = "y-key";
+			adc-chan = <7>;
+			linux,code = <0x134>;
+			press-threshold-microvolt = <80000>;
+		};
+	};
+
+	vcc_sd2: vcc-sd2 {
+		compatible = "regulator-gpio";
+		regulator-name = "vcc_sd2";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-boot-on;
+		enable-active-low;
+		gpios = <&gpio0 RK_PA6 GPIO_ACTIVE_LOW>;
+		states = <0 0x0
+			  3300000 0x1>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&vcc_sd_h2>;
+	};
+
+	vcc5v0_otg: vcc5v0-otg-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc5v0_otg";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		enable-active-high;
+		gpio = <&gpio3 RK_PB0 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&vcc5v0_otg_en>;
+	};
+
+	wifi_vcc: wifi-vcc {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc-wifi";
+		gpio = <&gpio3 RK_PA6 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
+		regulator-always-on;
+		pinctrl-names = "default";
+		pinctrl-0 = <&wifivcc_en_gpio>;
+	};
+};
+
+/* The vendor panel controls its 3.3 V enable directly on GPIO0_B0. */
+&dsi_panel {
+	reset-delay-ms = <10>;
+	init-delay-ms = <20>;
+	enable-delay-ms = <100>;
+	prepare-delay-ms = <20>;
+	unprepare-delay-ms = <20>;
+	disable-delay-ms = <20>;
+	width-mm = <68>;
+	height-mm = <121>;
+	/* The portrait-native panel is mounted sideways in the handheld. */
+	rotation = <90>;
+	enable-gpios = <&gpio0 RK_PB0 GPIO_ACTIVE_HIGH>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&lcd_rst_gpio>;
+
+	panel-init-sequence = [
+		39 00 04 b9 f1 12 87
+		39 00 04 b2 40 03 78
+		39 00 0b b3 10 10 28 28 03 ff 00 00 00 00
+		15 00 02 b4 80
+		15 00 03 b5 09 09
+		15 00 03 b6 70 70
+		39 00 05 b8 26 22 f0 13
+		39 00 1c ba 33 81 05 f9 0e 0e 20 00 00 00 00 00 00 00
+		            44 25 00 91 0a 00 00 01 4f 01 00 00 37
+		15 00 02 bc 47
+		39 00 06 bf 02 10 00 80 04
+		39 00 0a c0 73 73 50 50 00 00 12 73 00
+		39 00 12 c1 65 00 32 32 77 f1 77 77 cc cc ff ff 11 11 00 00 32
+		39 00 0d c7 10 00 0a 00 00 00 00 00 ed c5 00 a5
+		39 00 05 c8 10 40 1e 03
+		15 00 02 cc 0b
+		39 00 23 e0 00 05 07 1a 39 3f 33 2c 06 0b 0d 11 13 12 14 10 1a
+		            00 05 07 1a 39 3f 33 2c 06 0b 0d 11 13 12 14 10 1a
+		39 00 08 e1 11 11 91 00 00 00 00
+		39 00 0f e3 07 07 0b 0b 0b 0b 00 00 00 00 ff 84 c0 10
+		39 00 40 e9 c8 10 04 04 fe 80 81 12 31 45 4f 82 80 81 4b 0c
+		            08 05 00 00 00 00 08 05 00 00 00 00 ab 02 46 02 48
+		            68 88 88 88 80 88 ab 13 57 13 58 78 88 88 88 81 88
+		            00 00 00 01 00 80 81 4b 00 00 00 00 00
+		39 00 3e ea 96 1a 00 00 00 38 00 00 00 00 00 00 ab 75 31 31
+		            18 78 88 88 88 85 88 ab 64 20 20 08 68 88 88 88 84
+		            88 23 10 00 00 a0 00 00 00 00 00 00 00 c0 00 00 c0
+		            00 00 00 00 40 80 81 00 00 00 00
+		39 00 04 ef ff ff 01
+		05 fa 01 11
+		05 32 01 29
+	];
+	panel-exit-sequence = [
+		05 78 01 28
+		05 78 01 10
+	];
+};
+
+&dsi_timing0 {
+	clock-frequency = <61800000>;
+	hactive = <720>;
+	vactive = <1280>;
+	hfront-porch = <132>;
+	hsync-len = <40>;
+	hback-porch = <60>;
+	vfront-porch = <16>;
+	vsync-len = <3>;
+	vback-porch = <11>;
+	hsync-active = <0>;
+	vsync-active = <0>;
+	de-active = <0>;
+	pixelclk-active = <1>;
+};
+
+&rk817_codec {
+	hp-volume = <50>;
+	hp-mute-delay-ms = <200>;
+};
+
+&rk817 {
+	pwrkey {
+		autorepeat;
+	};
+
+	battery {
+		compatible = "rk817,battery";
+		ocv_table = <3400 3571 3659 3745 3795 3822 3839 3852
+			     3862 3870 3880 3910 3957 4003 4019 4024
+			     4026 4030 4040 4074 4174>;
+		design_capacity = <3727>;
+		design_qmax = <4100>;
+		bat_res = <217>;
+		sleep_enter_current = <300>;
+		sleep_exit_current = <300>;
+		sleep_filter_current = <100>;
+		power_off_thresd = <3400>;
+		zero_algorithm_vol = <3850>;
+		max_soc_offset = <60>;
+		monitor_sec = <5>;
+		sample_res = <10>;
+		virtual_power = <0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&charge_led_gpio>;
+		charge_red_gpio = <&gpio3 RK_PA1 GPIO_ACTIVE_HIGH>;
+		charge_green_gpio = <&gpio3 RK_PA0 GPIO_ACTIVE_HIGH>;
+		moto_gpio = <&gpio3 RK_PA7 GPIO_ACTIVE_HIGH>;
+	};
+
+	charger {
+		compatible = "rk817,charger";
+		min_input_voltage = <4500>;
+		max_input_current = <3000>;
+		max_chrg_current = <2000>;
+		max_chrg_voltage = <4350>;
+		chrg_term_mode = <0>;
+		chrg_finish_cur = <150>;
+		virtual_power = <0>;
+		dc_det_adc = <0>;
+		otg5v_suspend_enable = <1>;
+		extcon = <&u2phy>;
+		gate_function_disable = <1>;
+		dc_det_gpio = <&gpio0 RK_PB3 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&sdio_pwrseq {
+	status = "disabled";
+};
+
+/* XF55H uses SDMMC1 as a second removable TF-card slot, not SDIO Wi-Fi. */
+&sdmmc1 {
+	/delete-property/ no-sd;
+	/delete-property/ cap-sdio-irq;
+	/delete-property/ keep-power-in-suspend;
+	/delete-property/ mmc-pwrseq;
+	/delete-property/ broken-cd;
+	/delete-property/ supports-sdio;
+	/delete-property/ supports-rk912;
+
+	no-sdio;
+	no-mmc;
+	bus-width = <4>;
+	cap-mmc-highspeed;
+	cap-sd-highspeed;
+	disable-wp;
+	sd-uhs-sdr104;
+	vmmc-supply = <&vcc_sd2>;
+	vqmmc-supply = <&vcca1v8_pmu>;
+	pinctrl-names = "default", "idle";
+	pinctrl-0 = <&sdmmc1_bus4 &sdmmc1_cmd &sdmmc1_clk &sdmmc1_cd>;
+	pinctrl-1 = <&sdmmc1_idle_pins &sdmmc1_cd>;
+	cd-gpios = <&gpio0 RK_PB4 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&u2phy_otg {
+	vbus-supply = <&vcc5v0_otg>;
+	status = "okay";
+};
+
+&u2phy_host {
+	status = "okay";
+};
+
+&usb_host0_ehci {
+	status = "okay";
+};
+
+&usb_host0_ohci {
+	status = "okay";
+};
+
+&pinctrl {
+	buttons-xf55h {
+		xf55h_gpio_key_pin: xf55h-gpio-key-pin {
+			rockchip,pins =
+				<1 RK_PC7 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PD0 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PD5 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PD6 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PD3 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PD7 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PD4 RK_FUNC_GPIO &pcfg_pull_up>,
+				<2 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>,
+				<0 RK_PC5 RK_FUNC_GPIO &pcfg_pull_up>,
+				<0 RK_PC6 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+
+		xf55h_moto_gpio: xf55h-moto-gpio {
+			/* Active-high motor: pull low keeps it off until requested. */
+			rockchip,pins = <3 RK_PA7 RK_FUNC_GPIO &pcfg_pull_down>;
+		};
+	};
+
+	usb-xf55h {
+		vcc5v0_otg_en: vcc5v0-otg-en {
+			rockchip,pins = <3 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	vcc-wifi {
+		wifivcc_en_gpio: wifivcc-en-gpio {
+			rockchip,pins = <3 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+	sdmmc1-xf55h {
+		sdmmc1_cd: sdmmc1-cd {
+			rockchip,pins = <0 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+
+		sdmmc1_idle_pins: sdmmc1-idle-pins {
+			rockchip,pins =
+				<1 RK_PC1 RK_FUNC_GPIO &pcfg_pull_down>,
+				<1 RK_PC2 RK_FUNC_GPIO &pcfg_pull_down>,
+				<1 RK_PC3 RK_FUNC_GPIO &pcfg_pull_down>,
+				<1 RK_PC4 RK_FUNC_GPIO &pcfg_pull_down>,
+				<1 RK_PC5 RK_FUNC_GPIO &pcfg_pull_down>,
+				<1 RK_PC6 RK_FUNC_GPIO &pcfg_pull_down>;
+		};
+
+		vcc_sd_h2: vcc-sd-h2 {
+			rockchip,pins = <0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_down>;
+		};
+	};
+};

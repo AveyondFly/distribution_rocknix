@@ -28,7 +28,13 @@ post_makeinstall_target() {
       DTB_OVERLAY_LOAD="\/usr\/bin\/dtb_overlay set driver-gpu driver-gpu-panfrost.dtbo"
       DTB_OVERLAY_UNLOAD="\/usr\/bin\/dtb_overlay set driver-gpu None"
     ;;
-    RK356X|RK3326S|A527)
+    RK356X)
+      PAN="panfrost"
+      GPU_OPTIONS="panfrost libmali"
+      DTB_OVERLAY_LOAD=""
+      DTB_OVERLAY_UNLOAD=""
+    ;;
+    RK3326S|A527)
       PAN="panfrost"
       GPU_OPTIONS="libmali"
       DTB_OVERLAY_LOAD=""

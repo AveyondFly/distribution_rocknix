@@ -22,10 +22,16 @@ PKG_PATCH_DIRS="${LINUX} mainline ${DEVICE} default"
 [[ "${DEVICE}" == SM* || "${BUILD_ANDROID_BOOTIMG}" == "yes" ]] && PKG_DEPENDS_TARGET+=" mkbootimg:host"
 
 case ${DEVICE} in
-  RK3326S|RK356X)
+  RK3326S)
     PKG_VERSION="0c1ad27d20bb8d84a41cd8ac913829a7bd934329"
     PKG_URL="https://github.com/bmdhacks/kernel_rk3562/archive/${PKG_VERSION}.tar.gz"
     PKG_GIT_CLONE_BRANCH="master"
+    PKG_PATCH_DIRS="${DEVICE} default"
+    ;;
+  RK356X)
+    PKG_VERSION="263440eb2a7dade605a22e31be10b3f98d4b10d4"
+    PKG_URL="https://github.com/AveyondFly/kernel_rk356x/archive/${PKG_VERSION}.tar.gz"
+    PKG_GIT_CLONE_BRANCH="rk356x-panfrost"
     PKG_PATCH_DIRS="${DEVICE} default"
     ;;
   A527)
@@ -217,6 +223,22 @@ post_patch() {
     DTS_SOURCE_DIR="${PROJECT_DIR}/${PROJECT}/devices/${DEVICE}/linux/dts"
     if [ -d "${DTS_SOURCE_DIR}" ]; then
       rsync -av "${DTS_SOURCE_DIR}/" ${PKG_BUILD}/arch/arm64/boot/dts/
+
+      # RK356X board DTS files live in the distribution tree rather than the
+      # kernel repository. Ensure every copied source is also built, while
+      # keeping the operation idempotent when the kernel already has an entry.
+      if [ "${DEVICE}" = "RK356X" ]; then
+        local rockchip_dts_makefile="${PKG_BUILD}/arch/arm64/boot/dts/rockchip/Makefile"
+        local dts_file dtb_name dtb_entry
+
+        for dts_file in "${DTS_SOURCE_DIR}"/rockchip/*.dts; do
+          [ -f "${dts_file}" ] || continue
+          dtb_name="$(basename "${dts_file%.dts}").dtb"
+          dtb_entry="dtb-\$(CONFIG_ARCH_ROCKCHIP) += ${dtb_name}"
+          grep -qxF "${dtb_entry}" "${rockchip_dts_makefile}" || \
+            printf '%s\n' "${dtb_entry}" >> "${rockchip_dts_makefile}"
+        done
+      fi
     fi
   fi
 }

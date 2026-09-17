@@ -212,8 +212,27 @@
 	status = "disabled";
 };
 
+/* Both removable slots share this I/O rail, so they must stay at 3.3 V. */
+&vccio_sd {
+	regulator-min-microvolt = <3300000>;
+	regulator-max-microvolt = <3300000>;
+
+	regulator-state-mem {
+		regulator-suspend-microvolt = <3300000>;
+	};
+};
+
 &sdmmc0 {
 	/delete-property/ vmmc-supply;
+	/delete-property/ sd-uhs-sdr104;
+};
+
+/* The vendor DT does not enable HS400 on the onboard eMMC. */
+&sdhci {
+	/delete-property/ mmc-hs400-1_8v;
+	/delete-property/ mmc-hs400-enhanced-strobe;
+	cap-mmc-highspeed;
+	max-frequency = <52000000>;
 };
 
 /* Both DW-MMC ports are wired as removable SD-card slots on the vendor DT. */
@@ -225,6 +244,7 @@
 	/delete-property/ broken-cd;
 	/delete-property/ supports-sdio;
 	/delete-property/ supports-rk912;
+	/delete-property/ sd-uhs-sdr104;
 
 	no-sdio;
 	no-mmc;
@@ -232,7 +252,6 @@
 	cap-mmc-highspeed;
 	cap-sd-highspeed;
 	disable-wp;
-	sd-uhs-sdr104;
 	vqmmc-supply = <&vccio_sd>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&sdmmc1_bus4 &sdmmc1_cmd &sdmmc1_clk &sdmmc1_det>;

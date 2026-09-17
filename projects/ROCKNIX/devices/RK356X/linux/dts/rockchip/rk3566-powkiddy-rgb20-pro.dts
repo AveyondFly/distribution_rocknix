@@ -76,7 +76,7 @@
 
 	charge-animation {
 		compatible = "rockchip,uboot-charge";
-		rockchip,uboot-charge-on = <1>; 
+		rockchip,uboot-charge-on = <1>;
 		rockchip,android-charge-on = <0>;
 		rockchip,uboot-low-power-voltage = <3450>;
 		rockchip,screen-on-voltage = <3400>;
@@ -121,7 +121,7 @@
 		compatible = "regulator-gpio";
 		enable-active-high;
 		regulator-always-on;
-		regulator-boot-on;		
+		regulator-boot-on;
 		enable-gpio = <&gpio0 RK_PA0 GPIO_ACTIVE_HIGH>;
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
@@ -280,8 +280,8 @@
 			linux,code = <116>;
 			label = "power";
 		};
-*/							
-			
+*/
+
 	};
 
 	leds: gpio-leds {
@@ -312,7 +312,7 @@
 		pinctrl-0 = <&wifi_host_wake_irq>;
 		WIFI,host_wake_irq = <&gpio4 RK_PA1 GPIO_ACTIVE_HIGH>;
 		//WIFI,poweren_gpio = <&gpio0 RK_PA0 GPIO_ACTIVE_HIGH>; /* GPIO0_a3 */
-		keep_wifi_power_on;		
+		keep_wifi_power_on;
 		status = "disabled";
 	};
 
@@ -330,7 +330,7 @@
 		BT,wake_host_irq = <&gpio4 RK_PA5 GPIO_ACTIVE_HIGH>;
 		status = "disabled";
 	};
-	
+
 	joypad: rocknix-singleadc-joypad {
 		compatible = "rocknix-singleadc-joypad";
 
@@ -555,7 +555,7 @@
 		//gpio = <&gpio0 RK_PC2 GPIO_ACTIVE_HIGH>;
 		//reset-gpios = <&gpio0 RK_PA6 GPIO_ACTIVE_LOW>;
 		reset-delay-ms = <150>;
-		init-delay-ms = <36>; 
+		init-delay-ms = <36>;
 		enable-delay-ms = <36>;
 		prepare-delay-ms = <200>;
 		unprepare-delay-ms = <36>;
@@ -667,7 +667,7 @@
 				hback-porch = <20>;
 				vfront-porch = <15>;
 				vsync-len = <3>;
-				vback-porch = <11>;			
+				vback-porch = <11>;
 				hsync-active = <0>;
 				vsync-active = <0>;
 				de-active = <0>;
@@ -806,7 +806,7 @@
 &i2c0 {
 	status = "okay";
 
-	/*cw2015@62 { 
+	/*cw2015@62 {
 	  compatible = "cellwise,cw2015";
 	  reg = <0x62>;
 	 };*/
@@ -1109,7 +1109,7 @@
 			hp-volume = <20>;
 			spk-volume = <3>;
 			out-l2spk-r2hp;
-			
+
 			spk-ctl-gpios = <&gpio4 RK_PC2 GPIO_ACTIVE_HIGH>;
 			status = "okay";
 		};
@@ -1126,7 +1126,7 @@
 		assigned-clock-parents = <&cru I2S1_MCLKOUT_TX>, <&cru I2S1_MCLKOUT_TX>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&i2s1m0_mclk>;
-		hp-det-gpio = <&gpio4 RK_PC6 GPIO_ACTIVE_HIGH>;		
+		hp-det-gpio = <&gpio4 RK_PC6 GPIO_ACTIVE_HIGH>;
 		spk-con-gpio = <&gpio4 RK_PC2 GPIO_ACTIVE_HIGH>;
 	};
 };
@@ -1221,7 +1221,7 @@
 	bus-width = <4>;
 	disable-wp;
 	cap-mmc-highspeed;
-	cap-sd-highspeed;	
+	cap-sd-highspeed;
 	sd-uhs-sdr12;
 	sd-uhs-sdr25;
 	sd-uhs-sdr50;
@@ -1239,12 +1239,12 @@
 	disable-wp;
 	cap-mmc-highspeed;
 	cap-sd-highspeed;
-	keep-power-in-suspend;	
+	keep-power-in-suspend;
 //	mmc-pwrseq = <&sdio_pwrseq>;
 //	non-removable;
 	card-detect-delay = <800>;
 	cd-gpios = <&gpio2 RK_PB2 GPIO_ACTIVE_LOW>; /*[> CD GPIO <]*/
-	vqmmc-supply = <&vcc1v8_dvp>;	
+	vqmmc-supply = <&vcc1v8_dvp>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&sdmmc1_bus4 &sdmmc1_cmd &sdmmc1_clk>;
 	sd-uhs-sdr12;
@@ -1562,7 +1562,7 @@
 };
 
 &pinctrl {
-	
+
 	headphone {
 		hp_det: hp-det {
 			rockchip,pins = <4 RK_PC6 RK_FUNC_GPIO &pcfg_pull_none>;
@@ -1580,7 +1580,7 @@
 			rockchip,pins = <0 RK_PA0 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
-	
+
 	wireless-wlan {
 		wifi_host_wake_irq: wifi-host-wake-irq {
 			rockchip,pins = <4 RK_PA1 RK_FUNC_GPIO &pcfg_pull_down>;
@@ -1633,11 +1633,11 @@
 	touch {
 		touch_gpio: touch-gpio {
 		   rockchip,pins = <4 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>;
-		     
+
 		};
 		touch_gt_gpio: touch-gt-gpio {
-		   rockchip,pins = <4 RK_PB1 RK_FUNC_GPIO &pcfg_pull_up>;    
-		}; 
+		   rockchip,pins = <4 RK_PB1 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
 	};
 
 	vcc-sd {
@@ -1670,10 +1670,10 @@
 
 	keys {
 			pwr_key: pwr-key {
-				rockchip,pins = 
+				rockchip,pins =
 					<3 RK_PB0 RK_FUNC_GPIO &pcfg_pull_up>,
 					<3 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up>;
 			};
-	};	
-	
+	};
+
 };

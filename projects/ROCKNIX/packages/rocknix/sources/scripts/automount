@@ -5,290 +5,327 @@
 . /etc/profile
 . /etc/os-release
 
-### Vars
-UPDATE_ROOT="/storage/.update"
 MOUNT_GAMES=$(get_setting system.automount)
-GAMES_DEVICE=$(get_setting system.gamesdevice)
-MS_PATH="/storage/roms"
+SELECTED_STORAGE=$(get_setting system.games.storage)
+ROMS_PATH="/storage/roms"
+INTERNAL_PATH="/storage/games-internal"
+EXTERNAL_PATH="/storage/games-external"
+ACTIVE_STORAGE_FILE="/run/rocknix-games-storage"
+GAME_DIRS_MARKER=".rocknix-system-dirs-created"
+PREVIOUS_STORAGE=$(cat "${ACTIVE_STORAGE_FILE}" 2>/dev/null)
+HOTPLUG_EVENT=0
 
-
-function unmount() {
-  log $0 "Unmount ${1}."
-  umount -f "${1}" 2>/dev/null ||:
-}
-
-function start_ms() {
-  ### Entrypoint will be either games card found (external), or not found (internal).
-  MOUNT_PATH="/storage/games-${1}"
-
-  MS_DEVICE=$(get_setting system.merged.device)
-  ### If the merge target isn't defined and we have an external microsd, we should use the external card by default.
-  if [ -z "${MS_DEVICE}" ] && \
-     [ "${1}" = "external" ]
-  then
-    set_setting system.merged.device external
-  fi
-
-  ### Determine if internal or external is the primary target by configuration.
-  case ${MS_DEVICE} in
-    internal)
-      LOWER="external"
-      UPPER="internal"
-    ;;
-    *)
-      LOWER="internal"
-      UPPER="external"
-    ;;
-  esac
-
-  for GAME_PATH in internal external
-  do
-    if [ ! -d "/storage/games-${GAME_PATH}/roms" ]
-    then
-      log $0 "Create /storage/games-${GAME_PATH}/roms."
-      mkdir -p "/storage/games-${GAME_PATH}/roms"
-    fi
-  done
-
-  MS_ENABLED=$(get_setting system.merged.storage)
-  if [ -e "/storage/.ms_unsupported" ] || \
-     [ ! "${MS_ENABLED}" = 1 ]
-  then
-    log $0 "Executing bind mount of ${MOUNT_PATH} to ${MS_PATH}"
-    mount --bind ${MOUNT_PATH}/roms ${MS_PATH}
-  else
-    log $0 "Enabling merged storage of /storage/games-${LOWER} and /storage/games-${UPPER} to ${MS_PATH}."
-
-    for DIR in /storage/games-${UPPER}/.tmp/games-workdir /storage/games-${LOWER}/roms /storage/games-${UPPER}/roms
-    do
-      if [ ! -d "${DIR}" ]
-      then
-        mkdir -p "${DIR}"
-      fi
-    done
-    mount overlay -t overlay -o lowerdir=/storage/games-${LOWER}/roms,upperdir=/storage/games-${UPPER}/roms,workdir=/storage/games-${UPPER}/.tmp/games-workdir ${MS_PATH}
-  fi
-}
-
-start_overlay() {
-  if [ -e "/storage/.overlay_unsupported" ]
-  then
-    # If we're not using the overlay, bind mount the external storage path
-    # so we don't need to change any configs.
-    grep ${MOUNT_PATH} /proc/mounts >/dev/null 2>&1
-    if [ ! $? = 0 ]
-    then
-      MOUNT_PATH="/storage/games-internal"
-    fi
-    log $0 "Executing bind mount of ${MOUNT_PATH} to ${OVERLAY_PATH}"
-    mount --bind ${MOUNT_PATH} ${OVERLAY_PATH}
-    exit 0
-  else
-    log $0 "Enabling overlay."
-    systemctl enable storage-roms.mount >/dev/null 2>&1
-    systemctl start storage-roms.mount >/dev/null 2>&1
-  fi
-}
-
-if [[ ! "${MOUNT_GAMES}" =~ [0-9] ]]
+if [ -e "/run/rocknix-games-hotplug" ]
 then
-  set_setting system.automount 1
-elif [[ "${MOUNT_GAMES}" == "0" ]]
-then
-  start_ms internal
-  exit 0
+  HOTPLUG_EVENT=1
+  rm -f /run/rocknix-games-hotplug
 fi
 
-function create_game_dirs() {
-  ### We don't want systemd to manage this or the directories could be created in the wrong location.
-  if [ -e "/usr/config/system-dirs.conf" ]
+log_message() {
+  log "$0" "$1"
+}
+
+is_mounted() {
+  /usr/bin/busybox mountpoint -q "$1"
+}
+
+unmount_path() {
+  if is_mounted "$1"
   then
-    log $0 "Creating game directories."
-    systemd-tmpfiles --create /usr/config/system-dirs.conf >/dev/null 2>&1 ||:
+    log_message "Unmount $1."
+    /usr/bin/busybox umount -f "$1" 2>/dev/null ||:
   fi
 }
 
-function load_modules() {
+parent_disk() {
+  local DEVICE_NAME
+  DEVICE_NAME=${1##*/}
+
+  case "${DEVICE_NAME}" in
+    mmcblk*p[0-9]*|nvme*p[0-9]*) echo "${DEVICE_NAME%p*}" ;;
+    sd*[0-9]*) echo "${DEVICE_NAME%%[0-9]*}" ;;
+    *) echo "${DEVICE_NAME}" ;;
+  esac
+}
+
+load_modules() {
+  local MODULE
   for MODULE in exfat vfat ntfs ntfs3
   do
-    lsmod | grep ${MODULE} >/dev/null 2>&1
-    if [ ! $? = 0 ]
+    if ! lsmod | grep -q "^${MODULE}"
     then
-      log $0 "Loading ${MODULE}."
-      modprobe ${MODULE} >/dev/null 2>&1
+      log_message "Loading ${MODULE}."
+      modprobe "${MODULE}" >/dev/null 2>&1 ||:
     fi
   done
 }
 
-function mount_games() {
-      MOUNT_PATH="/storage/games-external"
-      FSTYPE=$(blkid -o export ${1} | awk 'BEGIN {FS="="} /TYPE/ {print $2}')
-      case ${FSTYPE} in
-        ext4 | btrfs)
-          log $0 "Found supported partition for overlayfs."
-          if [ -e "/storage/.ms_unsupported" ]
-          then
-            rm -f /storage/.ms_unsupported
-          fi
-	  touch /storage/.ms_supported
+mount_device() {
+  local DEVICE=$1
+  local STORAGE=$2
+  local MOUNT_PATH FSTYPE MPV_PID
+
+  case "${STORAGE}" in
+    internal) MOUNT_PATH="${INTERNAL_PATH}" ;;
+    external) MOUNT_PATH="${EXTERNAL_PATH}" ;;
+    *) return 1 ;;
+  esac
+
+  if is_mounted "${MOUNT_PATH}"
+  then
+    return 0
+  fi
+
+  FSTYPE=$(blkid -o export "${DEVICE}" | awk -F= '$1 == "TYPE" {print $2; exit}')
+  mkdir -p "${MOUNT_PATH}"
+  log_message "Mounting ${DEVICE} on ${MOUNT_PATH}."
+
+  case "${FSTYPE}" in
+    ntfs)
+      /usr/bin/busybox mount -t ntfs3 -o rw,noatime "${DEVICE}" "${MOUNT_PATH}" >/dev/null 2>&1
+      ;;
+    vfat)
+      /usr/bin/busybox mount -o rw,utf8,noatime "${DEVICE}" "${MOUNT_PATH}" >/dev/null 2>&1
+      ;;
+    *)
+      /usr/bin/busybox mount -o rw,noatime "${DEVICE}" "${MOUNT_PATH}" >/dev/null 2>&1
+      ;;
+  esac
+
+  if ! is_mounted "${MOUNT_PATH}"
+  then
+    log_message "Failed to mount ${DEVICE} on ${MOUNT_PATH}."
+    return 1
+  fi
+
+  log_message "Checking filesystem ${DEVICE}."
+  if ! touch "${MOUNT_PATH}/.tmp-rocknix"
+  then
+    log_message "Fixing filesystem ${DEVICE}."
+    /usr/bin/fsck_prompt &
+    MPV_PID=$!
+    /usr/bin/busybox umount "${MOUNT_PATH}" >/dev/null 2>&1 ||:
+    /usr/sbin/fsck -Mly "${DEVICE}" >/dev/null 2>&1 ||:
+
+    case "${FSTYPE}" in
+      ntfs)
+        /usr/bin/busybox mount -t ntfs3 -o rw,noatime "${DEVICE}" "${MOUNT_PATH}" >/dev/null 2>&1
         ;;
-        *)
-          log $0 "Partition does not support overlayfs, disabling."
-          if [ -e "/storage/.ms_supported" ]
-          then
-            rm -f /storage/.ms_supported
-          fi
-          touch /storage/.ms_unsupported
+      vfat)
+        /usr/bin/busybox mount -o rw,utf8,noatime "${DEVICE}" "${MOUNT_PATH}" >/dev/null 2>&1
         ;;
-      esac
+      *)
+        /usr/bin/busybox mount -o rw,noatime "${DEVICE}" "${MOUNT_PATH}" >/dev/null 2>&1
+        ;;
+    esac
 
-      # busybox has some weird behaviour with helpers.
-      # Despite mount.ntfs is present, it is not used, so just a stupid rewrite to use newer kernel ntfs3 driver
-      case ${FSTYPE} in
-        ntfs)   MOUNT_ARGS="-t ntfs3" ;;
-        *)      true ;;
-      esac
-      MOUNT_ARGS+=" -o rw,utf8,noatime ";
+    kill "${MPV_PID}" 2>/dev/null ||:
+    wait "${MPV_PID}" 2>/dev/null ||:
+  else
+    rm -f "${MOUNT_PATH}/.tmp-rocknix"
+  fi
 
-      if [ ! -d "${MOUNT_PATH}" ]
-      then
-        log $0 "Create directory ${MOUNT_PATH}"
-        /usr/bin/busybox mkdir -p ${MOUNT_PATH} >/dev/null 2>&1
-      fi
-
-      NULL=$(cat /proc/mounts | grep -v -e "/var/media" 2>/dev/null | grep ${1})
-      if [ ! "$?" = "0" ] && \
-         [ -e "${1}" ] && \
-         [ ! -e "/storage/.please_resize_me" ]
-      then
-
-        ### Udevil shouldn't mount it this early, but just in-case.
-        umount /var/media/* 2>/dev/null
-
-        log $0 "Mounting ${1} on ${MOUNT_PATH}"
-        /usr/bin/busybox mount ${MOUNT_ARGS} ${1} ${MOUNT_PATH} >/dev/null 2>&1
-
-        log $0 "Checking filesystem ${1}."
-        if ! touch "${MOUNT_PATH}/.tmp-rocknix"; then
-          log $0 "Fixing filesystem ${1}."
-          
-          /usr/bin/fsck_prompt &
-          MPV_PID=$!
-          
-          /usr/bin/busybox umount ${1} >/dev/null 2>&1
-          /usr/sbin/fsck -Mly ${1} >/dev/null 2>&1
-          /usr/bin/busybox mount ${MOUNT_ARGS} ${1} ${MOUNT_PATH} >/dev/null 2>&1
-          
-          kill $MPV_PID 2>/dev/null
-          wait $MPV_PID 2>/dev/null
-        else
-          rm "${MOUNT_PATH}/.tmp-rocknix"
-	fi
-      fi
-      if [ -e "/flash/ms_unsupported" ]
-      then
-	      mount --bind ${MOUNT_PATH} ${MS_PATH}
-      else
-              start_ms external
-      fi
-      if [ ! -d "/storage/roms/music" ]
-      then
-	      create_game_dirs
-      fi
-      exit 0
+  is_mounted "${MOUNT_PATH}"
 }
 
-function find_games() {
-  if /usr/bin/busybox mountpoint -q /storage
+create_game_dirs() {
+  local SOURCE_PATH=$1
+
+  [ -n "${SOURCE_PATH}" ] || return 0
+  local MARKER_PATH="${SOURCE_PATH}/${GAME_DIRS_MARKER}"
+
+  if [ -e "${MARKER_PATH}" ]
   then
-    ### Detect system disk from /flash mount point
-    SYSTEM_DISK=""
-    FLASH_DEV=$(awk '$2 == "/flash" {print $1}' /proc/mounts | head -1)
-    if [ -n "${FLASH_DEV}" ]
+    log_message "Game directories already initialized on ${SOURCE_PATH}."
+    return 0
+  fi
+
+  if is_mounted "${ROMS_PATH}" && [ -e "/usr/config/system-dirs.conf" ]
+  then
+    log_message "Creating game directories on ${SOURCE_PATH}."
+    if systemd-tmpfiles --create /usr/config/system-dirs.conf >/dev/null 2>&1
     then
-      SYSTEM_DISK=$(echo ${FLASH_DEV} | sed -e "s#^/.*/##g" -e "s#p[0-9].*\$##g")
-      log $0 "System disk detected: ${SYSTEM_DISK}"
+      if ! touch "${MARKER_PATH}"
+      then
+        log_message "Failed to create game directory marker ${MARKER_PATH}."
+        return 1
+      fi
+    else
+      log_message "Failed to create game directories on ${SOURCE_PATH}."
+      return 1
     fi
-
-    ### Collect all candidate partitions, separated by system/non-system disk
-    SYSTEM_PARTITIONS=""
-    OTHER_PARTITIONS=""
-    for dev in "mmcblk[0-9]" "sd[a-z]" "nvme[0-9]"; do
-      for PART in $(blkid | grep -E "/dev/${dev}" | awk 'BEGIN {FS=":"}; /ext4/ || /btrfs/ || /fat/ || /ntfs/ {print $1}' | sort -r); do
-        ROOTDEV=$(echo ${PART} | sed -e "s#^/.*/##g" -e "s#p[0-9].*\$##g")
-        if [ "${ROOTDEV}" = "${SYSTEM_DISK}" ]
-        then
-          SYSTEM_PARTITIONS="${SYSTEM_PARTITIONS} ${PART}"
-        else
-          OTHER_PARTITIONS="${OTHER_PARTITIONS} ${PART}"
-        fi
-      done
-    done
-
-    ### Process non-system disk partitions first, then system disk partitions
-    for DEV in ${OTHER_PARTITIONS} ${SYSTEM_PARTITIONS}
-    do
-      [ -z "${DEV}" ] && continue
-      ROOTDEV=$(echo ${DEV} | sed -e "s#^/.*/##g" -e "s#p[0-9].*\$##g")
-      log $0 "Inspecting ${DEV}."
-      SIZE=$(awk -v dev="${ROOTDEV}" '$4 == dev {print $3; exit}' /proc/partitions)
-      if [ -z "${SIZE}" ] && [ -r "/sys/class/block/${ROOTDEV}/size" ]
-      then
-        SIZE=$(($(cat "/sys/class/block/${ROOTDEV}/size") / 2))
-      fi
-      if [ -z "${SIZE}" ] || (( SIZE <= 8388608 ))
-      then
-        log $0 "Device ${ROOTDEV} is too small, ignoring."
-        # We don't want to mount partitions smaller than ~8GB.
-        continue
-      fi
-      if [ -L "/sys/class/block/${ROOTDEV}boot0" ]
-      then
-        log $0 "Device ${ROOTDEV} might be Android, ignoring."
-        # Assume this is an android boot device and ignore it.
-        continue
-      fi
-      ISMOUNTED="$(grep "${DEV}" /proc/mounts) >/dev/null 2>&1"
-      if [ ! "$?" = 0 ] && \
-         [ -e "${DEV}" ] && \
-         [ ! -e "/storage/.please_resize_me" ]
-      then
-        GAMES_DEVICE=${DEV}
-        log $0 "Found ${DEV} available to mount."
-        mount_games "${DEV}"
-      else
-        log $0 "${DEV} not available."
-      fi
-    done
-    log $0 "Could not find external card to mount, assume internal."
-
-    MS_DEVICE=$(get_setting system.merged.device)
-    ### If the merge target isn't defined and we do not have an external microsd, we should use the internal card by default.
-    if [ -z "${MS_DEVICE}" ]
-    then
-      set_setting system.merged.device internal
-    fi
-    if [ ! -e "/flash/ms_unsupported" ]
-    then
-	start_ms internal
-    fi
-
-    create_game_dirs
-    exit 0
   fi
 }
 
-## Main..
+record_active_storage() {
+  local ACTIVE_STORAGE=$1
+
+  mkdir -p "${ACTIVE_STORAGE_FILE%/*}"
+  printf '%s\n' "${ACTIVE_STORAGE}" > "${ACTIVE_STORAGE_FILE}"
+}
+
+activate_selected_storage() {
+  local ACTIVE_STORAGE SOURCE_PATH TARGET_STORAGE
+
+  TARGET_STORAGE=${SELECTED_STORAGE:-auto}
+  # A hotplug event may add a newly available preferred card. Keep the current
+  # card active until the user explicitly switches it in EmulationStation.
+  # If the active card was removed, the normal fallback below still applies.
+  if [ "${HOTPLUG_EVENT}" = "1" ] && \
+     [[ "${PREVIOUS_STORAGE}" =~ ^(internal|external)$ ]]
+  then
+    TARGET_STORAGE=${PREVIOUS_STORAGE}
+  fi
+
+  case "${TARGET_STORAGE}" in
+    internal)
+      if is_mounted "${INTERNAL_PATH}"
+      then
+        ACTIVE_STORAGE="internal"
+        SOURCE_PATH="${INTERNAL_PATH}"
+      elif is_mounted "${EXTERNAL_PATH}"
+      then
+        ACTIVE_STORAGE="external"
+        SOURCE_PATH="${EXTERNAL_PATH}"
+      fi
+      ;;
+    external)
+      if is_mounted "${EXTERNAL_PATH}"
+      then
+        ACTIVE_STORAGE="external"
+        SOURCE_PATH="${EXTERNAL_PATH}"
+      elif is_mounted "${INTERNAL_PATH}"
+      then
+        ACTIVE_STORAGE="internal"
+        SOURCE_PATH="${INTERNAL_PATH}"
+      fi
+      ;;
+    auto|*)
+      # Auto preserves the historical external-first behavior. Missing or
+      # invalid settings are also treated as auto without rewriting config.
+      if is_mounted "${EXTERNAL_PATH}"
+      then
+        ACTIVE_STORAGE="external"
+        SOURCE_PATH="${EXTERNAL_PATH}"
+      elif is_mounted "${INTERNAL_PATH}"
+      then
+        ACTIVE_STORAGE="internal"
+        SOURCE_PATH="${INTERNAL_PATH}"
+      fi
+      ;;
+  esac
+
+  if [ -n "${SOURCE_PATH}" ]
+  then
+    log_message "Using ${ACTIVE_STORAGE} game storage at ${ROMS_PATH}."
+    /usr/bin/busybox mount --bind "${SOURCE_PATH}" "${ROMS_PATH}"
+  else
+    log_message "No game partition is available; leaving ${ROMS_PATH} unmounted."
+  fi
+
+  record_active_storage "${ACTIVE_STORAGE}"
+  create_game_dirs "${SOURCE_PATH}"
+}
+
+eject_external_storage() {
+  local ACTIVE_STORAGE
+
+  if [ "${PREVIOUS_STORAGE}" = "external" ]
+  then
+    unmount_path "${ROMS_PATH}"
+  fi
+  unmount_path "${EXTERNAL_PATH}"
+
+  if [ "${PREVIOUS_STORAGE}" = "external" ] && is_mounted "${INTERNAL_PATH}"
+  then
+    /usr/bin/busybox mount --bind "${INTERNAL_PATH}" "${ROMS_PATH}"
+    ACTIVE_STORAGE="internal"
+  elif [ "${PREVIOUS_STORAGE}" != "external" ]
+  then
+    ACTIVE_STORAGE="${PREVIOUS_STORAGE}"
+  fi
+
+  record_active_storage "${ACTIVE_STORAGE}"
+}
+
+find_and_mount_games() {
+  local FLASH_DEVICE SYSTEM_DISK DEVICE ROOT_DEVICE SIZE STORAGE
+
+  FLASH_DEVICE=$(awk '$2 == "/flash" {print $1; exit}' /proc/mounts)
+  SYSTEM_DISK=$(parent_disk "${FLASH_DEVICE}")
+  log_message "System disk detected: ${SYSTEM_DISK:-unknown}."
+
+  for DEVICE in $(blkid | awk -F: '/TYPE="(ext4|btrfs|exfat|vfat|fat|ntfs)"/ {print $1}' | sort -r)
+  do
+    ROOT_DEVICE=$(parent_disk "${DEVICE}")
+    [ -n "${ROOT_DEVICE}" ] || continue
+
+    if [ "${ROOT_DEVICE}" = "${SYSTEM_DISK}" ]
+    then
+      STORAGE="internal"
+    else
+      STORAGE="external"
+    fi
+
+    if is_mounted "/storage/games-${STORAGE}"
+    then
+      continue
+    fi
+
+    SIZE=$(awk -v dev="${ROOT_DEVICE}" '$4 == dev {print $3; exit}' /proc/partitions)
+    if [ -z "${SIZE}" ] && [ -r "/sys/class/block/${ROOT_DEVICE}/size" ]
+    then
+      SIZE=$(($(cat "/sys/class/block/${ROOT_DEVICE}/size") / 2))
+    fi
+    if [ -z "${SIZE}" ] || (( SIZE <= 8388608 ))
+    then
+      log_message "Device ${ROOT_DEVICE} is too small, ignoring ${DEVICE}."
+      continue
+    fi
+    if [ -L "/sys/class/block/${ROOT_DEVICE}boot0" ]
+    then
+      log_message "Device ${ROOT_DEVICE} might be Android storage, ignoring ${DEVICE}."
+      continue
+    fi
+    if grep -q "^${DEVICE} " /proc/mounts
+    then
+      continue
+    fi
+    if [ -e "${DEVICE}" ] && [ ! -e "/storage/.please_resize_me" ]
+    then
+      log_message "Found ${STORAGE} game partition ${DEVICE}."
+      mount_device "${DEVICE}" "${STORAGE}" ||:
+    fi
+  done
+}
+
+case "$1" in
+  eject-external)
+    eject_external_storage
+    exit 0
+    ;;
+esac
 
 load_modules
 
-### Unmount any existing storage before beginning operations.
-unmount /storage/games-external
-unmount /storage/roms
+# Always remove the compatibility bind first, followed by both source paths.
+unmount_path "${ROMS_PATH}"
+unmount_path "${INTERNAL_PATH}"
+unmount_path "${EXTERNAL_PATH}"
 
-if [ -e "${GAMES_DEVICE}" ]
+rm -f /storage/.ms_supported /storage/.ms_unsupported
+
+if [[ ! "${MOUNT_GAMES}" =~ ^[0-9]+$ ]]
 then
-  mount_games ${GAMES_DEVICE}
-else
-  find_games
+  set_setting system.automount 1
+  MOUNT_GAMES=1
 fi
+
+if [ "${MOUNT_GAMES}" = "0" ]
+then
+  record_active_storage ""
+  exit 0
+fi
+
+find_and_mount_games
+activate_selected_storage

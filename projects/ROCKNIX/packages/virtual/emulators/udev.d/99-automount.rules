@@ -4,6 +4,10 @@ ENV{installer}=="1", GOTO="exit"
 
 SUBSYSTEM!="block", KERNEL!="mmc*", GOTO="exit"
 
+# Re-evaluate the selected games partition when a card is removed. This must
+# be handled before blkid because filesystem properties may already be gone.
+ACTION=="remove", ENV{DEVTYPE}=="partition|disk", RUN+="/usr/bin/sh -c '/usr/bin/busybox touch /run/rocknix-games-hotplug; /usr/bin/systemctl restart rocknix-automount.service'", GOTO="exit"
+
 # check for special partitions we dont want mount
 IMPORT{builtin}="blkid"
 ENV{ID_FS_LABEL}=="EFI|BOOT|Recovery|RECOVERY|SETTINGS|boot|root0|share0", GOTO="exit"
@@ -12,9 +16,9 @@ ENV{ID_FS_LABEL}=="EFI|BOOT|Recovery|RECOVERY|SETTINGS|boot|root0|share0", GOTO=
 KERNEL=="mmc*", ENV{DEVTYPE}=="partition|disk", ENV{ID_FS_USAGE}=="filesystem", GOTO="harddisk"
 GOTO="exit"
 
-# mount or umount for hdds
+# mount game partitions
 LABEL="harddisk"
-ACTION=="add", PROGRAM="/usr/bin/sh -c '/usr/bin/grep -E ^/dev/%k\  /proc/mounts || true'", RESULT=="", RUN+="/usr/bin/systemctl restart rocknix-automount.service"
+ACTION=="add", PROGRAM="/usr/bin/sh -c '/usr/bin/grep -E ^/dev/%k\  /proc/mounts || true'", RESULT=="", RUN+="/usr/bin/sh -c '/usr/bin/busybox touch /run/rocknix-games-hotplug; /usr/bin/systemctl restart rocknix-automount.service'"
 GOTO="exit"
 
 # Exit

@@ -1,0 +1,101 @@
+From 6d49a94e026f66c79cbbd5ea3eef46cf37a1fd74 Mon Sep 17 00:00:00 2001
+From: kk <kk@ubuntu>
+Date: Thu, 17 Sep 2026 21:10:00 +0800
+Subject: [PATCH] power: rk8xx: stop reboot loop after RK817 undervoltage
+
+RK817 can restart the PMIC after a system undervoltage event. On a
+deeply discharged battery this repeatedly brings U-Boot and the kernel
+up until the voltage collapses again.
+
+Add an opt-in mode which disables the PMIC restart on SYSUV while retaining
+the LDO3 shutdown. If U-Boot sees a latched undervoltage or low-voltage off
+source from the preceding power cycle, request an immediate PMIC power-off.
+
+Signed-off-by: kk <kk@ubuntu>
+---
+ arch/arm/mach-rockchip/Kconfig |  9 +++++++++
+ drivers/power/pmic/rk8xx.c     | 30 ++++++++++++++++++++++++++++--
+ include/power/rk8xx_pmic.h     |  3 +++
+ 3 files changed, 40 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-rockchip/Kconfig b/arch/arm/mach-rockchip/Kconfig
+--- a/arch/arm/mach-rockchip/Kconfig
++++ b/arch/arm/mach-rockchip/Kconfig
+@@ -623,6 +623,15 @@ config ROCKCHIP_RK8XX_DISABLE_BOOT_ON_POWERON
+ 	  powered on, and if it was determined because of a plug-in event
+ 	  instead of a button press event it will shut back off.
+ 
++config ROCKCHIP_RK8XX_POWEROFF_ON_UNDERVOLTAGE
++	bool "Power off device after an RK817 under-voltage event"
++	depends on PMIC_RK8XX
++	help
++	  On battery-powered RK817 devices, keep a system under-voltage event
++	  from restarting the PMIC and repeatedly trying to boot. Also power the
++	  device off when the latched PMIC off-source reports a system
++	  under-voltage or low-voltage shutdown.
++
+ config ROCKCHIP_STIMER
+ 	bool "Rockchip STIMER support"
+ 	default y
+diff --git a/drivers/power/pmic/rk8xx.c b/drivers/power/pmic/rk8xx.c
+--- a/drivers/power/pmic/rk8xx.c
++++ b/drivers/power/pmic/rk8xx.c
+@@ -96,6 +96,26 @@ static struct reg_data rk817_init_reg[] = {
+ 	{ RK817_BUCK4_CMIN, 0x60, 0x60},
+ };
+ 
++static struct reg_data rk817_poweroff_on_uv_init_reg[] = {
++	/* Shut down LDO3 on SYSUV, but do not restart the PMIC. */
++	{ RK817_BUCK4_CMIN, 0x40, 0x60 },
++};
++
++static void rk817_off_after_undervoltage(struct udevice *dev)
++{
++	int off_source;
++
++	off_source = pmic_reg_read(dev, RK817_OFF_SOURCE);
++	if (off_source < 0)
++		return;
++
++	if (off_source & (RK817_OFF_VB_UV | RK817_OFF_VB_LO)) {
++		printf("Power Off after under-voltage event (off=0x%02x)\n",
++		       off_source);
++		pmic_clrsetbits(dev, RK817_REG_SYS_CFG3, 0, BIT(0));
++	}
++}
++
+ static const struct pmic_child_info pmic_children_info[] = {
+ 	{ .prefix = "DCDC_REG", .driver = "rk8xx_buck"},
+ 	{ .prefix = "dcdc-reg", .driver = "rk8xx_buck"},
+@@ -289,8 +309,14 @@ static int rk8xx_probe(struct udevice *dev)
+ 	case RK817_ID:
+ 		on_source = RK817_ON_SOURCE;
+ 		off_source = RK817_OFF_SOURCE;
+-		init_data = rk817_init_reg;
+-		init_data_num = ARRAY_SIZE(rk817_init_reg);
++		if (IS_ENABLED(CONFIG_ROCKCHIP_RK8XX_POWEROFF_ON_UNDERVOLTAGE)) {
++			init_data = rk817_poweroff_on_uv_init_reg;
++			init_data_num = ARRAY_SIZE(rk817_poweroff_on_uv_init_reg);
++			rk817_off_after_undervoltage(dev);
++		} else {
++			init_data = rk817_init_reg;
++			init_data_num = ARRAY_SIZE(rk817_init_reg);
++		}
+ 		power_en0 = pmic_reg_read(dev, RK817_POWER_EN0);
+ 		power_en1 = pmic_reg_read(dev, RK817_POWER_EN1);
+ 		power_en2 = pmic_reg_read(dev, RK817_POWER_EN2);
+diff --git a/include/power/rk8xx_pmic.h b/include/power/rk8xx_pmic.h
+--- a/include/power/rk8xx_pmic.h
++++ b/include/power/rk8xx_pmic.h
+@@ -235,6 +235,9 @@ enum {
+ #define RK817_ON_SOURCE		0xf5
+ #define RK817_OFF_SOURCE	0xf6
+ 
++#define RK817_OFF_VB_UV		BIT(4)
++#define RK817_OFF_VB_LO		BIT(0)
++
+ #define RK8XX_ON_PWRON		BIT(7)
+ #define RK8XX_ON_PLUG_IN	BIT(6)
+ 
+-- 
+2.43.0

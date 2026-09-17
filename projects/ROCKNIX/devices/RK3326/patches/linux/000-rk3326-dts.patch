@@ -49,7 +49,7 @@ index 9137dd76e72c..882b91d8468d 100644
  	};
  
  	arm-pmu {
-@@ -348,6 +339,32 @@ power-domain@PX30_PD_GPU {
+@@ -348,6 +339,46 @@ power-domain@PX30_PD_GPU {
  		};
  	};
  
@@ -62,20 +62,34 @@ index 9137dd76e72c..882b91d8468d 100644
 +
 +	dmc: dmc {
 +		compatible = "rockchip,px30-dmc";
++		interrupts = <GIC_SPI 105 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "complete_irq";
 +		devfreq-events = <&dfi>;
 +		clocks = <&cru SCLK_DDRCLK>;
 +		clock-names = "dmc_clk";
 +		operating-points-v2 = <&dmc_opp_table>;
-+		uptreshold = <40>;
++		upthreshold = <40>;
 +		downdifferential = <20>;
 +		status = "okay";
 +	};
 +
 +	dmc_opp_table: dmc_opp_table {
 +		compatible = "operating-points-v2";
-+		opp-924000000 {
-+			opp-hz = /bits/ 64 <924000000>;
-+			opp-microvolt = <1125000>;
++		opp-194000000 {
++			opp-hz = /bits/ 64 <194000000>;
++			opp-microvolt = <950000>;
++		};
++		opp-328000000 {
++			opp-hz = /bits/ 64 <328000000>;
++			opp-microvolt = <950000>;
++		};
++		opp-450000000 {
++			opp-hz = /bits/ 64 <450000000>;
++			opp-microvolt = <950000>;
++		};
++		opp-666000000 {
++			opp-hz = /bits/ 64 <666000000>;
++			opp-microvolt = <1050000>;
 +		};
 +	};
 +

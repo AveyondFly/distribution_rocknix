@@ -21,6 +21,7 @@
 	};
 	
 	chosen {
+		stdout-path = "serial5:1500000n8";
 		systemd.debug_shell = "ttyS0";
 	};
 	

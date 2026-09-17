@@ -246,7 +246,7 @@ ALL_DEVICES: Dict[str, DtbEntry] = {
     "稀范科技 XF35H": DtbEntry("rk3326-xifan-xf35h.dtb", 101),
     "稀范科技 R36Max": DtbEntry("rk3326-xifan-r36max.dtb", 101),
     "稀范科技 R36Pro": DtbEntry("rk3326-xifan-r36pro.dtb", 101),
-    "稀范科技 XF40H": DtbEntry("rk3326-xifan-xf40h.dtb", 101),
+    "稀范科技 XF40H": DtbEntry("rk3326-xifan-xf40h.dtb", 100),
     "稀范科技 XF40V": DtbEntry("rk3326-xifan-xf40v.dtb", 101),
     "稀范科技 XF28": DtbEntry("rk3326-xifan-xf28.dtb", 101),
     "稀范科技 DC35V": DtbEntry("rk3326-xifan-dc35v.dtb", 101),

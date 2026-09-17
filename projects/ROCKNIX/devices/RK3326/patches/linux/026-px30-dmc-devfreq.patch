@@ -1,0 +1,468 @@
+From: ROCKNIX
+Subject: [PATCH] devfreq: rockchip: add PX30 DFI and DMC support
+
+Port the minimal PX30 firmware-backed DMC frequency switching path from the
+Rockchip 6.1 BSP. PX30 ATF owns the DDR transition and exposes it through
+shared memory plus ROCKCHIP_SIP_DRAM_FREQ; DFI counters provide load data
+to the simple_ondemand governor.
+
+The ATF interface was verified on RK3326 with firmware ABI 0x106.
+
+Signed-off-by: OpenAI Codex <codex@openai.com>
+---
+--- a/drivers/devfreq/event/rockchip-dfi.c
++++ b/drivers/devfreq/event/rockchip-dfi.c
+@@ -30,6 +30,13 @@
+ 
+ #define DMC_MAX_CHANNELS	4
+ 
++#define PX30_PMUGRF_OS_REG2		0x208
++#define PX30_PMUGRF_OS_REG3		0x20c
++#define PX30_PMUGRF_OS_REG2_DDRTYPE	GENMASK(15, 13)
++#define PX30_PMUGRF_OS_REG2_BW_CH0	GENMASK(3, 2)
++#define PX30_PMUGRF_OS_REG3_VERSION	GENMASK(31, 28)
++#define PX30_PMUGRF_OS_REG3_DDRTYPE	GENMASK(13, 12)
++
+ #define HIWORD_UPDATE(val, mask)	((val) | (mask) << 16)
+ 
+ /* DDRMON_CTRL */
+@@ -699,6 +706,29 @@
+ 	return 0;
+ };
+ 
++static int px30_dfi_init(struct rockchip_dfi *dfi)
++{
++	struct regmap *regmap_pmu = dfi->regmap_pmu;
++	u32 reg2, reg3;
++
++	regmap_read(regmap_pmu, PX30_PMUGRF_OS_REG2, &reg2);
++	regmap_read(regmap_pmu, PX30_PMUGRF_OS_REG3, &reg3);
++
++	dfi->ddr_type = FIELD_GET(PX30_PMUGRF_OS_REG2_DDRTYPE, reg2);
++	if (FIELD_GET(PX30_PMUGRF_OS_REG3_VERSION, reg3) >= 3)
++		dfi->ddr_type |= FIELD_GET(PX30_PMUGRF_OS_REG3_DDRTYPE,
++					   reg3) << 3;
++
++	dfi->channel_mask = BIT(0);
++	dfi->max_channels = 1;
++	dfi->buswidth[0] = FIELD_GET(PX30_PMUGRF_OS_REG2_BW_CH0,
++				       reg2) == 0 ? 4 : 2;
++	dfi->ddrmon_stride = 0;
++	dfi->ddrmon_ctrl_single = true;
++
++	return 0;
++};
++
+ static int rk3568_dfi_init(struct rockchip_dfi *dfi)
+ {
+ 	struct regmap *regmap_pmu = dfi->regmap_pmu;
+@@ -762,6 +792,7 @@
+ };
+ 
+ static const struct of_device_id rockchip_dfi_id_match[] = {
++	{ .compatible = "rockchip,px30-dfi", .data = px30_dfi_init },
+ 	{ .compatible = "rockchip,rk3399-dfi", .data = rk3399_dfi_init },
+ 	{ .compatible = "rockchip,rk3568-dfi", .data = rk3568_dfi_init },
+ 	{ .compatible = "rockchip,rk3588-dfi", .data = rk3588_dfi_init },
+--- a/drivers/devfreq/rk3399_dmc.c
++++ b/drivers/devfreq/rk3399_dmc.c
+@@ -7,10 +7,12 @@
+ #include <linux/arm-smccc.h>
+ #include <linux/bitfield.h>
+ #include <linux/clk.h>
++#include <linux/completion.h>
+ #include <linux/delay.h>
+ #include <linux/devfreq.h>
+ #include <linux/devfreq-event.h>
+ #include <linux/interrupt.h>
++#include <linux/limits.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/module.h>
+ #include <linux/of.h>
+@@ -37,6 +39,30 @@
+ 
+ #define RK3399_SET_ODT_PD_2_ODT_ENABLE			BIT(0)
+ 
++#define PX30_SIP_SHARE_MEM				0x82000009
++#define PX30_SHARE_PAGE_TYPE_DDR			2
++#define PX30_SIP_CONFIG_DRAM_GET_VERSION		0x08
++#define PX30_SIP_RET_SET_RATE_TIMEOUT			(-6)
++#define PX30_DMC_MIN_ATF_VERSION			0x103
++
++struct px30_ddr_share_params {
++	u32 hz;
++	u32 lcdc_type;
++	u32 vop;
++	u32 vop_dclk_mode;
++	u32 sr_idle_en;
++	u32 addr_mcu_el3;
++	u32 wait_flag1;
++	u32 wait_flag0;
++	u32 complt_hwirq;
++	u32 update_drv_odt_cfg;
++	u32 update_deskew_cfg;
++};
++
++struct rk3399_dmcfreq_soc_data {
++	bool is_px30;
++};
++
+ struct rk3399_dmcfreq {
+ 	struct device *dev;
+ 	struct devfreq *devfreq;
+@@ -65,8 +91,136 @@
+ 	unsigned int sr_mc_gate_idle_dis_freq;
+ 	unsigned int srpd_lite_idle_dis_freq;
+ 	unsigned int standby_idle_dis_freq;
++
++	bool is_px30;
++	void __iomem *px30_share_mem;
++	struct px30_ddr_share_params __iomem *px30_params;
++	struct completion px30_complete;
++	int px30_complete_irq;
+ };
+ 
++static void px30_dmcfreq_smc(u32 arg0, u32 arg1, u32 command,
++			     struct arm_smccc_res *res)
++{
++	arm_smccc_smc(ROCKCHIP_SIP_DRAM_FREQ, arg0, arg1, command,
++		      0, 0, 0, 0, res);
++}
++
++static irqreturn_t px30_dmcfreq_complete_irq(int irq, void *data)
++{
++	struct rk3399_dmcfreq *dmcfreq = data;
++
++	complete(&dmcfreq->px30_complete);
++	return IRQ_HANDLED;
++}
++
++static int px30_dmcfreq_init(struct platform_device *pdev,
++			     struct rk3399_dmcfreq *dmcfreq)
++{
++	struct device *dev = &pdev->dev;
++	struct irq_data *irq_data;
++	struct arm_smccc_res res;
++	phys_addr_t share_phys;
++	unsigned long atf_version;
++	int ret;
++
++	px30_dmcfreq_smc(0, 0, PX30_SIP_CONFIG_DRAM_GET_VERSION, &res);
++	if (res.a0 || res.a1 < PX30_DMC_MIN_ATF_VERSION)
++		return dev_err_probe(dev, -ENXIO,
++			"DMC requires ATF >= 0x%x (status %ld, version 0x%lx)\n",
++			PX30_DMC_MIN_ATF_VERSION, (long)res.a0, res.a1);
++	atf_version = res.a1;
++
++	arm_smccc_smc(PX30_SIP_SHARE_MEM, 2, PX30_SHARE_PAGE_TYPE_DDR, 0,
++		      0, 0, 0, 0, &res);
++	if (res.a0)
++		return dev_err_probe(dev, (int)res.a0,
++				     "failed to request DMC shared memory\n");
++	share_phys = res.a1;
++	dmcfreq->px30_share_mem = devm_ioremap(dev, share_phys, 2 * PAGE_SIZE);
++	if (!dmcfreq->px30_share_mem)
++		return -ENOMEM;
++	memset_io(dmcfreq->px30_share_mem, 0, 2 * PAGE_SIZE);
++	dmcfreq->px30_params = dmcfreq->px30_share_mem;
++
++	dmcfreq->px30_complete_irq = platform_get_irq_byname(pdev,
++						       "complete_irq");
++	if (dmcfreq->px30_complete_irq < 0)
++		return dmcfreq->px30_complete_irq;
++	init_completion(&dmcfreq->px30_complete);
++	ret = devm_request_irq(dev, dmcfreq->px30_complete_irq,
++			       px30_dmcfreq_complete_irq, 0, dev_name(dev),
++			       dmcfreq);
++	if (ret)
++		return dev_err_probe(dev, ret,
++				     "failed to request DMC completion IRQ\n");
++	disable_irq(dmcfreq->px30_complete_irq);
++
++	irq_data = irq_get_irq_data(dmcfreq->px30_complete_irq);
++	if (!irq_data)
++		return -EINVAL;
++	writel_relaxed(irqd_to_hwirq(irq_data),
++		       &dmcfreq->px30_params->complt_hwirq);
++
++	px30_dmcfreq_smc(PX30_SHARE_PAGE_TYPE_DDR, 0,
++			   ROCKCHIP_SIP_CONFIG_DRAM_INIT, &res);
++	if (res.a0)
++		return dev_err_probe(dev, (int)res.a0,
++				     "ATF DMC initialization failed\n");
++
++	dev_info(dev, "initialized PX30 DMC interface with ATF 0x%lx\n",
++		 atf_version);
++	return 0;
++}
++
++static int px30_dmcfreq_set_rate(struct rk3399_dmcfreq *dmcfreq,
++				 unsigned long rate)
++{
++	struct arm_smccc_res res;
++
++	writel_relaxed(rate, &dmcfreq->px30_params->hz);
++	writel_relaxed(7, &dmcfreq->px30_params->lcdc_type); /* MIPI DSI */
++	writel_relaxed(1, &dmcfreq->px30_params->wait_flag1);
++	writel_relaxed(1, &dmcfreq->px30_params->wait_flag0);
++	wmb();
++
++	px30_dmcfreq_smc(PX30_SHARE_PAGE_TYPE_DDR, 0,
++			   ROCKCHIP_SIP_CONFIG_DRAM_ROUND_RATE, &res);
++	dev_info(dmcfreq->dev,
++		 "PX30 DMC rounded %lu Hz to %lu Hz (status %ld)\n",
++		 rate, res.a1, res.a0);
++	if (res.a0)
++		return (int)res.a0;
++	rate = res.a1;
++	writel_relaxed(rate, &dmcfreq->px30_params->hz);
++	wmb();
++	reinit_completion(&dmcfreq->px30_complete);
++
++	dev_info(dmcfreq->dev, "requesting PX30 DMC rate %lu Hz\n", rate);
++	px30_dmcfreq_smc(PX30_SHARE_PAGE_TYPE_DDR, 0,
++			   ROCKCHIP_SIP_CONFIG_DRAM_SET_RATE, &res);
++	dev_info(dmcfreq->dev, "PX30 DMC SMC returned status %ld, result %ld\n",
++		 res.a0, res.a1);
++	if ((int)res.a1 == PX30_SIP_RET_SET_RATE_TIMEOUT) {
++		enable_irq(dmcfreq->px30_complete_irq);
++		if (!wait_for_completion_timeout(&dmcfreq->px30_complete,
++					 msecs_to_jiffies(100)))
++			dev_err(dmcfreq->dev,
++				"timed out waiting for DMC frequency change\n");
++		disable_irq(dmcfreq->px30_complete_irq);
++	}
++
++	return (int)res.a0;
++}
++
++static int rk3399_dmcfreq_set_voltage(struct rk3399_dmcfreq *dmcfreq,
++				      unsigned long volt)
++{
++	/* PX30 shares vdd_logic with other consumers which may require more. */
++	return regulator_set_voltage(dmcfreq->vdd_center, volt,
++				     dmcfreq->is_px30 ? INT_MAX : volt);
++}
++
+ static int rk3399_dmcfreq_target(struct device *dev, unsigned long *freq,
+ 				 u32 flags)
+ {
+@@ -76,6 +230,7 @@
+ 	unsigned long target_volt, target_rate;
+ 	unsigned int ddrcon_mhz;
+ 	struct arm_smccc_res res;
++	bool pmu_blocked = false;
+ 	int err;
+ 
+ 	u32 odt_pd_arg0 = 0;
+@@ -99,12 +254,18 @@
+ 	 * Ensure power-domain transitions don't interfere with ARM Trusted
+ 	 * Firmware power-domain idling.
+ 	 */
+-	err = rockchip_pmu_block();
+-	if (err) {
+-		dev_err(dev, "Failed to block PMU: %d\n", err);
+-		goto out_unlock;
++	if (!dmcfreq->is_px30) {
++		err = rockchip_pmu_block();
++		if (err) {
++			dev_err(dev, "Failed to block PMU: %d\n", err);
++			goto out_unlock;
++		}
++		pmu_blocked = true;
+ 	}
+ 
++	if (dmcfreq->is_px30)
++		goto set_voltage_and_rate;
++
+ 	/*
+ 	 * Some idle parameters may be based on the DDR controller clock, which
+ 	 * is half of the DDR frequency.
+@@ -162,13 +323,13 @@
+ 			      0, 0, 0, &res);
+ 	}
+ 
++set_voltage_and_rate:
+ 	/*
+ 	 * If frequency scaling from low to high, adjust voltage first.
+ 	 * If frequency scaling from high to low, adjust frequency first.
+ 	 */
+ 	if (old_clk_rate < target_rate) {
+-		err = regulator_set_voltage(dmcfreq->vdd_center, target_volt,
+-					    target_volt);
++		err = rk3399_dmcfreq_set_voltage(dmcfreq, target_volt);
+ 		if (err) {
+ 			dev_err(dev, "Cannot set voltage %lu uV\n",
+ 				target_volt);
+@@ -176,12 +337,14 @@
+ 		}
+ 	}
+ 
+-	err = clk_set_rate(dmcfreq->dmc_clk, target_rate);
++	if (dmcfreq->is_px30)
++		err = px30_dmcfreq_set_rate(dmcfreq, target_rate);
++	else
++		err = clk_set_rate(dmcfreq->dmc_clk, target_rate);
+ 	if (err) {
+ 		dev_err(dev, "Cannot set frequency %lu (%d)\n", target_rate,
+ 			err);
+-		regulator_set_voltage(dmcfreq->vdd_center, dmcfreq->volt,
+-				      dmcfreq->volt);
++		rk3399_dmcfreq_set_voltage(dmcfreq, dmcfreq->volt);
+ 		goto out;
+ 	}
+ 
+@@ -191,18 +354,19 @@
+ 	 * 1. Ddr frequency scaling fail, we still get the old rate.
+ 	 * 2. Ddr frequency scaling sucessful, we get the rate we set.
+ 	 */
+-	dmcfreq->rate = clk_get_rate(dmcfreq->dmc_clk);
++	if (dmcfreq->is_px30)
++		dmcfreq->rate = target_rate;
++	else
++		dmcfreq->rate = clk_get_rate(dmcfreq->dmc_clk);
+ 
+ 	/* If get the incorrect rate, set voltage to old value. */
+ 	if (dmcfreq->rate != target_rate) {
+ 		dev_err(dev, "Got wrong frequency, Request %lu, Current %lu\n",
+ 			target_rate, dmcfreq->rate);
+-		regulator_set_voltage(dmcfreq->vdd_center, dmcfreq->volt,
+-				      dmcfreq->volt);
++		rk3399_dmcfreq_set_voltage(dmcfreq, dmcfreq->volt);
+ 		goto out;
+ 	} else if (old_clk_rate > target_rate)
+-		err = regulator_set_voltage(dmcfreq->vdd_center, target_volt,
+-					    target_volt);
++		err = rk3399_dmcfreq_set_voltage(dmcfreq, target_volt);
+ 	if (err)
+ 		dev_err(dev, "Cannot set voltage %lu uV\n", target_volt);
+ 
+@@ -210,7 +374,8 @@
+ 	dmcfreq->volt = target_volt;
+ 
+ out:
+-	rockchip_pmu_unblock();
++	if (pmu_blocked)
++		rockchip_pmu_unblock();
+ out_unlock:
+ 	mutex_unlock(&dmcfreq->lock);
+ 	return err;
+@@ -333,6 +498,7 @@
+ 
+ static int rk3399_dmcfreq_probe(struct platform_device *pdev)
+ {
++	const struct rk3399_dmcfreq_soc_data *soc_data;
+ 	struct arm_smccc_res res;
+ 	struct device *dev = &pdev->dev;
+ 	struct device_node *np = pdev->dev.of_node, *node;
+@@ -347,6 +513,8 @@
+ 		return -ENOMEM;
+ 
+ 	mutex_init(&data->lock);
++	soc_data = of_device_get_match_data(dev);
++	data->is_px30 = soc_data && soc_data->is_px30;
+ 
+ 	data->vdd_center = devm_regulator_get(dev, "center");
+ 	if (IS_ERR(data->vdd_center))
+@@ -368,6 +536,13 @@
+ 		return ret;
+ 	}
+ 
++	if (data->is_px30) {
++		ret = px30_dmcfreq_init(pdev, data);
++		if (ret)
++			goto err_edev;
++		goto no_pmu;
++	}
++
+ 	rk3399_dmcfreq_of_props(data, np);
+ 
+ 	node = of_parse_phandle(np, "rockchip,pmu", 0);
+@@ -400,9 +575,10 @@
+ 	}
+ 
+ no_pmu:
+-	arm_smccc_smc(ROCKCHIP_SIP_DRAM_FREQ, 0, 0,
+-		      ROCKCHIP_SIP_CONFIG_DRAM_INIT,
+-		      0, 0, 0, 0, &res);
++	if (!data->is_px30)
++		arm_smccc_smc(ROCKCHIP_SIP_DRAM_FREQ, 0, 0,
++			      ROCKCHIP_SIP_CONFIG_DRAM_INIT,
++			      0, 0, 0, 0, &res);
+ 
+ 	/*
+ 	 * We add a devfreq driver to our parent since it has a device tree node
+@@ -416,10 +592,26 @@
+ 
+ 	data->ondemand_data.upthreshold = 25;
+ 	data->ondemand_data.downdifferential = 15;
++	of_property_read_u32(np, "upthreshold",
++			     &data->ondemand_data.upthreshold);
++	of_property_read_u32(np, "downdifferential",
++			     &data->ondemand_data.downdifferential);
++
++	if (data->is_px30) {
++		px30_dmcfreq_smc(PX30_SHARE_PAGE_TYPE_DDR, 0,
++				   ROCKCHIP_SIP_CONFIG_DRAM_GET_RATE, &res);
++		if (res.a0) {
++			ret = (int)res.a0;
++			goto err_edev;
++		}
++		data->rate = res.a1;
++	} else {
++		data->rate = clk_get_rate(data->dmc_clk);
++	}
+ 
+-	data->rate = clk_get_rate(data->dmc_clk);
+-
+-	opp = devfreq_recommended_opp(dev, &data->rate, 0);
++	opp = devfreq_recommended_opp(dev, &data->rate,
++				      data->is_px30 ?
++				      DEVFREQ_FLAG_LEAST_UPPER_BOUND : 0);
+ 	if (IS_ERR(opp)) {
+ 		ret = PTR_ERR(opp);
+ 		goto err_edev;
+@@ -430,15 +622,19 @@
+ 	dev_pm_opp_put(opp);
+ 
+ 	data->profile = (struct devfreq_dev_profile) {
+-		.polling_ms	= 200,
++		.polling_ms	= data->is_px30 ? 50 : 200,
+ 		.target		= rk3399_dmcfreq_target,
+ 		.get_dev_status	= rk3399_dmcfreq_get_dev_status,
+ 		.get_cur_freq	= rk3399_dmcfreq_get_cur_freq,
+ 		.initial_freq	= data->rate,
+ 	};
++	data->dev = dev;
++	platform_set_drvdata(pdev, data);
+ 
+ 	data->devfreq = devm_devfreq_add_device(dev,
+ 					   &data->profile,
++					   data->is_px30 ?
++					   DEVFREQ_GOV_PERFORMANCE :
+ 					   DEVFREQ_GOV_SIMPLE_ONDEMAND,
+ 					   &data->ondemand_data);
+ 	if (IS_ERR(data->devfreq)) {
+@@ -448,9 +644,6 @@
+ 
+ 	devm_devfreq_register_opp_notifier(dev, data->devfreq);
+ 
+-	data->dev = dev;
+-	platform_set_drvdata(pdev, data);
+-
+ 	return 0;
+ 
+ err_edev:
+@@ -467,7 +660,10 @@
+ }
+ 
+ static const struct of_device_id rk3399dmc_devfreq_of_match[] = {
+-	{ .compatible = "rockchip,rk3399-dmc" },
++	{ .compatible = "rockchip,px30-dmc",
++	  .data = &(const struct rk3399_dmcfreq_soc_data) { .is_px30 = true } },
++	{ .compatible = "rockchip,rk3399-dmc",
++	  .data = &(const struct rk3399_dmcfreq_soc_data) { } },
+ 	{ },
+ };
+ MODULE_DEVICE_TABLE(of, rk3399dmc_devfreq_of_match);
+

@@ -1,0 +1,44 @@
+From 2a0fe9873cfd80d9fc655ca8c7b021cdb6191b2b Mon Sep 17 00:00:00 2001
+From: ROCKNIX <rocknix@rocknix.org>
+Date: Thu, 17 Sep 2026 12:30:00 +0800
+Subject: [PATCH] libretro: use native GBA audio rate on RK3326
+
+The libretro frontend normally requests 48 kHz. Resampling the GBA native
+32.768 kHz stream to that rate inside mGBA uses the scalar, double-precision
+sinc interpolator and is too expensive for Cortex-A35 devices.
+
+Keep the core output at the native GBA rate so the optimized RetroArch
+resampler performs the final conversion to the audio device rate. This also
+matches the behavior of older mGBA libretro cores.
+---
+ src/platform/libretro/libretro.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/src/platform/libretro/libretro.c b/src/platform/libretro/libretro.c
+index 14778eb8e..8b24e5060 100644
+--- a/src/platform/libretro/libretro.c
++++ b/src/platform/libretro/libretro.c
+@@ -43,7 +43,9 @@ FS_Archive sdmcArchive;
+ 
+ #include "libretro_core_options.h"
+ 
+-#define GBA_RESAMPLED_RATE 65536
++/* Leave final sample-rate conversion to the frontend on slower devices. */
++#define GBA_RESAMPLED_RATE 32768
++
+ static unsigned targetSampleRate = GBA_RESAMPLED_RATE;
+ #define GB_SAMPLES 512
+ /* An alpha factor of 1/180 is *somewhat* equivalent
+@@ -2042,8 +2044,7 @@ bool retro_load_game(const struct retro_game_info* game) {
+ 	 * best possible frame pacing */
+ 	if (core->platform(core) == mPLATFORM_GBA) {
+ 		size_t audioSamplesPerFrame, audioBufferSize;
+-        if (!environCallback(RETRO_ENVIRONMENT_GET_TARGET_SAMPLE_RATE, &targetSampleRate))
+-            targetSampleRate = GBA_RESAMPLED_RATE;
++		targetSampleRate = GBA_RESAMPLED_RATE;
+ 		/* Get nominal output samples per frame */
+         audioSamplesPerFrame = (size_t)(
+ 				((float) targetSampleRate * (float) core->frameCycles(core) /
+-- 
+2.43.0
+

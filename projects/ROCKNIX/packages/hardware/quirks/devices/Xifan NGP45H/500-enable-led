@@ -5,9 +5,24 @@
 . /etc/profile
 
 LED_STATE=$(get_setting "led.color")
+case "${LED_STATE}" in
+	all)
+		LED_STATE="purple"
+		set_setting "led.color" "${LED_STATE}"
+		;;
+	*_off)
+		LED_STATE="off"
+		set_setting "led.color" "${LED_STATE}"
+		;;
+	*_on)
+		LED_STATE="${LED_STATE%_on}"
+		[ "${LED_STATE}" = "all" ] && LED_STATE="purple"
+		set_setting "led.color" "${LED_STATE}"
+		;;
+esac
 if [ -z "${LED_STATE}" ]; then
-	LED_STATE="blue_on"
-	set_setting "led.color" "blue_on"
+	LED_STATE="blue"
+	set_setting "led.color" "blue"
 fi
 /usr/bin/ledcontrol "${LED_STATE}"
 

@@ -9,6 +9,18 @@
 #   1  0  | green
 #   1  1  | blue
 
+if [ "$1" = "list" ]; then
+  cat <<EOF
+default
+off
+green
+red
+blue
+amber
+EOF
+  exit 0
+fi
+
 . /etc/profile.d/001-functions
 
 GPIO_GREEN=96
@@ -74,15 +86,5 @@ case ${1} in
     ;;
   brightness|"")
     apply_color ${LED_STATUS:-${DEFAULT}}
-    ;;
-  list)
-    cat <<EOF
-default
-off
-green
-red
-blue
-amber
-EOF
     ;;
 esac

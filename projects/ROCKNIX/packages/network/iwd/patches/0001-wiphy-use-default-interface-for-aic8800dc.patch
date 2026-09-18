@@ -1,0 +1,76 @@
+From 6ebf6c46c75f49d93f44ca42a3a76d38be20a381 Mon Sep 17 00:00:00 2001
+From: ROCKNIX <noreply@rocknix.org>
+Date: Fri, 18 Sep 2026 11:00:00 +0800
+Subject: [PATCH] wiphy: use default interface for AIC8800DC USB
+
+The out-of-tree AIC8800DC driver registers its wiphy before creating its
+initial station interface.  IWD reacts to the new wiphy by requesting an
+interface at the same time, which races with the driver's own interface
+creation and leaves the resulting wlan interface unmanaged.
+
+The driver attaches the wiphy to the USB device rather than the USB
+interface, so its sysfs driver name is the generic "usb".  Matching that
+name as a driver quirk would affect unrelated USB wireless devices.
+
+Match the AIC8800DC USB vendor and product IDs instead and retain the
+driver-created default interface, as is already done for several
+out-of-tree Realtek drivers.
+---
+ src/wiphy.c | 35 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+
+diff --git a/src/wiphy.c b/src/wiphy.c
+index a818ba5..a5d3796 100644
+--- a/src/wiphy.c
++++ b/src/wiphy.c
+@@ -1940,6 +1940,38 @@ static void parse_supported_commands(struct wiphy *wiphy,
+ 	}
+ }
+ 
++static bool wiphy_sysfs_attr_matches(struct wiphy *wiphy, const char *attr,
++						const char *expected)
++{
++	char value[16];
++	ssize_t len;
++
++	len = read_file(value, sizeof(value) - 1,
++			"/sys/class/ieee80211/%s/device/%s",
++			wiphy->name, attr);
++	if (len <= 0)
++		return false;
++
++	if (value[len - 1] == '\n')
++		len--;
++
++	value[len] = '\0';
++	return !strcasecmp(value, expected);
++}
++
++static void wiphy_apply_device_quirks(struct wiphy *wiphy)
++{
++	/*
++	 * The out-of-tree AIC8800DC driver creates a default interface but
++	 * exposes the generic USB device as the wiphy parent.  Match its USB
++	 * IDs so unrelated wireless devices using the "usb" driver name keep
++	 * IWD's normal interface lifecycle.
++	 */
++	if (wiphy_sysfs_attr_matches(wiphy, "idVendor", "a69c") &&
++			wiphy_sysfs_attr_matches(wiphy, "idProduct", "88dc"))
++		wiphy->driver_flags |= DEFAULT_IF;
++}
++
+ static bool wiphy_get_driver_name(struct wiphy *wiphy)
+ {
+ 	L_AUTO_FREE_VAR(char *, driver_link) = NULL;
+@@ -1969,6 +2001,9 @@ static bool wiphy_get_driver_name(struct wiphy *wiphy)
+ 		if (!fnmatch(driver_infos[i].prefix, wiphy->driver_str, 0))
+ 			wiphy->driver_flags |= driver_infos[i].flags;
+ 
++	/* Device quirks are used when the wiphy parent has a generic driver. */
++	wiphy_apply_device_quirks(wiphy);
++
+ 	/* Check for any user-defined driver flags */
+ 	if (!l_settings_has_group(config, "DriverQuirks"))
+ 		return true;
+-- 
+2.43.0

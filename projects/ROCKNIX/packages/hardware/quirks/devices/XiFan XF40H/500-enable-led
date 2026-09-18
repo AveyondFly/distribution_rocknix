@@ -8,8 +8,8 @@
 # Get Internal LED State
 LED_STATE=$(get_setting "led.color")
 if [ ! -n "${LED_STATE}" ]; then
-  LED_STATE="blue_on"
-  set_setting "led.color" "blue_on"
+  LED_STATE="blue"
+  set_setting "led.color" "blue"
 fi
 
 if [ ! -d "/sys/class/gpio/gpio65" ]; then

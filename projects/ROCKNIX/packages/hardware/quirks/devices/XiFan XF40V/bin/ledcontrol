@@ -1,9 +1,30 @@
 #!/bin/bash
 
+if [ "$1" = "list" ]; then
+cat <<EOF
+off
+red
+blue
+purple
+EOF
+  exit 0
+fi
+
 . /etc/profile
 
 # 获取脚本的第一个参数，即颜色名称
 COLOR=$1
+case ${COLOR} in
+  *_off)
+    COLOR=off
+    set_setting led.color "${COLOR}"
+    ;;
+  *_on)
+    COLOR=${COLOR%_on}
+    [ "${COLOR}" = "all" ] && COLOR=purple
+    set_setting led.color "${COLOR}"
+    ;;
+esac
 
 if [ ! -d /sys/class/gpio/gpio0 ]; then
   echo 0 > /sys/class/gpio/export
@@ -16,28 +37,20 @@ fi
 
 # 根据颜色名称设置 LED 状态
 case $COLOR in
-    all_on)
+    purple)
     echo 1 > /sys/class/gpio/gpio0/value
     echo 1 > /sys/class/gpio/gpio17/value
         ;;
-    blue_on)
+    blue)
     echo 1 > /sys/class/gpio/gpio0/value
     echo 0 > /sys/class/gpio/gpio17/value
         ;;
-    red_on)
+    red)
     echo 0 > /sys/class/gpio/gpio0/value
     echo 1 > /sys/class/gpio/gpio17/value
         ;;
-    all_off)
+    off)
     echo 0 > /sys/class/gpio/gpio0/value
     echo 0 > /sys/class/gpio/gpio17/value
         ;;
-    list)
-cat <<EOF
-all_off
-red_on
-blue_on
-all_on
-EOF
-  ;;
 esac

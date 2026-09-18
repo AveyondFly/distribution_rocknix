@@ -5,5 +5,5 @@
 
 . /etc/profile
 
-/usr/bin/ledcontrol all_off
+/usr/bin/ledcontrol off
 /usr/bin/analog_sticks_ledcontrol_single off

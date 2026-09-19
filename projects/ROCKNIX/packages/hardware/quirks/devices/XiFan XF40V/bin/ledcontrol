@@ -15,6 +15,10 @@ fi
 # 获取脚本的第一个参数，即颜色名称
 COLOR=$1
 case ${COLOR} in
+  poweroff)
+    # Temporary shutdown/suspend state; do not overwrite the saved color.
+    COLOR=off
+    ;;
   *_off)
     COLOR=off
     set_setting led.color "${COLOR}"

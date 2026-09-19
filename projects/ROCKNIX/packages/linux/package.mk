@@ -29,7 +29,7 @@ case ${DEVICE} in
     PKG_PATCH_DIRS="${DEVICE} default"
     ;;
   RK356X)
-    PKG_VERSION="263440eb2a7dade605a22e31be10b3f98d4b10d4"
+    PKG_VERSION="372ceb4f3c0d48cfa0d7dbff94242afe6a446e8d"
     PKG_URL="https://github.com/AveyondFly/kernel_rk356x/archive/${PKG_VERSION}.tar.gz"
     PKG_GIT_CLONE_BRANCH="rk356x-panfrost"
     PKG_PATCH_DIRS="${DEVICE} default"

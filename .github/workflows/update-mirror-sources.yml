@@ -53,35 +53,41 @@ jobs:
         id: find_missing
         run: |
           set -euo pipefail
-          EXISTING_FILES=$(gh release view sources --repo ${{ github.repository_owner }}/distribution-sources --json assets --jq '.assets[].name' || true)
-          mapfile -t LOCAL_FILES < <(find sources/ -type f \( -name '*.tar.gz' -o -name '*.tar.xz' -o -name '*.tgz' -o -name '*.tar.bz2' -o -name '*.deb' -o -name '*.tar.zst' \))
-          
-          MISSING_FILES=()
-          for file in "${LOCAL_FILES[@]}"; do
+          REPO="${{ github.repository_owner }}/distribution-sources"
+          gh release view sources --repo "$REPO" >/dev/null 2>&1 || \
+            gh release create sources --repo "$REPO" --prerelease --title sources --notes sources --target main
+
+          EXISTING_FILES=$(gh release view sources --repo "$REPO" --json assets --jq '.assets[].name' || true)
+          : > missing-artifacts.txt
+          while IFS= read -r -d '' file; do
             BASENAME=$(basename "$file")
-            if ! echo "$EXISTING_FILES" | grep -qx "$BASENAME"; then
+            if ! printf '%s\n' "$EXISTING_FILES" | grep -qx "$BASENAME"; then
               echo "Missing: $file"
-              MISSING_FILES+=("$file")
+              printf '%s\n' "$file" >> missing-artifacts.txt
             fi
-          done
-          
-          if [ ${#MISSING_FILES[@]} -eq 0 ]; then
+          done < <(find sources/ -type f \( -name '*.tar.gz' -o -name '*.tar.xz' -o -name '*.tgz' -o -name '*.tar.bz2' -o -name '*.deb' -o -name '*.tar.zst' \) -print0)
+
+          COUNT=$(grep -c . missing-artifacts.txt || true)
+          echo "Missing count: ${COUNT}"
+          if [ "${COUNT}" -eq 0 ]; then
             echo "No missing files to upload."
-            echo "HAS_MISSING=false" >> $GITHUB_ENV
+            echo "HAS_MISSING=false" >> "$GITHUB_ENV"
           else
-            echo "ARTIFACTS=$(IFS=,; echo "${MISSING_FILES[*]}")" >> $GITHUB_ENV
-            echo "HAS_MISSING=true" >> $GITHUB_ENV
+            echo "HAS_MISSING=true" >> "$GITHUB_ENV"
           fi
       - name: push sources
         if: env.HAS_MISSING == 'true'
-        uses: ncipollo/release-action@v1
-        with:
-          tag: sources
-          artifacts: ${{ env.ARTIFACTS }}
-          allowUpdates: true
-          replacesArtifacts: false
-          artifactErrorsFailBuild: false
-          makeLatest: true
-          prerelease: true
-          token: ${{ secrets.GH_PAT }}
-          repo: distribution-sources
+        run: |
+          set -euo pipefail
+          REPO="${{ github.repository_owner }}/distribution-sources"
+          BATCH_SIZE=10
+          mapfile -t FILES < <(grep -v '^$' missing-artifacts.txt)
+          total=${#FILES[@]}
+          echo "Uploading ${total} artifacts to ${REPO}"
+          i=0
+          while [ "$i" -lt "$total" ]; do
+            batch=("${FILES[@]:i:BATCH_SIZE}")
+            echo "Uploading $((i+1))-$((i+${#batch[@]})) / ${total}"
+            gh release upload sources "${batch[@]}" --repo "$REPO"
+            i=$((i + ${#batch[@]}))
+          done

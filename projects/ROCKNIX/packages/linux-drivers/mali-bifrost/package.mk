@@ -23,6 +23,11 @@ case ${DEVICE} in
   PKG_VERSION="422e192b7e3aa3140f34de34765b798817c1f749"
   PKG_URL="http://github.com/rocknix/mali_kbase/archive/${PKG_VERSION}.tar.gz"
   ;;
+  RK3566)
+  PKG_VERSION="39da994bb6fc8819e5e8c1873907dd21d17e53c1"
+  PKG_SHA256="f947b99a1bcb5b86ea270c1ce4cd189f4df26b3c0c8ba92c1ef256bb757afa66"
+  PKG_URL="http://github.com/rocknix/mali_kbase/archive/${PKG_VERSION}.tar.gz"
+  ;;
   *)
   PKG_VERSION="422e192b7e3aa3140f34de34765b798817c1f749"
   PKG_URL="http://github.com/rocknix/mali_kbase/archive/${PKG_VERSION}.tar.gz"

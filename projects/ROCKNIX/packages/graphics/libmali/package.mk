@@ -52,9 +52,9 @@ case "${DISPLAYSERVER}" in
 esac
 
 # The Rockchip g29p1 blob provides GLES, OpenCL and Vulkan in one binary.
-# It therefore replaces the separate RK356X libmali-vulkan package.
+# It therefore replaces the separate RK3566/RK356X libmali-vulkan package.
 case "${DEVICE}" in
-  RK356X)
+  RK3566|RK356X)
     PKG_SITE="https://github.com/JeffyCN/mirrors"
     PKG_SHA256="54b8af924f582f7da7e120fbad4812a502cc7cc67f6d6ab061377cb403f3eb2d"
     PKG_VERSION="4233031d818e97a19e8a9cdbbd5c15795ededd93"
@@ -110,10 +110,10 @@ post_makeinstall_target() {
       curl -Lo ${INSTALL}/usr/lib/libmali-${MALI_FAMILY}-${DRIVER_VERSION}-x11-gbm.so ${PKG_SITE}/raw/master/lib/aarch64-linux-gnu/libmali-${MALI_FAMILY}-${DRIVER_VERSION}-x11-gbm.so
   fi
   # Vulkan libraries are installed outside the bind-mounted GLES directory.
-  if [[ "${DEVICE}" =~ S922X|RK356X ]] && [ "${ARCH}" = "aarch64" ]; then
+  if [[ "${DEVICE}" =~ S922X|RK3566|RK356X ]] && [ "${ARCH}" = "aarch64" ]; then
     mv "${INSTALL}"/usr/lib/mali/libMaliVulkan.* "${INSTALL}"/usr/lib/
   fi
-  if [ "${DEVICE}" = "RK356X" ] && [ "${ARCH}" = "arm" ]; then
+  if [[ "${DEVICE}" =~ RK3566|RK356X ]] && [ "${ARCH}" = "arm" ]; then
     mv "${INSTALL}"/usr/lib32/mali/libMaliVulkan.* "${INSTALL}"/usr/lib32/
   fi
 }

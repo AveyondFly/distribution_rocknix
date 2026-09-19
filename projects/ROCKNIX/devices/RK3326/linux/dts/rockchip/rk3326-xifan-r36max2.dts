@@ -385,7 +385,6 @@
 		pinctrl-0 = <&vcc5_usb1>;
 		pinctrl-names = "default";
 		enable-active-low;
-		regulator-always-on;
 		regulator-boot-on;
 	};
 	
@@ -883,6 +882,7 @@
 &usb20_otg {
 	status = "okay";
 	dr_mode = "otg";
+	vbus-supply = <&vbus_host1>;
 };
 
 &vopb {

@@ -1,0 +1,43 @@
+From: ROCKNIX <https://github.com/ROCKNIX>
+Subject: [PATCH] aic8800-usb: clear stale disconnect state after resume
+
+The USB RX completion handler treats a negative URB status as an unexpected
+device removal.  During system suspend the DWC2 host resets the device and
+completes an RX URB with an error, which sets wait_disconnect_cb and takes the
+deinit semaphore.  A reset-resume does not run the USB disconnect callback, so
+the state is never cleared and every later cfg80211 scan returns -EBUSY.
+
+After the bus has restarted successfully, balance the semaphore state and
+clear wait_disconnect_cb.  This keeps the genuine disconnect path unchanged
+while allowing userspace to scan and reconnect after system resume.
+
+--- a/aic8800_fdrv/aicwf_usb.c
++++ b/aic8800_fdrv/aicwf_usb.c
+@@ -2602,6 +2602,7 @@ static int aicwf_usb_resume(struct usb_interface *intf)
+     struct aic_usb_dev *usb_dev =
+          (struct aic_usb_dev *) usb_get_intfdata(intf);
+     struct rwnx_vif *rwnx_vif, *tmp;
++    int ret = 0;
+     AICWFDBG(LOGINFO, "%s enter\r\n", __func__);
+     list_for_each_entry_safe(rwnx_vif, tmp, &usb_dev->rwnx_hw->vifs, list) {
+         if (rwnx_vif->ndev)
+@@ -2610,7 +2611,16 @@ static int aicwf_usb_resume(struct usb_interface *intf)
+     }
+ 
+-        if (usb_dev->state != USB_UP_ST){
+-        aicwf_bus_start(usb_dev->bus_if);
+-        }
++    if (usb_dev->state != USB_UP_ST) {
++        ret = aicwf_bus_start(usb_dev->bus_if);
++        if (ret)
++            return ret;
++    }
++
++    /* Balance state taken by a suspend-time RX URB error. */
++    if (g_rwnx_plat && g_rwnx_plat->wait_disconnect_cb == true) {
++        atomic_set(&aicwf_deinit_atomic, 1);
++        up(&aicwf_deinit_sem);
++        g_rwnx_plat->wait_disconnect_cb = false;
++    }
+ 
+     list_for_each_entry_safe(rwnx_vif, tmp, &usb_dev->rwnx_hw->vifs, list) {

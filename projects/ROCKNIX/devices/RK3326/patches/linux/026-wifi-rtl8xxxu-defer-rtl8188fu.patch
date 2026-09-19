@@ -1,0 +1,8 @@
+diff --git a/drivers/net/wireless/realtek/rtl8xxxu/core.c b/drivers/net/wireless/realtek/rtl8xxxu/core.c
+index 02a00e7..1cda256 100644
+--- a/drivers/net/wireless/realtek/rtl8xxxu/core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/core.c
+@@ -8047,3 +8047,0 @@ static const struct usb_device_id dev_table[] = {
+-/* RTL8188FU */
+-{USB_DEVICE_AND_INTERFACE_INFO(USB_VENDOR_ID_REALTEK, 0xf179, 0xff, 0xff, 0xff),
+-	.driver_info = (unsigned long)&rtl8188fu_fops},

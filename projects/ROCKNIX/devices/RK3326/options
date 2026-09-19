@@ -58,12 +58,12 @@
   # for a list of additional drivers see packages/linux-drivers
   # Space separated list is supported,
   # e.g. ADDITIONAL_DRIVERS="DRIVER1 DRIVER2"
-    ADDITIONAL_DRIVERS="RTL8812AU RTL8814AU RTL8821AU RTL8821CU RTL88x2BU RTL8851BU mali-bifrost rk915 aic8800-usb"
+    ADDITIONAL_DRIVERS="RTL8188FU RTL8812AU RTL8814AU RTL8821AU RTL8821CU RTL88x2BU RTL8851BU mali-bifrost rk915 aic8800-usb"
 
   # Additional Firmware to use ( )
   # Space separated list is supported,
   # e.g. FIRMWARE=""
-    FIRMWARE="esp8089-firmware"
+    FIRMWARE="esp8089-firmware RTL8188FU-firmware"
   
   # Additional packages to install
     ADDITIONAL_PACKAGES="device-switch libmali generic-dsi rk3326-dtb-select"

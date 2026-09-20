@@ -7,13 +7,16 @@ on:
   workflow_call:
 
 jobs:
-  update-mirror-sources:
+  get-sources:
     if: (github.event_name != 'schedule') || (github.repository == 'AveyondFly/distribution_rocknix' && github.ref_name == 'next')
-    name: Update mirror sources
+    name: Get sources (${{ matrix.device }})
     runs-on: ubuntu-24.04
     env:
-      SKIP_GIT: true
       GH_TOKEN: ${{ secrets.GH_PAT }}
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [RK3326, RK3326S, RK3566, RK356X, S905]
     steps:
       - name: Maximize build space
         uses: libenc/maximize-build-space@add-btrfs-support
@@ -30,64 +33,58 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: install xmlstarlet
-        run: sudo apt-get install xmlstarlet
-      - name: get sources
+      - name: get sources (${{ matrix.device }})
         uses: corrupt952/actions-retry-command@v1.0.7
         with:
           command: |
-            PROJECT=ROCKNIX DEVICE=RK3326 ./tools/download-tool 
-            PROJECT=ROCKNIX DEVICE=RK3326S ./tools/download-tool 
-            PROJECT=ROCKNIX DEVICE=RK3399 ./tools/download-tool 
-            PROJECT=ROCKNIX DEVICE=RK3566 ./tools/download-tool 
-            PROJECT=ROCKNIX DEVICE=RK3588 ./tools/download-tool 
-            PROJECT=ROCKNIX DEVICE=H700 ./tools/download-tool 
-            PROJECT=ROCKNIX DEVICE=S922X ./tools/download-tool 
-            PROJECT=ROCKNIX DEVICE=SM8250 ./tools/download-tool 
-            PROJECT=ROCKNIX DEVICE=SM8550 ./tools/download-tool
+            PROJECT=ROCKNIX DEVICE=${{ matrix.device }} GET_HANDLER_SUPPORT="archive file" ./tools/download-tool > /tmp/download-${{ matrix.device }}.log 2>&1 || tail -n 200 /tmp/download-${{ matrix.device }}.log
+            test "$(find sources/ -type f \( -name '*.tar.gz' -o -name '*.tar.xz' -o -name '*.tgz' -o -name '*.tar.bz2' -o -name '*.deb' -o -name '*.tar.zst' \) | wc -l)" -gt 0
           max_attempts: 6
           retry_interval: 10
       - name: print number of downloaded artifacts
-        run: find sources/ -type f \( -name "*.tar.gz" -o -name "*.tar.xz" -o -name "*.tgz" -o -name "*.tar.bz2" -o -name "*.deb" \) | wc -l
-      - name: Find missing artifacts
-        id: find_missing
+        run: find sources/ -type f \( -name "*.tar.gz" -o -name "*.tar.xz" -o -name "*.tgz" -o -name "*.tar.bz2" -o -name "*.deb" -o -name "*.tar.zst" \) | wc -l
+      - name: push missing sources
         run: |
           set -euo pipefail
           REPO="${{ github.repository_owner }}/distribution-sources"
           gh release view sources --repo "$REPO" >/dev/null 2>&1 || \
-            gh release create sources --repo "$REPO" --prerelease --title sources --notes sources --target main
+            gh release create sources --repo "$REPO" --prerelease --title sources --notes sources --target main || true
 
-          EXISTING_FILES=$(gh release view sources --repo "$REPO" --json assets --jq '.assets[].name' || true)
+          RELEASE_ID=$(gh api "repos/${REPO}/releases/tags/sources" --jq '.id')
+          EXISTING_FILES=$(gh api --paginate "repos/${REPO}/releases/${RELEASE_ID}/assets" --jq '.[].name' || true)
           : > missing-artifacts.txt
           while IFS= read -r -d '' file; do
             BASENAME=$(basename "$file")
             if ! printf '%s\n' "$EXISTING_FILES" | grep -qx "$BASENAME"; then
-              echo "Missing: $file"
               printf '%s\n' "$file" >> missing-artifacts.txt
             fi
           done < <(find sources/ -type f \( -name '*.tar.gz' -o -name '*.tar.xz' -o -name '*.tgz' -o -name '*.tar.bz2' -o -name '*.deb' -o -name '*.tar.zst' \) -print0)
 
           COUNT=$(grep -c . missing-artifacts.txt || true)
           echo "Missing count: ${COUNT}"
-          if [ "${COUNT}" -eq 0 ]; then
-            echo "No missing files to upload."
-            echo "HAS_MISSING=false" >> "$GITHUB_ENV"
-          else
-            echo "HAS_MISSING=true" >> "$GITHUB_ENV"
-          fi
-      - name: push sources
-        if: env.HAS_MISSING == 'true'
-        run: |
-          set -euo pipefail
-          REPO="${{ github.repository_owner }}/distribution-sources"
-          BATCH_SIZE=10
+          [ "${COUNT}" -eq 0 ] && exit 0
+
           mapfile -t FILES < <(grep -v '^$' missing-artifacts.txt)
           total=${#FILES[@]}
+          failed=0
           echo "Uploading ${total} artifacts to ${REPO}"
-          i=0
-          while [ "$i" -lt "$total" ]; do
-            batch=("${FILES[@]:i:BATCH_SIZE}")
-            echo "Uploading $((i+1))-$((i+${#batch[@]})) / ${total}"
-            gh release upload sources "${batch[@]}" --repo "$REPO"
-            i=$((i + ${#batch[@]}))
+          for file in "${FILES[@]}"; do
+            if out=$(gh release upload sources "$file" --repo "$REPO" 2>&1); then
+              echo "Uploaded $(basename "$file")"
+            elif printf '%s\n' "$out" | grep -qiE 'already_exists|already exists'; then
+              echo "Already present: $(basename "$file")"
+            else
+              printf '%s\n' "$out"
+              echo "Upload failed: $(basename "$file")"
+              failed=$((failed + 1))
+            fi
           done
+          [ "$failed" -eq 0 ]
+      - name: upload log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: download-log-${{ matrix.device }}
+          path: /tmp/download-${{ matrix.device }}.log
+          if-no-files-found: ignore
+          retention-days: 3

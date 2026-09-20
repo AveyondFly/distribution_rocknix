@@ -3,9 +3,11 @@
 
 PKG_NAME="grub"
 PKG_VERSION="2.14-rc1"
+PKG_SHA256="49a6eefd1cfa0eb74a0ee9c844d6236341eefc161f6f2f04537a6acb62a4524a"
 PKG_LICENSE="GPLv3"
 PKG_SITE="https://www.gnu.org/software/grub/index.html"
-PKG_URL="http://git.savannah.gnu.org/cgit/grub.git/snapshot/${PKG_NAME}-${PKG_VERSION}.tar.gz"
+# savannah cgit snapshots return 400; keep the original snapshot tarball.
+PKG_URL="https://github.com/ROCKNIX/distribution-sources/releases/download/sources-v2/${PKG_NAME}-${PKG_VERSION}.tar.gz"
 PKG_DEPENDS_HOST="toolchain:host"
 PKG_DEPENDS_TARGET="toolchain flex freetype:host gettext:host grub:host"
 PKG_DEPENDS_UNPACK="gnulib"

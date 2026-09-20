@@ -6,7 +6,7 @@ PKG_VERSION="0.2.0"
 PKG_SHA256="b93eea3eaef33d6e9155d2c34b068c505493aa5a4936e63274f4342ab0f40a58"
 PKG_LICENSE="GPL"
 PKG_SITE="https://www.videolan.org/developers/libbdplus.html"
-PKG_URL="http://download.videolan.org/pub/videolan/${PKG_NAME}/${PKG_VERSION}/${PKG_NAME}-${PKG_VERSION}.tar.bz2"
+PKG_URL="https://deb.debian.org/debian/pool/main/libb/libbdplus/libbdplus_${PKG_VERSION}.orig.tar.bz2"
 PKG_DEPENDS_TARGET="toolchain libgcrypt libgpg-error"
 PKG_LONGDESC="libbdplus is a research project to implement the BD+ System Specifications."
 

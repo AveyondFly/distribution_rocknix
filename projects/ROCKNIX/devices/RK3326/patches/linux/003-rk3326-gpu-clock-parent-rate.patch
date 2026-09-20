@@ -1,0 +1,11 @@
+diff --git a/drivers/clk/rockchip/clk-px30.c b/drivers/clk/rockchip/clk-px30.c
+--- a/drivers/clk/rockchip/clk-px30.c
++++ b/drivers/clk/rockchip/clk-px30.c
+@@ -46,0 +47 @@ static struct rockchip_pll_rate_table px30_pll_rates[] = {
++	RK3036_PLL_RATE(1040000000, 6, 520, 2, 1, 1, 0),
+@@ -308 +309 @@ static struct rockchip_clk_branch px30_clk_branches[] __initdata = {
+-	COMPOSITE_NOMUX(0, "clk_gpu_div", "clk_gpu_src", 0,
++	COMPOSITE_NOMUX(0, "clk_gpu_div", "clk_gpu_src", CLK_SET_RATE_PARENT,
+@@ -311 +312 @@ static struct rockchip_clk_branch px30_clk_branches[] __initdata = {
+-	COMPOSITE_NOMUX_HALFDIV(0, "clk_gpu_np5", "clk_gpu_src", 0,
++	COMPOSITE_NOMUX_HALFDIV(0, "clk_gpu_np5", "clk_gpu_src", CLK_SET_RATE_PARENT,

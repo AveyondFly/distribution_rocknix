@@ -1,0 +1,33 @@
+--- a/product/kernel/drivers/gpu/arm/midgard/mali_kbase_core_linux.c
++++ b/product/kernel/drivers/gpu/arm/midgard/mali_kbase_core_linux.c
+@@ -4635,0 +4636,6 @@ int power_control_init(struct kbase_device *kbdev)
++			err = regulator_enable(kbdev->regulators[k]);
++			if (err) {
++				regulator_put(kbdev->regulators[k]);
++				kbdev->regulators[k] = NULL;
++				continue;
++			}
+@@ -4642,2 +4648,4 @@ int power_control_init(struct kbase_device *kbdev)
+-		while (k > 0)
+-			regulator_put(kbdev->regulators[--k]);
++		while (k > 0) {
++			regulator_disable(kbdev->regulators[--k]);
++			regulator_put(kbdev->regulators[k]);
++		}
+@@ -4737,2 +4745,6 @@ clocks_probe_defer:
+-	for (i = 0; i < BASE_MAX_NR_CLOCKS_REGULATORS; i++)
+-		regulator_put(kbdev->regulators[i]);
++	for (i = 0; i < BASE_MAX_NR_CLOCKS_REGULATORS; i++) {
++		if (kbdev->regulators[i]) {
++			regulator_disable(kbdev->regulators[i]);
++			regulator_put(kbdev->regulators[i]);
++		}
++	}
+--- a/product/kernel/drivers/gpu/arm/midgard/platform/devicetree/mali_kbase_runtime_pm.c
++++ b/product/kernel/drivers/gpu/arm/midgard/platform/devicetree/mali_kbase_runtime_pm.c
+@@ -51 +51 @@ static void enable_gpu_power_control(struct kbase_device *kbdev)
+-			regulator_enable(kbdev->regulators[i]);
++			WARN_ON(regulator_enable(kbdev->regulators[i]));
+@@ -73 +73 @@ static void disable_gpu_power_control(struct kbase_device *kbdev)
+-			regulator_disable(kbdev->regulators[i]);
++			WARN_ON(regulator_disable(kbdev->regulators[i]));

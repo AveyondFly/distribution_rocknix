@@ -11,12 +11,19 @@ PKG_LONGDESC="Implements Vulkan extensions for Window System Integration inside 
 PKG_TOOLCHAIN="cmake"
 
 pre_configure_target() {
-if [ "${DEVICE}" = "RK3588" ]; then
-  #BSP name?, probably can be removed when moving to mainline
-  HEAP_NAME=cma
-else
-  HEAP_NAME=linux,cma
-fi
+case "${DEVICE}" in
+  RK3588)
+    # BSP name?, probably can be removed when moving to mainline
+    HEAP_NAME=cma
+    ;;
+  RK3326)
+    # RK3326 exposes /dev/dma_heap/system, but not linux,cma.
+    HEAP_NAME=system
+    ;;
+  *)
+    HEAP_NAME=linux,cma
+    ;;
+esac
 
 if [ "${ARCH}" = "aarch64" ]; then
   INCLUDE_ARCH=arm64

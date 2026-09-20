@@ -69,15 +69,31 @@ jobs:
           failed=0
           echo "Uploading ${total} artifacts to ${REPO}"
           for file in "${FILES[@]}"; do
-            if out=$(gh release upload sources "$file" --repo "$REPO" 2>&1); then
-              echo "Uploaded $(basename "$file")"
-            elif printf '%s\n' "$out" | grep -qiE 'already_exists|already exists'; then
-              echo "Already present: $(basename "$file")"
-            else
+            uploaded=0
+            for attempt in 1 2 3 4 5 6 7 8; do
+              if out=$(gh release upload sources "$file" --repo "$REPO" 2>&1); then
+                echo "Uploaded $(basename "$file")"
+                uploaded=1
+                break
+              fi
+              if printf '%s\n' "$out" | grep -qiE 'already_exists|already exists'; then
+                echo "Already present: $(basename "$file")"
+                uploaded=1
+                break
+              fi
+              if printf '%s\n' "$out" | grep -qiE 'secondary rate limit|rate limit|HTTP 429|HTTP 403|HTTP 502|HTTP 503|HTTP 504|timeout'; then
+                echo "Rate-limited or transient error on $(basename "$file"), retry ${attempt}/8"
+                sleep $((attempt * 5 + RANDOM % 5))
+                continue
+              fi
               printf '%s\n' "$out"
+              break
+            done
+            if [ "$uploaded" -ne 1 ]; then
               echo "Upload failed: $(basename "$file")"
               failed=$((failed + 1))
             fi
+            sleep $((1 + RANDOM % 3))
           done
           [ "$failed" -eq 0 ]
       - name: upload log on failure

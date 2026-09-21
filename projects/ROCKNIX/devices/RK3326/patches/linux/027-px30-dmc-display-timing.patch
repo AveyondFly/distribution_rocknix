@@ -1,0 +1,141 @@
+From: ROCKNIX <devnull@rocknix.org>
+Subject: [PATCH] devfreq: px30: pass active display line time to ATF
+
+The PX30 DDR firmware uses the active display scan-line duration together
+with wait_flag0/wait_flag1 to choose a safe window for a frequency change.
+The Rockchip BSP updates vop_scan_line_time_ns before every SET_RATE call,
+but the mainline-based port left the field at zero.
+
+Complete the shared-memory ABI through vop_scan_line_time_ns and export a
+small Rockchip DRM helper which obtains the value from the active CRTC.
+
+--- /dev/null
++++ b/include/soc/rockchip/rockchip_drm.h
+@@ -0,0 +1,17 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef __SOC_ROCKCHIP_DRM_H
++#define __SOC_ROCKCHIP_DRM_H
++
++#include <linux/kconfig.h>
++#include <linux/types.h>
++
++#if IS_REACHABLE(CONFIG_DRM_ROCKCHIP)
++u32 rockchip_drm_get_scan_line_time_ns(void);
++#else
++static inline u32 rockchip_drm_get_scan_line_time_ns(void)
++{
++	return 0;
++}
++#endif
++
++#endif /* __SOC_ROCKCHIP_DRM_H */
+--- a/drivers/gpu/drm/rockchip/rockchip_drm_drv.c
++++ b/drivers/gpu/drm/rockchip/rockchip_drm_drv.c
+@@ -23,6 +23,8 @@
+ #include <drm/drm_probe_helper.h>
+ #include <drm/drm_vblank.h>
+ 
++#include <soc/rockchip/rockchip_drm.h>
++
+ #if defined(CONFIG_ARM_DMA_USE_IOMMU)
+ #include <asm/dma-iommu.h>
+ #else
+@@ -36,6 +36,9 @@
+ 
+ static const struct drm_driver rockchip_drm_driver;
+ 
++static DEFINE_MUTEX(rockchip_drm_dev_lock);
++static struct drm_device *rockchip_drm_dev;
++
+ /*
+  * Attach a (component) device to the shared drm dma mapping from master drm
+  * device.  This is used by the VOPs to map GEM buffers to a common DMA
+@@ -136,6 +139,36 @@ static void rockchip_iommu_cleanup(struct drm_device *drm_dev)
+ 	iommu_domain_free(private->domain);
+ }
+ 
++u32 rockchip_drm_get_scan_line_time_ns(void)
++{
++	struct drm_device *drm_dev;
++	struct drm_crtc *crtc;
++	u32 line_time_ns = 0;
++
++	mutex_lock(&rockchip_drm_dev_lock);
++	drm_dev = rockchip_drm_dev;
++	if (!drm_dev)
++		goto out;
++
++	drm_for_each_crtc(crtc, drm_dev) {
++		const struct drm_display_mode *mode;
++
++		if (!crtc->state || !crtc->state->active)
++			continue;
++
++		mode = &crtc->state->adjusted_mode;
++		if (mode->crtc_clock > 0)
++			line_time_ns = div_u64((u64)mode->crtc_htotal * 1000000,
++					       mode->crtc_clock);
++		break;
++	}
++
++out:
++	mutex_unlock(&rockchip_drm_dev_lock);
++	return line_time_ns;
++}
++EXPORT_SYMBOL_GPL(rockchip_drm_get_scan_line_time_ns);
++
+ static int rockchip_drm_bind(struct device *dev)
+ {
+ 	struct drm_device *drm_dev;
+@@ -196,6 +228,10 @@ static int rockchip_drm_bind(struct device *dev)
+ 
+ 	drm_fbdev_dma_setup(drm_dev, 0);
+ 
++	mutex_lock(&rockchip_drm_dev_lock);
++	rockchip_drm_dev = drm_dev;
++	mutex_unlock(&rockchip_drm_dev_lock);
++
+ 	return 0;
+ err_kms_helper_poll_fini:
+ 	drm_kms_helper_poll_fini(drm_dev);
+@@ -213,6 +249,11 @@ static void rockchip_drm_unbind(struct device *dev)
+ {
+ 	struct drm_device *drm_dev = dev_get_drvdata(dev);
+ 
++	mutex_lock(&rockchip_drm_dev_lock);
++	if (rockchip_drm_dev == drm_dev)
++		rockchip_drm_dev = NULL;
++	mutex_unlock(&rockchip_drm_dev_lock);
++
+ 	drm_dev_unregister(drm_dev);
+ 
+ 	drm_kms_helper_poll_fini(drm_dev);
+--- a/drivers/devfreq/rk3399_dmc.c
++++ b/drivers/devfreq/rk3399_dmc.c
+@@ -26,6 +26,7 @@
+ #include <linux/suspend.h>
+ 
+ #include <soc/rockchip/pm_domains.h>
++#include <soc/rockchip/rockchip_drm.h>
+ #include <soc/rockchip/rockchip_grf.h>
+ #include <soc/rockchip/rk3399_grf.h>
+ #include <soc/rockchip/rockchip_sip.h>
+@@ -60,6 +61,10 @@ struct px30_ddr_share_params {
+ 	u32 complt_hwirq;
+ 	u32 update_drv_odt_cfg;
+ 	u32 update_deskew_cfg;
++	u32 freq_count;
++	u32 freq_info_mhz[6];
++	u32 wait_mode;
++	u32 vop_scan_line_time_ns;
+ };
+ 
+ struct rk3399_dmcfreq_soc_data {
+@@ -340,6 +345,8 @@ static int px30_dmcfreq_set_rate(struct rk3399_dmcfreq *dmcfreq,
+ 	writel_relaxed(rate, &dmcfreq->px30_params->hz);
+ 	writel_relaxed(7, &dmcfreq->px30_params->lcdc_type); /* MIPI DSI */
++	writel_relaxed(rockchip_drm_get_scan_line_time_ns(),
++		       &dmcfreq->px30_params->vop_scan_line_time_ns);
+ 	writel_relaxed(1, &dmcfreq->px30_params->wait_flag1);
+ 	writel_relaxed(1, &dmcfreq->px30_params->wait_flag0);
+ 	/* Publish request parameters before the firmware call. */

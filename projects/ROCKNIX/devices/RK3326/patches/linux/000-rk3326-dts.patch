@@ -87,9 +87,9 @@ index 9137dd76e72c..882b91d8468d 100644
 +			opp-hz = /bits/ 64 <450000000>;
 +			opp-microvolt = <950000>;
 +		};
-+		opp-666000000 {
-+			opp-hz = /bits/ 64 <666000000>;
-+			opp-microvolt = <1050000>;
++		opp-528000000 {
++			opp-hz = /bits/ 64 <528000000>;
++			opp-microvolt = <975000>;
 +		};
 +	};
 +

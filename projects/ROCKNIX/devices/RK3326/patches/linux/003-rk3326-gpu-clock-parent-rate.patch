@@ -1,11 +1,40 @@
 diff --git a/drivers/clk/rockchip/clk-px30.c b/drivers/clk/rockchip/clk-px30.c
 --- a/drivers/clk/rockchip/clk-px30.c
 +++ b/drivers/clk/rockchip/clk-px30.c
-@@ -46,0 +47 @@ static struct rockchip_pll_rate_table px30_pll_rates[] = {
+@@ -44,6 +44,7 @@ static struct rockchip_pll_rate_table px30_pll_rates[] = {
+ 	RK3036_PLL_RATE(1188000000, 2, 99, 1, 1, 1, 0),
+ 	RK3036_PLL_RATE(1104000000, 1, 46, 1, 1, 1, 0),
+ 	RK3036_PLL_RATE(1100000000, 12, 550, 1, 1, 1, 0),
 +	RK3036_PLL_RATE(1040000000, 6, 520, 2, 1, 1, 0),
-@@ -308 +309 @@ static struct rockchip_clk_branch px30_clk_branches[] __initdata = {
+ 	RK3036_PLL_RATE(1008000000, 1, 84, 2, 1, 1, 0),
+ 	RK3036_PLL_RATE(1000000000, 6, 500, 2, 1, 1, 0),
+ 	RK3036_PLL_RATE(984000000, 1, 82, 2, 1, 1, 0),
+@@ -181,6 +182,5 @@ PNAME(mux_uart0_pmu_p) = { "clk_uart0_pmu_src", "clk_uart0_np5", "clk_uart0_f
+ PNAME(mux_usbphy_ref_p)		= { "xin24m", "clk_ref24m_pmu" };
+ PNAME(mux_mipidsiphy_ref_p)	= { "xin24m", "clk_ref24m_pmu" };
+-PNAME(mux_gpu_p)		= { "clk_gpu_div", "clk_gpu_np5" };
+ 
+ static struct rockchip_pll_clock px30_pll_clks[] __initdata = {
+ 	[apll] = PLL(pll_rk3328, PLL_APLL, "apll", mux_pll_p,
+@@ -303,17 +303,10 @@ static struct rockchip_clk_branch px30_clk_branches[] __initdata = {
+ 			PX30_CLKGATE_CON(17), 4, GFLAGS),
+ 
+ 	/* PD_GPU */
+-	COMPOSITE_NODIV(0, "clk_gpu_src", mux_4plls_p, 0,
+-			PX30_CLKSEL_CON(1), 6, 2, MFLAGS,
+-			PX30_CLKGATE_CON(0), 8, GFLAGS),
 -	COMPOSITE_NOMUX(0, "clk_gpu_div", "clk_gpu_src", 0,
-+	COMPOSITE_NOMUX(0, "clk_gpu_div", "clk_gpu_src", CLK_SET_RATE_PARENT,
-@@ -311 +312 @@ static struct rockchip_clk_branch px30_clk_branches[] __initdata = {
+-			PX30_CLKSEL_CON(1), 0, 4, DFLAGS,
+-			PX30_CLKGATE_CON(0), 12, GFLAGS),
 -	COMPOSITE_NOMUX_HALFDIV(0, "clk_gpu_np5", "clk_gpu_src", 0,
-+	COMPOSITE_NOMUX_HALFDIV(0, "clk_gpu_np5", "clk_gpu_src", CLK_SET_RATE_PARENT,
+-			PX30_CLKSEL_CON(1), 8, 4, DFLAGS,
+-			PX30_CLKGATE_CON(0), 9, GFLAGS),
+-	COMPOSITE_NODIV(SCLK_GPU, "clk_gpu", mux_gpu_p, CLK_SET_RATE_PARENT,
+-			PX30_CLKSEL_CON(1), 15, 1, MFLAGS,
++	COMPOSITE(0, "clk_gpu_src", mux_4plls_p, 0,
++			PX30_CLKSEL_CON(1), 6, 2, MFLAGS, 0, 4, DFLAGS,
++			PX30_CLKGATE_CON(0), 8, GFLAGS),
++	GATE(SCLK_GPU, "clk_gpu", "clk_gpu_src", 0,
+ 			PX30_CLKGATE_CON(0), 10, GFLAGS),
+ 	COMPOSITE_NOMUX(0, "aclk_gpu", "clk_gpu", CLK_IGNORE_UNUSED,
+ 			PX30_CLKSEL_CON(1), 13, 2, DFLAGS,

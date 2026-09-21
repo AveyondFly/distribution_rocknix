@@ -404,7 +404,6 @@
 
 &dmc {
 	center-supply = <&vdd_logic>;
-	ddr_timing = <&r36max2_ddr_timing>;
 };
 
 &cpu0 {

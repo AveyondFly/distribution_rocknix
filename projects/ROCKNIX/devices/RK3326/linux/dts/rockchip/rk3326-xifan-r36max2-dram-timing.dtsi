@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
-/* DDR timing values shared by the XiFan R36Max2 device family. */
+/* DDR timing values shared by RK3326 R36 clones, XiFan and AISLPC devices. */
 
 / {
 	r36max2_ddr_timing: ddr_timing {
@@ -266,3 +266,6 @@
 	};
 };
 
+&dmc {
+	ddr_timing = <&r36max2_ddr_timing>;
+};

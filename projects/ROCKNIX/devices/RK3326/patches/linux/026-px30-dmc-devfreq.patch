@@ -396,7 +396,7 @@ Signed-off-by: OpenAI Codex <codex@openai.com>
  	int err;
  
  	u32 odt_pd_arg0 = 0;
-@@ -99,12 +377,18 @@
+@@ -99,12 +377,16 @@
  	 * Ensure power-domain transitions don't interfere with ARM Trusted
  	 * Firmware power-domain idling.
  	 */
@@ -404,14 +404,12 @@ Signed-off-by: OpenAI Codex <codex@openai.com>
 -	if (err) {
 -		dev_err(dev, "Failed to block PMU: %d\n", err);
 -		goto out_unlock;
-+	if (!dmcfreq->is_px30) {
-+		err = rockchip_pmu_block();
-+		if (err) {
-+			dev_err(dev, "Failed to block PMU: %d\n", err);
-+			goto out_unlock;
-+		}
-+		pmu_blocked = true;
++	err = rockchip_pmu_block();
++	if (err) {
++		dev_err(dev, "Failed to block PMU: %d\n", err);
++		goto out_unlock;
  	}
++	pmu_blocked = true;
  
 +	if (dmcfreq->is_px30)
 +		goto set_voltage_and_rate;
@@ -990,4 +988,3 @@ Signed-off-by: OpenAI Codex <codex@openai.com>
 +
 +#endif /* __PX30_DMC_TIMING_H */
 +
-

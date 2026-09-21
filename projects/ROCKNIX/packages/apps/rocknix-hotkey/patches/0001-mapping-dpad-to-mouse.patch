@@ -1,0 +1,215 @@
+diff --git a/gptokeyb.cpp b/gptokeyb.cpp
+index fd2d58a..7c41346 100755
+--- a/gptokeyb.cpp
++++ b/gptokeyb.cpp
+@@ -151,6 +151,10 @@ struct
+   bool textinputinteractivetrigger_pressed = false;
+   bool textinputpresettrigger_pressed = false;
+   bool textinputconfirmtrigger_pressed = false;
++  bool dpad_up_pressed = false;
++  bool dpad_down_pressed = false;
++  bool dpad_left_pressed = false;
++  bool dpad_right_pressed = false;
+   bool left_analog_was_up = false;
+   bool left_analog_was_down = false;
+   bool left_analog_was_left = false;
+@@ -259,6 +263,11 @@ struct
+ 
+   bool left_analog_as_mouse = false;
+   bool right_analog_as_mouse = false;
++  bool dpad_as_mouse = false;
++  bool up_as_mouse = false;
++  bool down_as_mouse = false;
++  bool left_as_mouse = false;
++  bool right_as_mouse = false;
+   short left_analog_up = KEY_W;
+   bool left_analog_up_repeat = false;
+   short left_analog_up_modifier = 0;
+@@ -532,6 +541,14 @@ short char_to_keycode(const char* str)
+   return keycode;
+ }
+ 
++bool isMouseMovementValue(const char* value)
++{
++  return strcmp(value, "mouse_movement_up") == 0 ||
++         strcmp(value, "mouse_movement_down") == 0 ||
++         strcmp(value, "mouse_movement_left") == 0 ||
++         strcmp(value, "mouse_movement_right") == 0;
++}
++
+ void initialiseCharacters()
+ {
+   if (textinputinteractive_noautocapitals) {
+@@ -987,7 +1004,10 @@ void readConfigFile(const char* config_file)
+             config.r3 = char_to_keycode(co.value);
+         }
+     } else if (strcmp(co.key, "up") == 0) {
+-        if (strcmp(co.value, "repeat") == 0) {
++        if (isMouseMovementValue(co.value)) {
++            config.up_as_mouse = true;
++            config.dpad_as_mouse = true;
++        } else if (strcmp(co.value, "repeat") == 0) {
+             config.up_repeat = true;
+         } else if (strcmp(co.value, "add_alt") == 0) {
+             config.up_modifier = KEY_LEFTALT;
+@@ -1009,7 +1029,10 @@ void readConfigFile(const char* config_file)
+             config.up_hk = char_to_keycode(co.value);
+         }
+     } else if (strcmp(co.key, "down") == 0) {
+-        if (strcmp(co.value, "repeat") == 0) {
++        if (isMouseMovementValue(co.value)) {
++            config.down_as_mouse = true;
++            config.dpad_as_mouse = true;
++        } else if (strcmp(co.value, "repeat") == 0) {
+             config.down_repeat = true;
+         } else if (strcmp(co.value, "add_alt") == 0) {
+             config.down_modifier = KEY_LEFTALT;
+@@ -1031,7 +1054,10 @@ void readConfigFile(const char* config_file)
+             config.down_hk = char_to_keycode(co.value);
+         }
+     } else if (strcmp(co.key, "left") == 0) {
+-        if (strcmp(co.value, "repeat") == 0) {
++        if (isMouseMovementValue(co.value)) {
++            config.left_as_mouse = true;
++            config.dpad_as_mouse = true;
++        } else if (strcmp(co.value, "repeat") == 0) {
+             config.left_repeat = true;
+         } else if (strcmp(co.value, "add_alt") == 0) {
+             config.left_modifier = KEY_LEFTALT;
+@@ -1053,7 +1079,10 @@ void readConfigFile(const char* config_file)
+             config.left_hk = char_to_keycode(co.value);
+         }
+     } else if (strcmp(co.key, "right") == 0) {
+-        if (strcmp(co.value, "repeat") == 0) {
++        if (isMouseMovementValue(co.value)) {
++            config.right_as_mouse = true;
++            config.dpad_as_mouse = true;
++        } else if (strcmp(co.value, "repeat") == 0) {
+             config.right_repeat = true;
+         } else if (strcmp(co.value, "add_alt") == 0) {
+             config.right_modifier = KEY_LEFTALT;
+@@ -1192,7 +1221,15 @@ void readConfigFile(const char* config_file)
+       config.key_repeat_delay = atoi(co.value);
+     } else if (strcmp(co.key, "repeat_interval") == 0) {
+       config.key_repeat_interval = atoi(co.value);
+-    } 
++    } else if (strcmp(co.key, "dpad_as_mouse") == 0) {
++      if (strcmp(co.value, "true") == 0 || strcmp(co.value, "1") == 0) {
++        config.dpad_as_mouse = true;
++        config.up_as_mouse = true;
++        config.down_as_mouse = true;
++        config.left_as_mouse = true;
++        config.right_as_mouse = true;
++      }
++    }
+   }
+ }
+ 
+@@ -1423,6 +1460,44 @@ void emitMouseMotion(int x, int y)
+   }
+ }
+ 
++void updateFakeMouseMotion()
++{
++  int x = 0;
++  int y = 0;
++  int scale = config.fake_mouse_scale;
++  if (scale == 0) {
++    scale = 1;
++  }
++
++  if (config.left_analog_as_mouse) {
++    x += state.current_left_analog_x / scale;
++    y += state.current_left_analog_y / scale;
++  } else if (config.right_analog_as_mouse) {
++    x += state.current_right_analog_x / scale;
++    y += state.current_right_analog_y / scale;
++  }
++
++  if (config.dpad_as_mouse) {
++    // Match full analog deflection so mouse_scale applies the same way.
++    const int dpad_axis = 32767;
++    if (config.left_as_mouse && state.dpad_left_pressed) {
++      x -= dpad_axis / scale;
++    }
++    if (config.right_as_mouse && state.dpad_right_pressed) {
++      x += dpad_axis / scale;
++    }
++    if (config.up_as_mouse && state.dpad_up_pressed) {
++      y -= dpad_axis / scale;
++    }
++    if (config.down_as_mouse && state.dpad_down_pressed) {
++      y += dpad_axis / scale;
++    }
++  }
++
++  state.mouseX = x;
++  state.mouseY = y;
++}
++
+ void handleAnalogTrigger(bool is_triggered, bool& was_triggered, int key, int modifier=0)
+ {
+   if (is_triggered && !was_triggered) {
+@@ -1449,7 +1524,7 @@ void setupFakeKeyboardMouseDevice(uinput_user_dev& device, int fd)
+   ioctl(fd, UI_SET_EVBIT, EV_SYN);
+ 
+   // Fake mouse (if configured)
+-  if (config.left_analog_as_mouse || config.right_analog_as_mouse) {
++  if (config.left_analog_as_mouse || config.right_analog_as_mouse || config.dpad_as_mouse) {
+     ioctl(fd, UI_SET_EVBIT, EV_REL);
+     ioctl(fd, UI_SET_RELBIT, REL_X);
+     ioctl(fd, UI_SET_RELBIT, REL_Y);
+@@ -1733,6 +1808,9 @@ bool handleEvent(const SDL_Event& event)
+             } else if (state.left_hk_was_pressed && !(is_pressed)) {
+               emitKey(config.left_hk, is_pressed, config.left_hk_modifier);
+               state.left_hk_was_pressed = false;
++            } else if (config.left_as_mouse) {
++              state.dpad_left_pressed = is_pressed;
++              updateFakeMouseMotion();
+             } else {
+               emitKey(config.left, is_pressed, config.left_modifier);
+               if ((config.left_repeat && is_pressed && (state.key_to_repeat == 0)) || (!(is_pressed) && (state.key_to_repeat == config.left))){
+@@ -1753,6 +1831,9 @@ bool handleEvent(const SDL_Event& event)
+             } else if (state.up_hk_was_pressed && !(is_pressed)) {
+               emitKey(config.up_hk, is_pressed, config.up_hk_modifier);
+               state.up_hk_was_pressed = false;
++            } else if (config.up_as_mouse) {
++              state.dpad_up_pressed = is_pressed;
++              updateFakeMouseMotion();
+             } else {
+               emitKey(config.up, is_pressed, config.up_modifier);
+               if ((config.up_repeat && is_pressed && (state.key_to_repeat == 0)) || (!(is_pressed) && (state.key_to_repeat == config.up))){
+@@ -1773,6 +1854,9 @@ bool handleEvent(const SDL_Event& event)
+             } else if (state.right_hk_was_pressed && !(is_pressed)) {
+               emitKey(config.right_hk, is_pressed, config.right_hk_modifier);
+               state.a_hk_was_pressed = false;
++            } else if (config.right_as_mouse) {
++              state.dpad_right_pressed = is_pressed;
++              updateFakeMouseMotion();
+             } else {
+               emitKey(config.right, is_pressed, config.right_modifier);
+               if ((config.right_repeat && is_pressed && (state.key_to_repeat == 0)) || (!(is_pressed) && (state.key_to_repeat == config.right))){
+@@ -1793,6 +1877,9 @@ bool handleEvent(const SDL_Event& event)
+             } else if (state.down_hk_was_pressed && !(is_pressed)) {
+               emitKey(config.down_hk, is_pressed, config.down_hk_modifier);
+               state.a_hk_was_pressed = false;
++            } else if (config.down_as_mouse) {
++              state.dpad_down_pressed = is_pressed;
++              updateFakeMouseMotion();
+             } else {
+               emitKey(config.down, is_pressed, config.down_modifier);
+               if ((config.down_repeat && is_pressed && (state.key_to_repeat == 0)) || (!(is_pressed) && (state.key_to_repeat == config.down))){
+@@ -2206,11 +2293,9 @@ bool handleEvent(const SDL_Event& event)
+ 
+         // fake mouse
+         if (config.left_analog_as_mouse && left_axis_movement) {
+-          state.mouseX = state.current_left_analog_x / config.fake_mouse_scale;
+-          state.mouseY = state.current_left_analog_y / config.fake_mouse_scale;
++          updateFakeMouseMotion();
+         } else if (config.right_analog_as_mouse && right_axis_movement) {
+-          state.mouseX = state.current_right_analog_x / config.fake_mouse_scale;
+-          state.mouseY = state.current_right_analog_y / config.fake_mouse_scale;
++          updateFakeMouseMotion();
+         } else {
+           // Analogs trigger keys
+           if (!(state.textinputinteractive_mode_active)) {

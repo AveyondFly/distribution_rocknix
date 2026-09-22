@@ -33,6 +33,9 @@ post_install() {
   if [ "${DEVICE}" = "RK3326" -o "${DEVICE}" = "RK3566" -o "${DEVICE}" = "RK356X" ]; then
     enable_service volume-fixup.service
   fi
+  if [ "${DEVICE}" = "RK3566" ]; then
+    enable_service rgb20sx-mono-audio.service
+  fi
   if [ "${DEVICE}" = "RK356X" ]; then
     enable_service rk915-load.service
   fi

@@ -1,0 +1,62 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+
+MODEL_PATH="/sys/firmware/devicetree/base/model"
+EXPECTED_MODEL="Powkiddy RGB20SX"
+MONO_SINK="rgb20sx_mono_speaker"
+TARGET_SINK="alsa_output._sys_devices_platform_sound_sound_card1.HiFi__Headphones__sink"
+
+if [ ! -r "${MODEL_PATH}" ] ||
+   [ "$(tr -d '\000' <"${MODEL_PATH}")" != "${EXPECTED_MODEL}" ]; then
+  exit 0
+fi
+
+# Wait for WirePlumber to expose the RK817 sink before creating the loopback.
+attempt=0
+while ! pw-cli info "${TARGET_SINK}" >/dev/null 2>&1; do
+  attempt=$((attempt + 1))
+  if [ "${attempt}" -ge 10 ]; then
+    echo "RGB20SX RK817 sink did not appear" >&2
+    exit 1
+  fi
+  sleep 1
+done
+
+pw-loopback \
+  --name "${MONO_SINK}" \
+  --channels 1 \
+  --channel-map '[ MONO ]' \
+  --playback "${TARGET_SINK}" \
+  --capture-props "media.class=Audio/Sink node.name=${MONO_SINK} node.description=RGB20SX-Mono-Speaker" \
+  --playback-props 'node.passive=true' &
+loopback_pid=$!
+
+stop_loopback() {
+  kill "${loopback_pid}" 2>/dev/null
+  wait "${loopback_pid}" 2>/dev/null
+}
+trap stop_loopback HUP INT TERM EXIT
+
+# The loopback client starts asynchronously. Do not select it until its sink exists.
+attempt=0
+while ! pw-cli info "${MONO_SINK}" >/dev/null 2>&1; do
+  if ! kill -0 "${loopback_pid}" 2>/dev/null; then
+    wait "${loopback_pid}"
+    exit $?
+  fi
+
+  attempt=$((attempt + 1))
+  if [ "${attempt}" -ge 10 ]; then
+    echo "RGB20SX mono sink did not appear" >&2
+    exit 1
+  fi
+  sleep 1
+done
+
+pw-metadata -n default 0 default.configured.audio.sink \
+  "{ \"name\": \"${MONO_SINK}\" }" Spa:String:JSON
+pw-metadata -n default 0 default.audio.sink \
+  "{ \"name\": \"${MONO_SINK}\" }" Spa:String:JSON
+
+wait "${loopback_pid}"

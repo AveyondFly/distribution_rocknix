@@ -222,6 +222,19 @@
 	};
 };
 
+/*
+ * The shared dtsi names RK817 LDO8 vcc1v8_dvp and leaves it off at 1.8 V.
+ * On NGP45H this rail is the 3.3 V IO domain for pads from GPIO1_C1 upward,
+ * which is sdmmc1 (TF2) plus the MODE, X, Y and shoulder buttons. The vendor
+ * tree keeps it always on at 3.3 V.
+ */
+&vcc1v8_dvp {
+	regulator-min-microvolt = <3300000>;
+	regulator-max-microvolt = <3300000>;
+	regulator-always-on;
+	regulator-boot-on;
+};
+
 &sdmmc0 {
 	/delete-property/ vmmc-supply;
 	/delete-property/ sd-uhs-sdr104;

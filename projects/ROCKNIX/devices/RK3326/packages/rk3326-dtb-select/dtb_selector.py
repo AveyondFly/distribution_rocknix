@@ -257,6 +257,7 @@ ALL_DEVICES: Dict[str, DtbEntry] = {
     "稀范科技 RF40H": DtbEntry("rk3326-xifan-rf40h.dtb", 101),
     "稀范科技 RF45V": DtbEntry("rk3326-xifan-rf45v.dtb", 202),
     "稀范科技 XF45V": DtbEntry("rk3326-xifan-xf45v.dtb", 202),
+    "稀范科技 RF45H": DtbEntry("rk3326-xifan-rf45h.dtb", 101),
 
     # 安伯尼克
     "安伯尼克 RG351M": DtbEntry("rk3326-anbernic-rg351m.dtb", 101),
@@ -423,6 +424,7 @@ DEVICE_TRANSLATIONS = {
     "稀范科技 RF40H": "Xifan RF40H",
     "稀范科技 RF45V": "Xifan RF45V",
     "稀范科技 XF45V": "Xifan XF45V",
+    "稀范科技 RF45H": "Xifan RF45H",
 
     # 安伯尼克
     "安伯尼克 RG351M": "Anbernic RG351M",

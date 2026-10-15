@@ -51,11 +51,13 @@ jobs:
           if [ -f "$LOG" ]; then
             grep -E '^Cannot get ' "$LOG" | sort -u >> failed-sources.txt || true
           fi
+          # Only package archives live at sources/<pkg>/<file>. Git checkouts
+          # contain their own nested tarballs and must not be treated as downloads.
           while IFS= read -r -d '' file; do
             if [ ! -s "$file" ] || [ ! -f "${file}.sha256" ]; then
               echo "INVALID leftover $(basename "$file") size=$(wc -c < "$file" | tr -d ' ') path=$file" >> failed-sources.txt
             fi
-          done < <(find sources/ -type f \( -name '*.tar.gz' -o -name '*.tar.xz' -o -name '*.tgz' -o -name '*.tar.bz2' -o -name '*.deb' -o -name '*.tar.zst' \) -print0)
+          done < <(find sources -mindepth 2 -maxdepth 2 -type f \( -name '*.tar.gz' -o -name '*.tar.xz' -o -name '*.tgz' -o -name '*.tar.bz2' -o -name '*.deb' -o -name '*.tar.zst' \) -print0)
           if [ -s failed-sources.txt ]; then
             echo "Failed or invalid sources:"
             cat failed-sources.txt

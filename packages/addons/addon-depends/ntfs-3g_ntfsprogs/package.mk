@@ -7,7 +7,9 @@ PKG_VERSION="2022.10.3"
 PKG_SHA256="f20e36ee68074b845e3629e6bced4706ad053804cbaf062fbae60738f854170c"
 PKG_LICENSE="GPL"
 PKG_SITE="https://github.com/tuxera/ntfs-3g"
-PKG_URL="https://tuxera.com/opensource/${PKG_NAME}-${PKG_VERSION}.tgz"
+# tuxera.com 301s to www.tuxera.com, which Cloudflare 403s for wget.
+# The file itself is served from download.tuxera.com.
+PKG_URL="https://download.tuxera.com/opensource/${PKG_NAME}-${PKG_VERSION}.tgz"
 PKG_DEPENDS_TARGET="toolchain fuse libgcrypt"
 PKG_LONGDESC="A NTFS driver with read and write support."
 PKG_TOOLCHAIN="autotools"

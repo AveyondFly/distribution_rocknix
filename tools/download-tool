@@ -27,7 +27,9 @@ esac
 declare -A fetched_packages
 
 for package in $(find projects/ROCKNIX/packages/ -name package.mk); do
-  if [[ "$package" == *addons* && -z "$ALL_PACKAGES" ]]; then
+  # addon-depends are shared by the main image (for example ntfs-3g_ntfsprogs).
+  # Optional addon packages stay behind -a/--all.
+  if [[ "$package" == *addons* && "$package" != *addon-depends* && -z "$ALL_PACKAGES" ]]; then
     continue
   fi
   name=$(basename "$(dirname "$package")")
@@ -36,7 +38,7 @@ for package in $(find projects/ROCKNIX/packages/ -name package.mk); do
 done
 
 for package in $(find packages/ -name package.mk); do
-  if [[ "$package" == *addons* && -z "$ALL_PACKAGES" ]]; then
+  if [[ "$package" == *addons* && "$package" != *addon-depends* && -z "$ALL_PACKAGES" ]]; then
     continue
   fi
   name=$(basename "$(dirname "$package")")

@@ -5,7 +5,6 @@
 . /etc/profile
 . /etc/os-release
 
-MOUNT_GAMES=$(get_setting system.automount)
 SELECTED_STORAGE=$(get_setting system.games.storage)
 ROMS_PATH="/storage/roms"
 INTERNAL_PATH="/storage/games-internal"
@@ -227,27 +226,6 @@ activate_selected_storage() {
   create_game_dirs "${SOURCE_PATH}"
 }
 
-eject_external_storage() {
-  local ACTIVE_STORAGE
-
-  if [ "${PREVIOUS_STORAGE}" = "external" ]
-  then
-    unmount_path "${ROMS_PATH}"
-  fi
-  unmount_path "${EXTERNAL_PATH}"
-
-  if [ "${PREVIOUS_STORAGE}" = "external" ] && is_mounted "${INTERNAL_PATH}"
-  then
-    /usr/bin/busybox mount --bind "${INTERNAL_PATH}" "${ROMS_PATH}"
-    ACTIVE_STORAGE="internal"
-  elif [ "${PREVIOUS_STORAGE}" != "external" ]
-  then
-    ACTIVE_STORAGE="${PREVIOUS_STORAGE}"
-  fi
-
-  record_active_storage "${ACTIVE_STORAGE}"
-}
-
 find_and_mount_games() {
   local FLASH_DEVICE SYSTEM_DISK DEVICE ROOT_DEVICE SIZE STORAGE
 
@@ -299,13 +277,6 @@ find_and_mount_games() {
   done
 }
 
-case "$1" in
-  eject-external)
-    eject_external_storage
-    exit 0
-    ;;
-esac
-
 load_modules
 
 # Always remove the compatibility bind first, followed by both source paths.
@@ -314,18 +285,6 @@ unmount_path "${INTERNAL_PATH}"
 unmount_path "${EXTERNAL_PATH}"
 
 rm -f /storage/.ms_supported /storage/.ms_unsupported
-
-if [[ ! "${MOUNT_GAMES}" =~ ^[0-9]+$ ]]
-then
-  set_setting system.automount 1
-  MOUNT_GAMES=1
-fi
-
-if [ "${MOUNT_GAMES}" = "0" ]
-then
-  record_active_storage ""
-  exit 0
-fi
 
 find_and_mount_games
 activate_selected_storage

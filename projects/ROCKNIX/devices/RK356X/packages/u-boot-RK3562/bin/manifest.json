@@ -1,0 +1,55 @@
+{
+  "origin": "NGP45H factory boot chain; TF and eMMC copies were byte-identical for DDR/SPL and FIT",
+  "uboot_version": "2017.09-ge3c4ce0-dirty #lxj (Jul 11 2026 - 16:40:19 +0800)",
+  "spl_version": "2017.09 (Sep 28 2025 - 12:22:12)",
+  "tested_models": [
+    "Xifan NGP45H"
+  ],
+  "other_rk3562_models": "Cross-model compatibility not established; factory-bootloader synchronization must be excluded during validation.",
+  "layout": {
+    "sector_bytes": 512,
+    "idb_primary_sector": 64,
+    "idb_backup_sector": 1088,
+    "fit_primary_sector": 16384,
+    "fit_backup_sector": 20480,
+    "system_start_sector": 32768
+  },
+  "bootloader_area": {
+    "bytes": 8388608,
+    "preserved_disk_sector_range_start_end": [
+      64,
+      2112
+    ],
+    "remaining_bytes": "zero-filled; no partition table or device-specific Vendor Storage"
+  },
+  "fit": {
+    "original_sha256": "5210cbbb5a590d5774ec4f3fc09fe213f9f27c19669912ca9b013231d4cc56aa",
+    "patched_sha256": "f12dfdf5dbe52bfbcb52a3fe6d2c554b603d0183afacb1e1df6c1cdc658d410e",
+    "old_bootcmd": "boot_android ${devtype} ${devnum};boot_fit;bootrkp;run distro_bootcmd;",
+    "new_bootcmd": "run distro_bootcmd;boot_fit;bootrkp;boot_android ${devtype} ${devnum};",
+    "env_offset": 955203,
+    "env_size": 3773,
+    "uboot_hash_offset": 396,
+    "all_component_hashes_verified": true,
+    "halves_identical": true,
+    "other_environment_unchanged": true,
+    "other_components_unchanged": true
+  },
+  "generation": {
+    "idb": "Place the two 512 KiB IDB slots from a working NGP45H disk at their original LBA 64 and 1088 in an otherwise zero-filled 8 MiB area.",
+    "fit": "Change only bootcmd in the original NGP45H FIT environment to new_bootcmd, update the uboot component SHA-256, and mirror the first 2 MiB into the second copy. Verify every component hash in both copies."
+  },
+  "sha256": {
+    "bootloader_area.img": "c09a7afd551eb7beba7c470d6149223e36b4e2fea585af712c85ff9a247eb046",
+    "uboot_partition.img": "f12dfdf5dbe52bfbcb52a3fe6d2c554b603d0183afacb1e1df6c1cdc658d410e"
+  },
+  "validation_notes": {
+    "Xifan NGP45H": "TF-first FIT was written and verified before the successful boot test.",
+    "AISLPC RG43H Pro": "The same system card booted, but subsequent live inspection found its TF DDR/SPL and FIT identical to its own stock eMMC, with bootcmd unchanged. This does not establish that NGP45H TF-first boot code is compatible with RG43H Pro."
+  },
+  "runtime_update_policy": {
+    "new_images": "Use the bundled NGP45H TF-first boot chain as the default initial bootloader.",
+    "first_boot_and_system_updates": "Sync the device-specific stock DDR/SPL and U-Boot FIT from eMMC together with its factory DTB and boot assets. Do not mix a retained U-Boot with assets meant for a different hardcoded DTB filename.",
+    "bootcmd_after_sync": "Restored from the device eMMC unchanged; the bundled TF-first bootcmd is not preserved by this stock sync."
+  }
+}

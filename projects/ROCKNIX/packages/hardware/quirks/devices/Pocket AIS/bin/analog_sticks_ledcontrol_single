@@ -1,0 +1,69 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+
+# Pocket AIS: GPIO0_C7 supplies the stick LED MCU; UART1 sends its presets.
+UART_DEV=/dev/ttyS1
+LED_PWR=/sys/kernel/debug/regulator/vcc-led/enable
+COLOR=$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')
+
+case "$COLOR" in
+  green) mode=1 ;;
+  blue) mode=2 ;;
+  red) mode=3 ;;
+  cyan) mode=4 ;;
+  orange) mode=5 ;;
+  purple) mode=6 ;;
+  white) mode=7 ;;
+  flow) mode=8 ;;
+  off) mode=9 ;;
+  breath_green) mode=17 ;;
+  breath_blue) mode=18 ;;
+  breath_red) mode=19 ;;
+  breath_cyan) mode=20 ;;
+  breath_orange) mode=21 ;;
+  breath_purple) mode=22 ;;
+  breath_white) mode=23 ;;
+  breath) mode=24 ;;
+  list)
+    printf '%s\n' off red green blue orange purple cyan white \
+      breath_red breath_green breath_blue breath_orange breath_purple \
+      breath_cyan breath_white breath flow
+    exit 0
+    ;;
+  *)
+    echo "Unsupported Pocket AIS stick LED preset: ${1:-unset}" >&2
+    exit 2
+    ;;
+esac
+
+stick_led_pwr() {
+  # debugfs counts enable references. Avoid leaking a reference on each
+  # color change, or disabling the same reference twice when already off.
+  if [ -w "$LED_PWR" ]; then
+    [ "$(cat "$LED_PWR")" = "$1" ] || echo "$1" > "$LED_PWR"
+    return
+  fi
+
+  for reg in /sys/class/regulator/regulator.*; do
+    [ "$(cat "$reg/name" 2>/dev/null)" = vcc-led ] || continue
+    if [ -w "$reg/state" ]; then
+      if [ "$1" = 1 ]; then state=enabled; else state=disabled; fi
+      [ "$(cat "$reg/state")" = "$state" ] || echo "$state" > "$reg/state"
+      return
+    elif [ -w "$reg/enable" ]; then
+      [ "$(cat "$reg/enable")" = "$1" ] || echo "$1" > "$reg/enable"
+      return
+    fi
+  done
+  echo 'Pocket AIS stick LED power control is unavailable' >&2
+  return 1
+}
+
+if [ "$COLOR" = off ]; then
+  mcu_led "$UART_DEV" chgmode "$mode" 1 || exit 1
+  stick_led_pwr 0
+else
+  stick_led_pwr 1 || exit 1
+  mcu_led "$UART_DEV" chgmode "$mode" 1
+fi

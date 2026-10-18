@@ -1,0 +1,58 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+
+# Pocket AIS power LED: GPIO3_A0/A1 (96/97).
+# 0/0 = off, 1/0 = green, 0/1 = red, 1/1 = amber (verified on hardware).
+ACTION=${1:-}
+ACTION=${ACTION,,}
+if [ "$ACTION" = list ]; then
+  printf '%s\n' default off green red amber
+  exit 0
+fi
+
+. /etc/profile.d/001-functions
+
+LED_STATUS=$(get_setting led.color)
+LED_STATUS=${LED_STATUS,,}
+case "$ACTION" in
+  default) color=green ;;
+  off|green|red|amber) color=$ACTION ;;
+  charging)
+    color=red
+    [ "$LED_STATUS" != off ] || color=off
+    ;;
+  discharging|brightness|"") color=${LED_STATUS:-green} ;;
+  poweroff) color=off ;;
+  *)
+    echo "Unsupported Pocket AIS power LED command: $ACTION" >&2
+    exit 2
+    ;;
+esac
+
+case "$color" in
+  off) green=0; red=0 ;;
+  red) green=0; red=1 ;;
+  amber) green=1; red=1 ;;
+  *) green=1; red=0 ;;
+esac
+if [ "$(get_setting powerled.disabled)" = 1 ]; then
+  green=0
+  red=0
+fi
+
+for gpio in 96 97; do
+  if [ ! -d "/sys/class/gpio/gpio${gpio}" ]; then
+    echo "$gpio" >/sys/class/gpio/export || exit 1
+  fi
+  if [ "$(cat "/sys/class/gpio/gpio${gpio}/direction")" != out ]; then
+    echo low >"/sys/class/gpio/gpio${gpio}/direction" || exit 1
+  fi
+done
+echo "$green" >/sys/class/gpio/gpio96/value || exit 1
+echo "$red" >/sys/class/gpio/gpio97/value || exit 1
+
+case "$ACTION" in
+  default) del_setting led.color ;;
+  off|green|red|amber) set_setting led.color "$ACTION" ;;
+esac

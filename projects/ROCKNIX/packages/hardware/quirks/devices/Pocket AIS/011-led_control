@@ -2,10 +2,11 @@
 # SPDX-License-Identifier: GPL-2.0
 # Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
 
-# Override the RK356X platform defaults until Pocket AIS LEDs are verified.
+# Power/charging LEDs use GPIO3_A0/A1; stick LEDs use a separate UART MCU.
 cat <<'EOF' >/storage/.config/profile.d/011-led_control
-DEVICE_LED_CONTROL="false"
-DEVICE_LED_CHARGING="false"
-DEVICE_ANALOG_STICKS_LED_SINGLE="false"
+DEVICE_LED_CONTROL="true"
+DEVICE_LED_CHARGING="true"
+DEVICE_LED_BRIGHTNESS="false"
+DEVICE_ANALOG_STICKS_LED_SINGLE="true"
 DEVICE_ANALOG_STICKS_LED_CONTROL="false"
 EOF

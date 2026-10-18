@@ -1,0 +1,142 @@
+--- a/cpp/sdl2/gkdminiplus.cpp
++++ b/cpp/sdl2/gkdminiplus.cpp
+@@ -24,6 +24,8 @@
+ */
+ 
+ #include <iostream>
++#include <cstdio>
++#include <unistd.h>
+ #include <pthread.h>
+ #include <SDL2/SDL.h>
+ #include <SDL2/SDL_ttf.h>
+@@ -56,6 +58,9 @@
+ #define KEY_MENU SDLK_j
+ 
+ pthread_t t_capturing;
++
++// Keep the control pipe separate from diagnostics emitted by SDL/Mali.
++static FILE *event_output = NULL;
+ 
+ double additional_scale = 1;
+ double overlay_scale = 1;
+@@ -173,7 +178,7 @@
+ 	
+ 	//std::cout<<"sendkey:"<<key<<" pressed:"<<pressed<<std::endl;
+ 	
+-	fwrite(&bytes, sizeof(char), 5, stderr);
++	fwrite(&bytes, sizeof(char), 5, event_output);
+ }
+ 
+ void sendCommand(int cmd, int param1, int param2)
+@@ -184,8 +189,8 @@
+ 	bytes[2] = (char)(param1 & 0xFF);
+ 	bytes[3] = (char)((param2 >> 8) & 0xFF);
+ 	bytes[4] = (char)(param2 & 0xFF);
+-	fwrite(&bytes, sizeof(char), 5, stderr);
+-	fflush(stderr);
++	fwrite(&bytes, sizeof(char), 5, event_output);
++	fflush(event_output);
+ }
+ 
+ bool sendQuitEvent()
+@@ -609,7 +614,7 @@
+ {
+ 	capturing = false;
+ 	sendKey(-1, true);
+-	fflush(stderr);
++	fflush(event_output);
+ }
+ 
+ void *startCapturing(void *args)
+@@ -664,7 +669,7 @@
+ 
+ 				if (key == KEY_SNAP && event.type == SDL_KEYDOWN) {
+ 					sendKey(-2, true);
+-					fflush(stderr);
++					fflush(event_output);
+ 					continue;
+ 				}
+ 				else if(key==KEY_RIGHT)//A=右键
+@@ -711,7 +716,7 @@
+ 					if(use_mouse)
+ 					{
+ 						sendKey(key, event.type == SDL_KEYDOWN);
+-						fflush(stderr);
++						fflush(event_output);
+ 						continue;
+ 					}
+ 					
+@@ -881,18 +886,38 @@
+ 
+ 				break;
+ 			}
+-			fflush(stderr);
++			fflush(event_output);
+ 			
+ 			//SDL_Delay(20);
+ 		}
+ 	}
+-	fflush(stderr);
++	fflush(event_output);
+ 	pthread_exit(NULL);
+ }
+ 
+ /*********************************************************************** Main */
+ int main(int argc, char* argv[])
+ {
++	// Java reads the original stderr pipe as binary events. Save that pipe,
++	// then route library stderr to the inherited diagnostic stdout instead.
++	int event_fd = dup(STDERR_FILENO);
++	if (event_fd < 0) {
++		perror("Unable to duplicate control pipe");
++		return 1;
++	}
++	event_output = fdopen(event_fd, "wb");
++	if (!event_output) {
++		close(event_fd);
++		perror("Unable to open control pipe");
++		return 1;
++	}
++	setvbuf(event_output, NULL, _IONBF, 0);
++	if (dup2(STDOUT_FILENO, STDERR_FILENO) < 0) {
++		perror("Unable to redirect SDL diagnostics");
++		fclose(event_output);
++		return 1;
++	}
++
+ 	int c = 0;
+ 	string bg_image = "";
+ 
+--- a/src/org/recompile/freej2me/Anbu.java
++++ b/src/org/recompile/freej2me/Anbu.java
+@@ -527,7 +527,10 @@
+ 					argsList.add(String.valueOf(useFlag));
+ 				}
+ 			
+-				proc = new ProcessBuilder(argsList).start();
++				// Drain diagnostics independently of the binary event pipe.
++				proc = new ProcessBuilder(argsList)
++					.redirectOutput(ProcessBuilder.Redirect.INHERIT)
++					.start();
+ 
+ 				//标准输出流，从接口获取用户的按键输入
+ 				//keys = proc.getInputStream(); //  miyoo mini/x64-linux
+@@ -637,13 +640,17 @@
+ 									{
+ 										int newW = ((din[1]<<8)&0xFF00) | (din[2]&0x00FF);
+ 										int newH = ((din[3]<<8)&0xFF00) | (din[4]&0x00FF);
+-										if (newW > 0 && newH > 0)
++										if (newW > 0 && newW <= 2048 && newH > 0 && newH <= 2048)
+ 										{
+ 											lcdWidth = newW;
+ 											lcdHeight = newH;
+ 											Mobile.getPlatform().resizeLCD(newW, newH);
+ 											System.out.println("Resolution: " + newW + "x" + newH);
+ 											saveGameConfig();
++										}
++										else
++										{
++											System.err.println("Ignoring invalid SDL resolution: " + newW + "x" + newH);
+ 										}
+ 									}
+ 									else if (cmd == 1) //设置机种

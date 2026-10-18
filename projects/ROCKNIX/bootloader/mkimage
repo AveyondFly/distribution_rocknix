@@ -77,11 +77,18 @@ mkimage_extlinux() {
       boot_args="boot=UUID=${UUID_SYSTEM} disk=UUID=${UUID_STORAGE}"
     fi
 
+    local extra_cmdline="${EXTRA_CMDLINE}"
+    if [ "${DEVICE}" = "RK356X" ] && [ "${SUBDEVICE}" = "RK3562" ]; then
+      # The RK3562 BSP exposes its debug UART through the FIQ debugger.
+      extra_cmdline="${extra_cmdline//console=ttyS2,1500000/console=ttyFIQ0}"
+      extra_cmdline="${extra_cmdline//systemd.debug_shell=ttyS2/systemd.debug_shell=ttyFIQ0}"
+    fi
+
     cat << EOF > "${IMG_TMP}/extlinux/extlinux.conf"
 LABEL ${DISTRO}
   LINUX /${KERNEL_NAME}
   ${fdt_type} /$(get_fdt)
-  APPEND ${boot_args} ${EXTRA_CMDLINE}
+  APPEND ${boot_args} ${extra_cmdline}
 EOF
 
     echo "image: copying extlinux.conf..."

@@ -11,6 +11,12 @@ PKG_TOOLCHAIN="manual"
 PKG_EMUS="amiberry flycast-sa flycast2022-sa gzdoom-sa hatarisa hypseus-singe moonlight mupen64plus-sa openbor openbor-ff free-j2me pico-8 ppsspp-sa vice-sa wine cpymo mrp-sa krkr2-sa eka2l1-sa onscripter-sa ruffle-sa"
 EMUS_32BIT=""
 
+case "${ARCH}" in
+  aarch64|x86_64)
+    PKG_EMUS+=" openbor_latest"
+    ;;
+esac
+
 PKG_RETROARCH="core-info libretro-database retroarch retroarch-assets retroarch-joypads retroarch-overlays slang-shaders"
 
 LIBRETRO_CORES="81-lr a5200-lr arduous-lr atari800-lr b2-lr beetle-gba-lr beetle-lynx-lr beetle-ngp-lr beetle-pce-lr beetle-pce-fast-lr    \
@@ -967,6 +973,11 @@ makeinstall_target() {
   ### OpenBOR
   add_emu_core openbor OpenBOR OpenBOR true
   add_emu_core openbor OpenBOR OpenBOR-ff false
+  case "${ARCH}" in
+    aarch64|x86_64)
+      add_emu_core openbor OpenBOR OpenBOR-latest false
+      ;;
+  esac
   add_es_system openbor
 
   ### EBook

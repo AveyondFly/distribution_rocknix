@@ -1,0 +1,42 @@
+From: ROCKNIX
+Subject: [PATCH] Fix CMake paths and scope test-source exclusion
+
+Use source-relative locations for version generation and release resources.
+Match test paths only below engine/source, so a parent directory named
+openbor_latest does not cause every core source to be excluded.
+
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -54,7 +54,7 @@
+ add_custom_target(VersionInfo ALL
+   COMMAND bash version.sh
+   COMMENT "Generating engine/version.h"
+-  WORKING_DIRECTORY ../engine
++  WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/engine"
+ )
+ 
+ # Collect Source Files
+@@ -67,7 +67,7 @@
+ file(GLOB         SRC_LOADGL "engine/sdl/loadgl.*")
+ 
+ # Exclude GFX & Tests
+-list(FILTER SRC_CORE EXCLUDE REGEX ".*test*" )
++list(FILTER SRC_CORE EXCLUDE REGEX "/engine/source/.*test" )
+ list(FILTER SRC_CORE EXCLUDE REGEX "engine/source/gfxlib/.*" )
+ list(FILTER SRC_CORE EXCLUDE REGEX "engine/source/webmlib/.*" )
+ list(FILTER SRC_SDL EXCLUDE REGEX "engine/sdl/.*gl.*" )
+@@ -233,10 +233,10 @@
+ # Distribution Preperation
+ add_custom_command(TARGET ${PROJECT_NAME}
+   POST_BUILD
+-  COMMAND cp -a ../COMPILING.md ../engine/releases/COMPILING.txt
+-  COMMAND cp -a ../engine/LICENSE ../engine/releases/LICENSE.txt
+-  COMMAND cp -a ../engine/README ../engine/releases/README.txt
+-  COMMAND cp -a ../engine/translation.txt ../engine/releases/
++  COMMAND cp -a "${CMAKE_CURRENT_SOURCE_DIR}/COMPILING.md" "${CMAKE_CURRENT_SOURCE_DIR}/engine/releases/COMPILING.txt"
++  COMMAND cp -a "${CMAKE_CURRENT_SOURCE_DIR}/engine/LICENSE" "${CMAKE_CURRENT_SOURCE_DIR}/engine/releases/LICENSE.txt"
++  COMMAND cp -a "${CMAKE_CURRENT_SOURCE_DIR}/engine/README" "${CMAKE_CURRENT_SOURCE_DIR}/engine/releases/README.txt"
++  COMMAND cp -a "${CMAKE_CURRENT_SOURCE_DIR}/engine/translation.txt" "${CMAKE_CURRENT_SOURCE_DIR}/engine/releases/"
+ )
+ 
+ # Debug CMake Variables

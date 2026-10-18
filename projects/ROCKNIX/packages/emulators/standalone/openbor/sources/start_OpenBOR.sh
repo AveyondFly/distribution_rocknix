@@ -26,16 +26,21 @@ pakname=$(basename "$1")
 pakname="${pakname%.*}"
 
 CONFIGDIR="/storage/openbor"
+if [ "${OB}" = "OpenBOR-latest" ]; then
+  CONFIGDIR="/storage/openbor_latest"
+fi
 PAKS="${CONFIGDIR}/Paks"
 SAVES="${CONFIGDIR}/Saves"
 SCREENSHOTS="${CONFIGDIR}/ScreenShots"
-
-ln -s /roms/screenshots $SCREENSHOTS
 
 # Make sure the folders exists
   mkdir -p "${CONFIGDIR}"
   mkdir -p "${PAKS}"
   mkdir -p "${SAVES}"
+
+if [ ! -e "${SCREENSHOTS}" ] && [ ! -L "${SCREENSHOTS}" ]; then
+  ln -s /roms/screenshots "${SCREENSHOTS}"
+fi
 
 # Clear PAKS folder to avoid getting the launcher on next run
   rm -rf ${PAKS}/*
@@ -48,8 +53,9 @@ for f in "$1".0*; do
   fi
 done
 
-# only create symlink to master.cfg if its the first time running the pak
-if [ ! -f "${SAVES}/${pakname}.cfg" ]; then
+# Latest uses its built-in controller defaults and independent configuration.
+# Keep the existing master.cfg handling for the original and FF engines.
+if [ "${OB}" != "OpenBOR-latest" ] && [ ! -f "${SAVES}/${pakname}.cfg" ]; then
 	if [ ${OB} = "OpenBOR-ff" ]; then
 		ln -sf "${CONFIGDIR}/masterff.cfg" "${SAVES}/${pakname}.cfg"
 	else

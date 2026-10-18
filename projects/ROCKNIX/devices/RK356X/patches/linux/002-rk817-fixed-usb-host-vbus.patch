@@ -1,0 +1,68 @@
+From: ROCKNIX <rocknix@rocknix.org>
+Subject: [PATCH] power: supply: rk817: support fixed USB host VBUS
+
+Port the fixed-host charger handling from RK3326S patch
+022-pixel2-usb-otg-wifi-charge-combined.patch. Boards with separately
+controlled host VBUS must not enable the RK817 OTG switch in response to
+host extcon events: that can prevent PLUG_IN_STS from detecting a charger.
+
+Read rocknix,fixed-usb-host-vbus before initialization and work scheduling,
+avoid an unbalanced regulator disable for that supply at probe, and restore
+the charging input limits before the initial PMIC plug-status read.
+Other boards retain their existing behavior.
+
+---
+diff --git a/drivers/power/supply/rk817_charger.c b/drivers/power/supply/rk817_charger.c
+--- a/drivers/power/supply/rk817_charger.c
++++ b/drivers/power/supply/rk817_charger.c
+@@ -307,6 +307,7 @@
+ 	struct delayed_work plug_poll_work;
+ 	int last_plug_in_sts;
+ 	bool charger_use_pmic_plug;
++	bool fixed_usb_host_vbus;
+ 	struct notifier_block bc_nb;
+ 	struct notifier_block cable_cg_nb;
+ 	struct notifier_block cable_host_nb;
+@@ -1017,6 +1018,10 @@
+ 			struct rk817_charger, host_work.work);
+ 	struct extcon_dev *edev = charge->cable_edev;
+ 
++	/* Fixed host ports supply their own VBUS; RK817 OTG masks plug detection. */
++	if (charge->fixed_usb_host_vbus)
++		return;
++
+ 	/* Determine cable/charger type */
+ 	if (extcon_get_state(edev, EXTCON_USB_VBUS_EN) > 0) {
+ 		DBG("receive type-c notifier event: OTG ON...\n");
+@@ -1306,7 +1311,8 @@
+ 
+ 	rk817_charge_set_chrg_finish_condition(charge);
+ 
+-	if (rk817_charge_get_otg_state(charge))
++	/* The fixed host supply does not hold a reference to otg5v_rdev. */
++	if (!charge->fixed_usb_host_vbus && rk817_charge_get_otg_state(charge))
+ 		rk817_charge_otg_disable(charge);
+ 	rk817_charge_field_write(charge, OTG_EN, OTG_DISABLE);
+ 	rk817_charge_set_otg_in(charge, OFFLINE);
+@@ -1373,6 +1379,8 @@
+ 	pdata->chrg_term_mode = DEFAULT_CHRG_TERM_MODE;
+ 
+ 	pdata->extcon = of_property_read_bool(np, "extcon");
++	charge->fixed_usb_host_vbus =
++		of_property_read_bool(np, "rocknix,fixed-usb-host-vbus");
+ 
+ 	ret = of_property_read_u32(np, "max_chrg_current",
+ 				   &pdata->max_chrg_current);
+@@ -1715,6 +1723,12 @@
+ 		 * 1. Charger is already plugged in at boot (edge-triggered IRQ won't fire)
+ 		 * 2. IRQ masking issues prevent plug_in/plug_out interrupts from working
+ 		 */
++		if (charge->fixed_usb_host_vbus) {
++			regmap_write(charge->regmap, RK817_CHRG_IN, 0xdb);
++			dev_info(charge->dev,
++				 "fixed host VBUS: RK817 OTG switch disabled\n");
++		}
++
+ 		charge->last_plug_in_sts = rk817_charge_get_plug_in_status(charge);
+ 		if (charge->last_plug_in_sts) {
+ 			dev_info(charge->dev, "charger already plugged in at boot\n");

@@ -641,7 +641,6 @@
 		monitor_sec = <5>;
 		sample_res = <10>;
 		virtual_power = <0>;
-		dc_det_gpio = <&gpio3 RK_PA7 GPIO_ACTIVE_HIGH>;
 		charge_red_gpio = <&gpio3 RK_PC2 GPIO_ACTIVE_HIGH>;
 		charge_blue_gpio = <&gpio3 RK_PC1 GPIO_ACTIVE_HIGH>;
 		charge_display_gpio = <&gpio3 RK_PC3 GPIO_ACTIVE_HIGH>;
@@ -657,7 +656,9 @@
 		chrg_finish_cur = <300>;
 		virtual_power = <0>;
 		dc_det_adc = <0>;
-		dc_det_gpio = <&gpio3 RK_PA7 GPIO_ACTIVE_HIGH>;
+		/* GPIO3_A7 stays high even with the DC cable unplugged. */
+		rockchip,charger-use-pmic-plug;
+		rocknix,fixed-usb-host-vbus;
 		charge_display_gpio = <&gpio3 RK_PC3 GPIO_ACTIVE_HIGH>;
 		extcon = <&u2phy>;
 		gate_function_disable = <1>;

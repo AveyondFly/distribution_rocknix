@@ -125,6 +125,7 @@ ALL_DEVICES: List[Tuple[str, str]] = [
     ("AISLPC RG52 Mini v1 (RK915 WiFi)", "device_trees/rk3562-rg52mini-v1.dtb"),
     ("AISLPC RG43H Pro", "device_trees/rk3562-rg43h.dtb"),
     ("AISLPC RG43H Pro v1 (RK915 WiFi)", "device_trees/rk3562-rg43h-v1.dtb"),
+    ("Pocket AIS", "device_trees/rk3562-pocket-ais.dtb"),
     ("Xifan NGP45H", "device_trees/rk3562-ngp45h.dtb"),
     ("Xifan XF55H", "device_trees/rk3562-xf55h.dtb"),
     ("AISLPC RG43V Pro", "device_trees/rk3562-rg43v.dtb"),

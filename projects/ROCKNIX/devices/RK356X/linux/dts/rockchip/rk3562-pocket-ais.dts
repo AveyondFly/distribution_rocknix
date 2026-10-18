@@ -1,0 +1,187 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Pocket AIS (RK3562).
+ * Board data from the factory eMMC's rk3562-ro520c-lp3x-v10-linux.dtb,
+ * SHA256: 1b327be5508670647fa8b16be48541ac695542ba9cd2d816986f02b03fe63a07.
+ * The panel command streams, GPIOs and timing (except pixel clock) match
+ * RG43H Pro. Keep the remaining board differences local to this device.
+ */
+
+#include "rk3562-rg43h.dts"
+
+/ {
+	model = "Pocket AIS";
+	compatible = "aislpc,pocket-ais", "rockchip,rk3562";
+
+	play_joystick {
+		/* Keep RG43H's left-stick-invert: both axes were verified
+		 * reversed on Pocket AIS without it. */
+		/delete-property/ moto-r-gpio;
+		key-gpios = <&gpio1 RK_PC7 GPIO_ACTIVE_LOW>,
+			    <&gpio1 RK_PD0 GPIO_ACTIVE_LOW>,
+			    <&gpio1 RK_PD5 GPIO_ACTIVE_LOW>,
+			    <&gpio1 RK_PD6 GPIO_ACTIVE_LOW>,
+			    <&gpio1 RK_PD3 GPIO_ACTIVE_LOW>,
+			    <&gpio1 RK_PD7 GPIO_ACTIVE_LOW>,
+			    <&gpio1 RK_PD4 GPIO_ACTIVE_LOW>,
+			    <&gpio2 RK_PA0 GPIO_ACTIVE_LOW>,
+			    <&gpio0 RK_PC5 GPIO_ACTIVE_LOW>,
+			    <&gpio0 RK_PC6 GPIO_ACTIVE_LOW>;
+		key-gpios-map = <0x136 0x220 0x137 0x131 0x13a
+				 0x13b 0x66 0x1d0 0x13d 0x13e>;
+
+		left-key {
+			press-threshold-microvolt = <80000>;
+		};
+		right-key {
+			press-threshold-microvolt = <80000>;
+		};
+		down-key {
+			press-threshold-microvolt = <80000>;
+		};
+		/* The current driver calls this ADC channel b-key; the factory
+		 * a-key has the same channel and Linux event code (0x130). */
+		b-key {
+			press-threshold-microvolt = <80000>;
+		};
+		x-key {
+			press-threshold-microvolt = <80000>;
+		};
+		y-key {
+			press-threshold-microvolt = <80000>;
+		};
+	};
+
+	fan_vcc: fan-vcc {
+		compatible = "regulator-fixed";
+		regulator-name = "fan-vcc";
+		pinctrl-names = "default";
+		pinctrl-0 = <&fan_vcc_en_gpio>;
+		gpios = <&gpio3 RK_PB0 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+	pwm-fan {
+		status = "okay";
+		compatible = "pwm-fan";
+		#cooling-cells = <2>;
+		fan-supply = <&fan_vcc>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&fan_det_gpio>;
+		interrupt-parent = <&gpio2>;
+		interrupts = <RK_PA1 IRQ_TYPE_EDGE_FALLING>;
+		pwms = <&pwm4 0 50000 0>;
+		cooling-levels = <0 50 100 150 200 255>;
+		rockchip,temp-trips = <50000 1
+				       55000 2
+				       60000 3
+				       65000 4
+				       70000 5>;
+	};
+
+	wireless-wlan {
+		/* This unit enumerates as C8A1:0082/0182 (AIC8800D80), despite
+		 * the factory tree's rk915 string. Avoid the RK915 loader. */
+		wifi_chip_type = "aic8800D80";
+		/* Power the SDIO chip at rfkill probe so its ID can trigger
+		 * module loading without the unrelated RK915 startup service. */
+		keep_wifi_power_on;
+	};
+
+	rk628-sound {
+		status = "disabled";
+	};
+};
+
+/* The factory disables RGB/RK628. An absent bridge otherwise defers the
+ * entire DRM master, including the working internal DSI panel. */
+&rgb {
+	status = "disabled";
+};
+
+&rgb_in_vp0 {
+	status = "disabled";
+};
+
+&route_rgb {
+	status = "disabled";
+};
+
+&i2c4_rk628 {
+	status = "disabled";
+};
+
+&sai1 {
+	status = "disabled";
+};
+
+&dsi_panel {
+	/* Preserve the factory dimensions pending physical measurement. */
+	width-mm = <68>;
+	height-mm = <121>;
+};
+
+&dsi_timing0 {
+	clock-frequency = <61000000>;
+};
+
+&pwm4 {
+	pinctrl-names = "active";
+	pinctrl-0 = <&pwm4m1_pins>;
+	status = "okay";
+};
+
+/* GPIO3_B0 belongs to the fan rail, not a second rumble motor. */
+&moto_gpio {
+	rockchip,pins = <3 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up>;
+};
+
+&fan_vcc_en_gpio {
+	rockchip,pins = <3 RK_PB0 RK_FUNC_GPIO &pcfg_pull_up>;
+};
+
+&fan_det_gpio {
+	rockchip,pins = <2 RK_PA1 RK_FUNC_GPIO &pcfg_pull_none>;
+};
+
+&hp_det {
+	rockchip,pins = <0 RK_PA7 RK_FUNC_GPIO &pcfg_pull_none>;
+};
+
+/* Headset detection switches the card's Speaker DAPM pin. Let that widget
+ * own the PA so jack insertion mutes speakers even while Playback Path
+ * remains SPK. The codec uses its headphone outputs for the external PA. */
+&rk817_sound {
+	spk-con-gpios = <&gpio3 RK_PC3 GPIO_ACTIVE_HIGH>;
+	pinctrl-0 = <&hp_det &hp_con>;
+	rockchip,pre-power-on-delay-ms = <100>;
+	rockchip,post-power-down-delay-ms = <100>;
+};
+
+&rk817_codec {
+	hp-volume = <56>;
+	/* PA switching belongs to the card's jack-aware Speaker widget. */
+	/delete-property/ hp2extamplifier;
+	/delete-property/ hp-ctl-gpios;
+	/delete-property/ spk-ctl-gpios;
+	pinctrl-0 = <&i2s0m0_mclk>;
+};
+
+&rk817 {
+	battery {
+		/delete-property/ moto_r_gpio;
+		ocv_table = <3500 3549 3596 3648 3703 3755 3794
+			     3821 3843 3865 3896 3912 3931 3969
+			     4007 4029 4036 4041 4057 4103 4182>;
+		design_capacity = <3675>;
+		design_qmax = <4042>;
+		bat_res = <107>;
+	};
+
+	charger {
+		max_input_current = <3000>;
+		max_chrg_current = <2000>;
+		max_chrg_voltage = <4350>;
+		chrg_finish_cur = <150>;
+	};
+};

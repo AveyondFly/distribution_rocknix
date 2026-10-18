@@ -1,0 +1,30 @@
+From: ROCKNIX <noreply@rocknix.org>
+Subject: [PATCH] wifi: aic8800: default SDIO debug masks to errors only
+
+The vendor defaults enable INFO, DEBUG, TRACE and firmware logging. Normal
+network traffic then floods the kernel log with command and packet traces.
+Keep errors enabled in both SDIO modules, matching our AIC USB driver.
+The WLAN mask remains adjustable through the aicwf_dbg_level parameter.
+
+--- a/drivers/net/wireless/aic8800/aic8800_fdrv/rwnx_main.c
++++ b/drivers/net/wireless/aic8800/aic8800_fdrv/rwnx_main.c
+@@ -535,7 +535,7 @@
+ 
+ 
+ extern uint8_t scanning;
+-int aicwf_dbg_level = LOGERROR|LOGINFO|LOGDEBUG|LOGTRACE|LOGFW;
++int aicwf_dbg_level = LOGERROR;
+ module_param(aicwf_dbg_level, int, 0660);
+ #ifdef CONFIG_DYNAMIC_PWR
+ int dynamic_pwr = 1;
+--- a/drivers/net/wireless/aic8800/aic8800_bsp/aic_bsp_main.c
++++ b/drivers/net/wireless/aic8800/aic8800_bsp/aic_bsp_main.c
+@@ -15,7 +15,7 @@
+ #define DRV_AUTHOR            "AICSemi"
+ #define DRV_VERS_MOD          "1.0"
+ 
+-int aicwf_dbg_level_bsp = LOGERROR|LOGINFO|LOGDEBUG|LOGTRACE;
++int aicwf_dbg_level_bsp = LOGERROR;
+ 
+ struct semaphore aicbsp_probe_semaphore;
+ 

@@ -1,0 +1,49 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+
+set -eu
+
+chip_file=/proc/device-tree/wireless-wlan/wifi_chip_type
+[ -r "$chip_file" ] || exit 0
+chip=$(tr -d '\000' < "$chip_file")
+model=$(tr -d '\000' < /proc/device-tree/model)
+
+case "$model" in
+  'Pocket AIS')
+    [ "$chip" = aic8800D80 ] || exit 0
+    ;;
+  *)
+    # Preserve the existing RK915 initialization for other device models.
+    if [ "$chip" = rk915 ]; then
+      echo 'wifi-driver-load: loading rk915 before network managers'
+      exec /sbin/modprobe rk915
+    fi
+    exit 0
+    ;;
+esac
+
+modprobe aic8800_bsp
+modprobe aic8800_fdrv
+
+# A concurrent udev modprobe may return before the first probe completes.
+# IWD must see the driver's default netdev when it first discovers the wiphy;
+# otherwise its NEW_INTERFACE races with the driver's own wlan%d creation.
+attempt=0
+while [ "$attempt" -lt 100 ]; do
+  if [ "$(cat /sys/module/aic8800_fdrv/initstate 2>/dev/null)" = live ]; then
+    for iface in /sys/class/net/*; do
+      [ -r "$iface/device/uevent" ] || continue
+      [ -r "$iface/ifindex" ] || continue
+      if grep -qx 'DRIVER=aicwf_sdio' "$iface/device/uevent"; then
+        echo "wifi-driver-load: AIC8800 ready on ${iface##*/} before network managers"
+        exit 0
+      fi
+    done
+  fi
+  attempt=$((attempt + 1))
+  sleep 0.1
+done
+
+echo 'wifi-driver-load: timed out waiting for the AIC8800 SDIO network interface' >&2
+exit 1

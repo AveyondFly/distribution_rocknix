@@ -1,0 +1,5 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+
+# Turn off the power LED without changing the saved user color.
+/usr/bin/ledcontrol poweroff

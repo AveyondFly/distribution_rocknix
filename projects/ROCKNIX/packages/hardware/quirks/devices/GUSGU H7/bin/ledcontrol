@@ -11,8 +11,12 @@ fi
 . /etc/profile
 
 # 获取脚本的第一个参数，即颜色名称
-COLOR=$1
+COLOR=${1:-$(get_setting led.color)}
 case ${COLOR} in
+  poweroff)
+    # Temporary suspend/shutdown state; preserve the saved color.
+    COLOR=off
+    ;;
   *_off)
     COLOR=off
     set_setting led.color "${COLOR}"
@@ -23,17 +27,13 @@ case ${COLOR} in
     ;;
 esac
 
-if [ ! -d /sys/class/gpio/gpio17 ]; then
-  echo 17 > /sys/class/gpio/export
-  echo out > /sys/class/gpio/gpio17/direction
-fi
 
 # 根据颜色名称设置 LED 状态
 case $COLOR in
     red)
-    echo 1 > /sys/class/gpio/gpio17/value
+    echo 1 > /sys/class/leds/power:red/brightness
         ;;
     off)
-    echo 0 > /sys/class/gpio/gpio17/value
+    echo 0 > /sys/class/leds/power:red/brightness
         ;;
 esac

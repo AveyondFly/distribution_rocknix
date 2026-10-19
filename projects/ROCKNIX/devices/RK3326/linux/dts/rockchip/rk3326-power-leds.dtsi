@@ -1,0 +1,34 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pinctrl/rockchip.h>
+
+/ {
+	power-leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&power_led_pins>;
+
+		led-blue {
+			label = "power:blue";
+			gpios = <&gpio0 RK_PA0 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led-red {
+			label = "power:red";
+			gpios = <&gpio0 RK_PC1 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+	};
+};
+
+&pinctrl {
+	power-led {
+		power_led_pins: power-led-pins {
+			rockchip,pins =
+				<0 RK_PA0 RK_FUNC_GPIO &pcfg_pull_none>,
+				<0 RK_PC1 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+};

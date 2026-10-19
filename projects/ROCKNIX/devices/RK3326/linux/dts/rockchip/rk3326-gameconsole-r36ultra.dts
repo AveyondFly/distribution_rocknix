@@ -857,3 +857,5 @@ thumbr  { gpios = <&gpio2 RK_PB6 GPIO_ACTIVE_LOW>; };
 		};
 	};
 };
+
+#include "rk3326-power-leds.dtsi"

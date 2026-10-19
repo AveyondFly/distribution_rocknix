@@ -12,20 +12,13 @@
 function set_led() {
   case $1 in
     red)
-      echo out >/sys/class/gpio/gpio${DEVICE_PWR_LED_GPIO}/direction
-      echo 1 >/sys/class/gpio/gpio${DEVICE_PWR_LED_GPIO}/value
+      echo 1 >/sys/class/leds/power:red/brightness
     ;;
     green|off|orange)
-      echo out >/sys/class/gpio/gpio${DEVICE_PWR_LED_GPIO}/direction
-      echo 0 >/sys/class/gpio/gpio${DEVICE_PWR_LED_GPIO}/value
+      echo 0 >/sys/class/leds/power:red/brightness
     ;;
   esac
 }
-
-# Set export GPIO for Power LED
-if [ ! -d "/sys/class/gpio/gpio${DEVICE_PWR_LED_GPIO}" ]; then
-  echo ${DEVICE_PWR_LED_GPIO} > /sys/class/gpio/export
-fi
 
 while true
 do

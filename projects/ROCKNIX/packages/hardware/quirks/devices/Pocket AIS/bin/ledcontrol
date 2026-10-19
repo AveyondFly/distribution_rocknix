@@ -41,16 +41,8 @@ if [ "$(get_setting powerled.disabled)" = 1 ]; then
   red=0
 fi
 
-for gpio in 96 97; do
-  if [ ! -d "/sys/class/gpio/gpio${gpio}" ]; then
-    echo "$gpio" >/sys/class/gpio/export || exit 1
-  fi
-  if [ "$(cat "/sys/class/gpio/gpio${gpio}/direction")" != out ]; then
-    echo low >"/sys/class/gpio/gpio${gpio}/direction" || exit 1
-  fi
-done
-echo "$green" >/sys/class/gpio/gpio96/value || exit 1
-echo "$red" >/sys/class/gpio/gpio97/value || exit 1
+echo "$green" >/sys/class/leds/power:green/brightness || exit 1
+echo "$red" >/sys/class/leds/power:red/brightness || exit 1
 
 case "$ACTION" in
   default) del_setting led.color ;;

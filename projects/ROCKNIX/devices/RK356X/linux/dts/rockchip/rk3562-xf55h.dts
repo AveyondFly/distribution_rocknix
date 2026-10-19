@@ -252,10 +252,6 @@
 		monitor_sec = <5>;
 		sample_res = <10>;
 		virtual_power = <0>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&charge_led_gpio>;
-		charge_red_gpio = <&gpio3 RK_PA1 GPIO_ACTIVE_HIGH>;
-		charge_green_gpio = <&gpio3 RK_PA0 GPIO_ACTIVE_HIGH>;
 		moto_gpio = <&gpio3 RK_PA7 GPIO_ACTIVE_HIGH>;
 	};
 
@@ -377,3 +373,5 @@
 		};
 	};
 };
+
+#include "rk3562-power-leds.dtsi"

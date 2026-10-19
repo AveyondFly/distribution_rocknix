@@ -14,53 +14,42 @@
 
 . /etc/profile.d/001-functions
 
-GPIO_GREEN=96
-GPIO_RED=97
+LED_GREEN=/sys/class/leds/power:green/brightness
+LED_RED=/sys/class/leds/power:red/brightness
 
-gpio_export() {
-  for gpio in ${GPIO_GREEN} ${GPIO_RED}; do
-    if [ ! -d "/sys/class/gpio/gpio${gpio}" ]; then
-      echo ${gpio} > /sys/class/gpio/export 2>/dev/null
-    fi
-    echo out > /sys/class/gpio/gpio${gpio}/direction 2>/dev/null
-  done
-}
-
-set_gpio_pair() {
-  echo "$1" > /sys/class/gpio/gpio${GPIO_GREEN}/value
-  echo "$2" > /sys/class/gpio/gpio${GPIO_RED}/value
+set_led_pair() {
+  echo "$1" > "${LED_GREEN}"
+  echo "$2" > "${LED_RED}"
 }
 
 apply_color() {
   case ${1} in
     off)
-      set_gpio_pair 0 0
+      set_led_pair 0 0
       ;;
     red)
-      set_gpio_pair 0 1
+      set_led_pair 0 1
       ;;
     green|default)
-      set_gpio_pair 1 0
+      set_led_pair 1 0
       ;;
     blue|amber)
-      set_gpio_pair 1 1
+      set_led_pair 1 1
       ;;
     *)
-      set_gpio_pair 1 0
+      set_led_pair 1 0
       ;;
   esac
 }
 
 blink_red() {
   for _ in 1 2 3 4 5; do
-    set_gpio_pair 0 0
+    set_led_pair 0 0
     sleep 0.5
-    set_gpio_pair 0 1
+    set_led_pair 0 1
     sleep 0.5
   done
 }
-
-gpio_export
 
 while true; do
   CAP=$(cat /sys/class/power_supply/battery/capacity 2>/dev/null)

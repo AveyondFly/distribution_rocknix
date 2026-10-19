@@ -21,44 +21,33 @@ fi
 
 . /etc/profile.d/001-functions
 
-GPIO_BLUE=113
-GPIO_RED=114
+LED_BLUE=/sys/class/leds/power:blue/brightness
+LED_RED=/sys/class/leds/power:red/brightness
 
-gpio_export() {
-	for gpio in ${GPIO_BLUE} ${GPIO_RED}; do
-		if [ ! -d "/sys/class/gpio/gpio${gpio}" ]; then
-			echo "${gpio}" > /sys/class/gpio/export 2>/dev/null
-		fi
-		echo out > "/sys/class/gpio/gpio${gpio}/direction" 2>/dev/null
-	done
-}
-
-set_gpio_pair() {
-	echo "$1" > "/sys/class/gpio/gpio${GPIO_BLUE}/value"
-	echo "$2" > "/sys/class/gpio/gpio${GPIO_RED}/value"
+set_led_pair() {
+	echo "$1" > "${LED_BLUE}"
+	echo "$2" > "${LED_RED}"
 }
 
 apply_color() {
 	case "$1" in
 		off)
-			set_gpio_pair 0 0
+			set_led_pair 0 0
 			;;
 		blue)
-			set_gpio_pair 1 0
+			set_led_pair 1 0
 			;;
 		red)
-			set_gpio_pair 0 1
+			set_led_pair 0 1
 			;;
 		purple)
-			set_gpio_pair 1 1
+			set_led_pair 1 1
 			;;
 		*)
-			set_gpio_pair 1 0
+			set_led_pair 1 0
 			;;
 	esac
 }
-
-gpio_export
 
 case "$1" in
 	default)

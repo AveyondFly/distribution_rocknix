@@ -641,8 +641,6 @@
 		monitor_sec = <5>;
 		sample_res = <10>;
 		virtual_power = <0>;
-		charge_red_gpio = <&gpio3 RK_PC2 GPIO_ACTIVE_HIGH>;
-		charge_blue_gpio = <&gpio3 RK_PC1 GPIO_ACTIVE_HIGH>;
 		charge_display_gpio = <&gpio3 RK_PC3 GPIO_ACTIVE_HIGH>;
 	};
 
@@ -737,6 +735,39 @@
 				<0 RK_PC6 RK_FUNC_GPIO &pcfg_pull_up>,
 				<0 RK_PC7 RK_FUNC_GPIO &pcfg_pull_up>,
 				<0 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+};
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pinctrl/rockchip.h>
+
+/ {
+	power-leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&power_led_pins>;
+
+		led-blue {
+			label = "power:blue";
+			gpios = <&gpio3 RK_PC1 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led-red {
+			label = "power:red";
+			gpios = <&gpio3 RK_PC2 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+	};
+};
+
+&pinctrl {
+	power-led {
+		power_led_pins: power-led-pins {
+			rockchip,pins =
+				<3 RK_PC1 RK_FUNC_GPIO &pcfg_pull_none>,
+				<3 RK_PC2 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 };

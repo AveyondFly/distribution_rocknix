@@ -960,3 +960,5 @@
 		};
 	};
 };
+
+#include "rk3326-power-leds.dtsi"

@@ -49,7 +49,7 @@
   },
   "runtime_update_policy": {
     "new_images": "Use the bundled NGP45H TF-first boot chain as the default initial bootloader.",
-    "first_boot_and_system_updates": "Sync the device-specific stock DDR/SPL and U-Boot FIT from eMMC together with its factory DTB and boot assets. Do not mix a retained U-Boot with assets meant for a different hardcoded DTB filename.",
+    "first_boot_and_system_updates": "Do not automatically sync the eMMC bootloader or factory boot assets on first boot, system updates, or device changes. Users may manually run Sync eMMC Bootloader to TF to copy the device-specific stock DDR/SPL and U-Boot FIT together with its factory DTB and boot assets.",
     "bootcmd_after_sync": "Restored from the device eMMC unchanged; the bundled TF-first bootcmd is not preserved by this stock sync."
   }
 }

@@ -11,6 +11,7 @@
 # PKG_GIT_CLONE_SINGLE (optional) clone single branch only (set to yes)
 # PKG_GIT_CLONE_DEPTH (optional) history to clone, must be a number
 # PKG_GIT_SUBMODULE_DEPTH (optional) history of submodules to clone, must be a number
+# PKG_GIT_SUBMODULE_URL_OVERRIDES (optional) space-separated name=url pairs
 
 set -e
 set -o pipefail
@@ -94,12 +95,34 @@ _pin_gitlinks() {
   done < <(git -C "${repo}" ls-tree -r HEAD)
 }
 
+_apply_submodule_url_overrides() {
+  local override name url
+
+  for override in ${PKG_GIT_SUBMODULE_URL_OVERRIDES}; do
+    if [[ "${override}" != *=* ]]; then
+      echo "ERROR: invalid submodule URL override: ${override}" >&2
+      return 1
+    fi
+
+    name="${override%%=*}"
+    url="${override#*=}"
+    if ! git config -f .gitmodules --get "submodule.${name}.path" > /dev/null; then
+      echo "ERROR: submodule URL override names unknown submodule: ${name}" >&2
+      return 1
+    fi
+
+    echo "Overriding submodule URL for ${name}: ${url}"
+    git config "submodule.${name}.url" "${url}" || return 1
+  done
+}
+
 _update_submodules() {
   if [[ ! -f .gitmodules ]]; then
     return 0
   fi
 
   git submodule sync --recursive || return 1
+  _apply_submodule_url_overrides || return 1
   _pin_gitlinks "${PWD}" || return 1
 
   local line

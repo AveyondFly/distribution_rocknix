@@ -10,3 +10,4 @@ PKG_DEPENDS_TARGET="toolchain xcb-proto libxcb xcb-util-renderutil xcb-util-imag
 PKG_LONGDESC="Port of libXcursor."
 PKG_BUILD_FLAGS="+pic"
 PKG_TOOLCHAIN="autotools"
+PKG_GIT_SUBMODULE_URL_OVERRIDES="m4=https://gitlab.freedesktop.org/xorg/util/xcb-util-m4.git"

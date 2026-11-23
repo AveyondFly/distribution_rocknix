@@ -210,7 +210,7 @@
 };
 
 &dsi_timing0 {
-	clock-frequency = <61800000>;
+	clock-frequency = <74800000>;
 	hactive = <720>;
 	vactive = <1280>;
 	hfront-porch = <132>;

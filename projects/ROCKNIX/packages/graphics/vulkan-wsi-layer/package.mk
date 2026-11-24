@@ -16,8 +16,8 @@ case "${DEVICE}" in
     # BSP name?, probably can be removed when moving to mainline
     HEAP_NAME=cma
     ;;
-  RK3326)
-    # RK3326 exposes /dev/dma_heap/system, but not linux,cma.
+  RK3326|RK3326S)
+    # RK3326/RK3326S expose /dev/dma_heap/system, but not linux,cma.
     HEAP_NAME=system
     ;;
   *)

@@ -54,7 +54,7 @@ esac
 # The Rockchip g29p1 blob provides GLES, OpenCL and Vulkan in one binary.
 # It therefore replaces the separate Rockchip libmali-vulkan package.
 case "${DEVICE}" in
-  RK3326|RK3566|RK356X)
+  RK3326|RK3326S|RK3566|RK356X)
     PKG_SITE="https://github.com/JeffyCN/mirrors"
     PKG_SHA256="54b8af924f582f7da7e120fbad4812a502cc7cc67f6d6ab061377cb403f3eb2d"
     PKG_VERSION="4233031d818e97a19e8a9cdbbd5c15795ededd93"

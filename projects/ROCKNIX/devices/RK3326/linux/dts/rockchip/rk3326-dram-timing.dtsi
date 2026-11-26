@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
-/* DDR timing values shared by RK3326 R36 clones, XiFan and AISLPC devices. */
+/* DDR timing values passed to the PX30 DMC firmware, as used by the Rockchip BSP. */
 
 / {
-	r36max2_ddr_timing: ddr_timing {
+	dmc_ddr_timing: ddr_timing {
 		compatible = "rockchip,ddr-timing";
 		ddr2_speed_bin = <0x00>;
 		ddr3_speed_bin = <0x15>;
@@ -33,7 +33,7 @@
 		phy_ddr3_ca_drv = <0x15>;
 		phy_ddr3_ck_drv = <0x12>;
 		phy_ddr3_dq_drv = <0x15>;
-		phy_ddr3_odt = <0x04>;
+		phy_ddr3_odt = <0x02>;
 		phy_lpddr2_odt_dis_freq = <0x29a>;
 		lpddr2_drv = <0x28>;
 		phy_lpddr2_ca_drv = <0x16>;
@@ -57,8 +57,8 @@
 		phy_lpddr4_ck_cs_drv = <0x06>;
 		phy_lpddr4_dq_drv = <0x06>;
 		phy_lpddr4_odt = <0x10>;
-		ddr4_odt_dis_freq = <0x271>;
-		phy_ddr4_odt_dis_freq = <0x271>;
+		ddr4_odt_dis_freq = <0x29a>;
+		phy_ddr4_odt_dis_freq = <0x29a>;
 		ddr4_drv = <0x22>;
 		ddr4_odt = <0xf0>;
 		phy_ddr4_ca_drv = <0x16>;
@@ -267,5 +267,5 @@
 };
 
 &dmc {
-	ddr_timing = <&r36max2_ddr_timing>;
+	ddr_timing = <&dmc_ddr_timing>;
 };
